@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>rice jump! - Boss Battle Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>라이스점프!</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -12,8 +12,8 @@
             font-family: 'Press Start 2P', monospace;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none;
             background-color: #0b0c10;
+            /* 모바일에서 스크롤이 원활하게 작동할 수 있도록 전체 제한을 완화합니다. */
         }
         canvas {
             image-rendering: pixelated;
@@ -32,10 +32,10 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-2 overflow-hidden text-white">
+<body class="flex flex-col items-center justify-start min-h-screen p-2 overflow-y-auto text-white">
 
     <!-- 게임 헤더 및 스코어 보드 -->
-    <div class="w-full max-w-4xl flex flex-wrap justify-between items-center mb-2 px-4 z-10 gap-2">
+    <div class="w-full max-w-4xl flex flex-wrap justify-between items-center mb-2 px-4 z-10 gap-2 mt-4">
         <div class="flex flex-col">
             <h1 class="text-xl md:text-2xl text-yellow-400 retro-text tracking-widest animate-pulse">RICE JUMP!</h1>
             <span id="theme-banner" class="text-[8px] text-cyan-400 tracking-wider">THEME: EMERALD FOREST</span>
@@ -71,9 +71,9 @@
         </div>
 
         <!-- 인트로/대기 스크린 Overlay -->
-        <div id="start-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-6 z-20">
-            <h2 class="text-2xl md:text-4xl text-yellow-400 mb-4 retro-text animate-bounce">RICE JUMP!</h2>
-            <div class="text-[9px] md:text-xs text-gray-300 max-w-xl leading-relaxed mb-6 space-y-2 text-left bg-gray-950/80 p-4 rounded-lg border border-gray-800">
+        <div id="start-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-4 md:p-6 z-20 overflow-y-auto">
+            <h2 class="text-2xl md:text-4xl text-yellow-400 mb-3 retro-text animate-bounce">RICE JUMP!</h2>
+            <div class="text-[9px] md:text-xs text-gray-300 max-w-xl leading-relaxed mb-4 space-y-2 text-left bg-gray-950/80 p-4 rounded-lg border border-gray-800">
                 <p>💡 <span class="text-emerald-400 font-bold">조작 방법</span>: 키보드(방향키/WASD) 혹은 모바일 화면 하단의 가상 버튼으로 이동하고 점프하세요!</p>
                 <p>⚡ <span class="text-yellow-300 font-bold">무적 비약 "67"</span>: 맵 곳곳에 놓인 신비로운 황금빛 물약을 먹으면 무적의 거인으로 각성하여 전방의 모든 장애물을 시원하게 질주하며 분쇄합니다!</p>
                 <p>💥 <span class="text-red-400 font-bold">점멸 지뢰 주의</span>: 붉은빛으로 깜빡이는 지뢰를 밟으면 치명적인 폭발과 함께 스테이지의 맨 처음 시작 지점으로 되돌아갑니다!</p>
@@ -81,7 +81,7 @@
                 <p>📈 <span class="text-blue-400 font-bold">끝없는 도전</span>: 다음 관문으로 나아갈수록 모험의 무대가 넓어지고 적들의 방해가 더욱 집요하고 치열해집니다!</p>
                 <p>🛡️ <span class="text-indigo-400 font-bold">수호신의 가호</span>: 모든 목숨을 잃어도 처음부터 다시 시작하지 않습니다! 수호신이 안전하게 바로 이전 스테이지로 데려다주어 재도전할 수 있도록 돕습니다!</p>
             </div>
-            <button id="start-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-xs md:text-sm cursor-pointer">
+            <button id="start-btn" class="retro-btn px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-xs md:text-sm cursor-pointer mb-2">
                 게임 시작! (START)
             </button>
         </div>
@@ -114,13 +114,13 @@
     </div>
 
     <!-- 조작법 안내 및 모바일 컨트롤러 -->
-    <div class="w-full max-w-4xl mt-3 px-4 flex flex-col md:flex-row justify-between items-center gap-4 z-10">
+    <div class="w-full max-w-4xl mt-3 px-4 flex flex-col md:flex-row justify-between items-center gap-4 z-10 mb-8">
         <!-- 키보드 조작 안내 (PC용) -->
         <div class="hidden md:block text-[9px] text-gray-500">
             [좌우 이동]: ◀ ▶ 키 / A, D 키 | [점프]: Space 키 / ▲ 키 / W 키
         </div>
 
-        <!-- 모바일 터치 패널 (터치 기기 및 마우스 클릭 하이브리드 지원) -->
+        <!-- 모바일 터치 패널 (터치 기기 및 마우스 클릭 하이브리드 지원, 버튼 고정 터치 무시 적용) -->
         <div class="flex justify-between w-full gap-4 mt-2">
             <!-- 왼쪽/오른쪽 이동 패드 -->
             <div class="flex gap-2">
@@ -135,12 +135,12 @@
     </div>
 
     <!-- 저작권 표시 푸터 -->
-    <footer class="w-full max-w-4xl mt-6 mb-2 text-center text-[8px] md:text-[10px] text-gray-600 tracking-wider">
+    <footer class="w-full max-w-4xl mt-auto mb-4 text-center text-[8px] md:text-[10px] text-gray-600 tracking-wider">
         &copy; copyright 2026 super rice jamjam studio. All rights reserved.
     </footer>
 
-    <!-- 오디오 엘리먼트 (사용자가 업로드한 'six seven!.mp3') -->
-    <audio id="sixSevenAudio" src="http://googleusercontent.com/file_content/0" preload="auto" loop></audio>
+    <!-- 오디오 엘리먼트 (동일 경로의 'six seven!.mp3' 상대 경로 호출) -->
+    <audio id="sixSevenAudio" src="six seven!.mp3" preload="auto" loop></audio>
 
     <script>
         // --- 글로벌 게임 설정 및 리소스 ---
@@ -393,9 +393,7 @@
                 try {
                     // 멀티터치 도중 제스처 캡처 충돌 현상 방지
                     btn.releasePointerCapture(e.pointerId);
-                } catch (err) {
-                    // 구형 환경 대응용 예외 처리
-                }
+                } catch (err) {}
                 keys[keyName] = true;
             });
             btn.addEventListener('pointerup', (e) => {
@@ -416,7 +414,6 @@
         setupVirtualButton(btnRight, 'right');
         setupVirtualButton(btnJump, 'up');
 
-        // --- STREAMING_CHUNK:Defining player entity physics and functions... -->
         // --- 플레이어 엔티티 정의 ---
         const player = {
             x: 100,
@@ -509,12 +506,11 @@
             },
 
             handleFall() {
-                // 무적 상태여도 낙사(공허로 낙하) 시에는 무조건 목숨을 잃고 리스폰 처리 (버그 방지)
+                // 무적 상태여도 낙사(공허로 낙하) 시에는 무조건 목숨을 잃고 리스폰 처리
                 this.deductLife(1, false, true);
             },
 
             deductLife(amount, resetToStart = false, ignoreFever = false) {
-                // 일반 데미지는 Fever 무적일 때 보호되지만, ignoreFever가 true이면 강제 데미지(낙사 등)
                 if (gameState.isFever && !ignoreFever) return; 
 
                 playSound('hit');
@@ -529,7 +525,6 @@
                         this.x = 100;
                         this.y = 100;
                     } else {
-                        // 낙사 또는 일반 피격 시 살짝 전으로 리스폰
                         this.x = Math.max(100, this.x - 300);
                         this.y = 100;
                     }
@@ -550,7 +545,6 @@
         let bossProjectiles = [];     
         let goal = null;
 
-        // --- STREAMING_CHUNK:Designing procedural level generator and boss battle logic... -->
         // --- 절차적 난이도 비례 무한 맵 생성 엔진 ---
         function buildLevel() {
             platforms = [];
@@ -841,7 +835,6 @@
             startBGM();
         }
 
-        // --- STREAMING_CHUNK:Structuring frame updates and boss attack collision... -->
         // --- 메인 업데이트 루프 ---
         function update() {
             if (!gameState.isActive) return;
@@ -975,8 +968,6 @@
                     mine.exploded = true;
                     createExplosion(mine.x + mine.width / 2, mine.y + mine.height / 2);
 
-                    // 지뢰는 무적 모드일 때는 보너스 점수만 부여하고 물리 폭발만 연출,
-                    // 무적 아닐 때는 목숨을 깎고 시작점으로 강제 복귀시킵니다.
                     if (!gameState.isFever) {
                         player.deductLife(1, true);
                     } else {
@@ -1018,7 +1009,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Drawing platformers, hazards, and boss visuals... -->
         // --- 메인 드로잉 ---
         function draw() {
             const isBossStage = gameState.stage % 5 === 0;
@@ -1341,7 +1331,6 @@
             document.getElementById('score-display').innerText = paddedScore;
         }
 
-        // --- STREAMING_CHUNK:Establishing game start and loop controllers... -->
         // --- 루프 컨트롤 ---
         let animationFrameId = null;
 
@@ -1363,9 +1352,9 @@
                 gameState.stage++;
                 gameState.lives = Math.min(gameState.lives + 1, 5); 
             } else if (mode === 'retry') {
-                // 이전 단계 복귀 시스템: 목숨을 잃을 시 바로 전 단계(이전 스테이지)로 완만하게 강등
+                // 이전 단계 복귀 시스템: 목숨을 모두 잃을 시 이전 스테이지로 재진입
                 gameState.stage = Math.max(1, gameState.stage - 1);
-                gameState.lives = 3; // 라이프 3개로 초기화하여 기회 제공
+                gameState.lives = 3; 
             }
 
             gameState.isActive = true;
@@ -1406,7 +1395,6 @@
             stopBGM();
             sixSevenAudio.pause();
             
-            // 유저 멘탈 방지 복귀 수치 계산
             const prevStage = Math.max(1, gameState.stage - 1);
             
             document.getElementById('gameover-desc').innerHTML = `모든 생명력을 소진했습니다.<br><span class="text-indigo-400 font-bold">수호신의 가호 발동: STAGE ${prevStage}에서 다시 시작합니다!</span>`;
