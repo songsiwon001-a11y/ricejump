@@ -73,12 +73,12 @@
         <div id="start-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-4 md:p-6 z-20 overflow-y-auto">
             <h2 class="text-2xl md:text-4xl text-yellow-400 mb-3 retro-text animate-bounce">RICE JUMP!</h2>
             <div class="text-[9px] md:text-xs text-gray-300 max-w-xl leading-relaxed mb-4 space-y-2 text-left bg-gray-950/80 p-4 rounded-lg border border-gray-800">
-                <p>💡 <span class="text-emerald-400 font-bold">조작 방법</span>: 키보드(방향키/WASD) 혹은 모바일 화면 하단의 가상 버튼으로 이동하고 점프하세요!</p>
-                <p>⚡ <span class="text-yellow-300 font-bold">무적 비약 "67"</span>: 맵 곳곳에 놓인 신비로운 황금빛 물약을 먹으면 무적의 거인으로 각성하여 전방의 모든 장애물을 시원하게 질주하며 분쇄합니다!</p>
-                <p>💥 <span class="text-red-400 font-bold">점멸 지뢰 주의</span>: 붉은빛으로 깜빡이는 지뢰를 밟으면 치명적인 폭발과 함께 스테이지의 맨 처음 시작 지점으로 되돌아갑니다!</p>
-                <p>👑 <span class="text-red-500 font-bold">보스의 습격</span>: 5스테이지마다 강력한 수호 보스가 전장을 점거합니다. 보스의 탄막 공격을 날렵하게 피해 머리 위를 힘차게 밟아 제압하세요!</p>
-                <p>📈 <span class="text-blue-400 font-bold">끝없는 도전</span>: 다음 관문으로 나아갈수록 모험의 무대가 넓어지고 적들의 방해가 더욱 집요하고 치열해집니다!</p>
-                <p>🛡️ <span class="text-indigo-400 font-bold">수호신의 가호</span>: 모든 목숨을 잃어도 처음부터 다시 시작하지 않습니다! 수호신이 안전하게 바로 이전 스테이지로 데려다주어 재도전할 수 있도록 돕습니다!</p>
+                <p>💡 <span class="text-emerald-400 font-bold">조작 방법</span>: 키보드(방향키/WASD) 혹은 화면 하단의 버튼으로 이동하고 점프하세요!</p>
+                <p>🛡️ <span class="text-yellow-400 font-bold">황금빛 비약 "67"</span>: 획득이 극히 까다롭고 귀중한 물약으로, 먹는 즉시 생명력이 2칸 즉시 회복됩니다!</p>
+                <p>💦 <span class="text-cyan-400 font-bold">청량한 파란빛 "67"</span>: 이 비약을 마시면 전방을 향해 몬스터와 위협을 격파하는 시원한 물총을 발사할 수 있습니다! 키보드 <span class="text-yellow-300 font-bold">[Shift]</span> 키, 또는 하단의 <span class="text-yellow-300 font-bold">[SHOOT]</span> 버튼으로 사격하세요!</p>
+                <p>⚠️ <span class="text-pink-400 font-bold">수상한 분홍빛 "67"</span>: 황금빛, 파란빛과 형태는 유사하지만 위험한 분홍색을 띠고 있습니다. 차원을 조율하는 이 위험한 비약을 먹게 되면 순식간에 차원의 소용돌이에 휘말려 상상을 초월하는 매서운 난이도의 악몽 차원으로 강제 이동당합니다!</p>
+                <p>💥 <span class="text-red-400 font-bold">지뢰 주의</span>: 붉게 점멸하는 지뢰를 밟으면 큰 대미지를 받으며 해당 스테이지의 시작 지점으로 강제 강등됩니다! 하지만 물총으로 미리 멀리서 저격하여 파괴할 수 있습니다!</p>
+                <p>👑 <span class="text-red-500 font-bold">보스의 등장</span>: 5스테이지 단위로 압도적인 보스가 등장합니다. 보스의 탄막을 회피하며 머리 위를 밟아 처치하거나, 소지한 물총을 연사하여 대미지를 주어 제압하세요!</p>
             </div>
             <button id="start-btn" class="retro-btn px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-xs md:text-sm cursor-pointer mb-2">
                 게임 시작! (START)
@@ -98,7 +98,7 @@
         <!-- 스테이지 클리어 Overlay -->
         <div id="clear-screen" class="absolute inset-0 bg-black/90 hidden flex flex-col items-center justify-center text-center p-6 z-20">
             <h2 id="clear-title" class="text-3xl md:text-5xl text-emerald-400 mb-6 retro-text animate-pulse">STAGE 1 CLEAR!!</h2>
-            <p class="text-xs md:text-sm text-yellow-300 mb-2">축하합니다! 완벽하게 목적지에 도달했습니다!</p>
+            <p class="text-xs md:text-sm text-yellow-300 mb-2">축하합니다! 목적지에 성공적으로 도달했습니다!</p>
             <p class="text-[10px] md:text-xs text-emerald-300 mb-4">다음 스테이지 진입 시 보너스 체력 회복 (+1) (최대 5개)</p>
             <p id="final-score" class="text-sm md:text-base text-white mb-8">현재 누적 점수: 0</p>
             <button id="next-btn" class="retro-btn px-8 py-4 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold rounded-lg border-2 border-white text-xs cursor-pointer">
@@ -106,9 +106,14 @@
             </button>
         </div>
 
-        <!-- 무적 모드 활성화 알림 배너 -->
-        <div id="fever-banner" class="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-4 py-1 rounded-full text-[10px] font-bold border-2 border-white hidden animate-pulse z-10">
-            ★ SIX SEVEN 무적 모드! ★
+        <!-- 물총 장착 상태 활성화 알림 배너 -->
+        <div id="fever-banner" class="absolute top-4 left-1/2 -translate-x-1/2 bg-cyan-500 text-white px-4 py-1 rounded-full text-[10px] font-bold border-2 border-white hidden animate-pulse z-10">
+            ★ 물총 사격 활성화! (WATER GUN ACTIVE) ★
+        </div>
+
+        <!-- 악몽 모드 강제 전이 알림 배너 -->
+        <div id="nightmare-banner" class="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-bold border-2 border-white hidden animate-pulse z-10">
+            ⚠️ 붕괴 경보: 악몽 차원 돌입! ⚠️
         </div>
     </div>
 
@@ -116,7 +121,7 @@
     <div class="w-full max-w-4xl mt-3 px-4 flex flex-col md:flex-row justify-between items-center gap-4 z-10 mb-8">
         <!-- 키보드 조작 안내 (PC용) -->
         <div class="hidden md:block text-[9px] text-gray-500">
-            [좌우 이동]: ◀ ▶ 키 / A, D 키 | [점프]: Space 키 / ▲ 키 / W 키
+            [좌우 이동]: ◀ ▶ 키 / A, D 키 | [점프]: Space 키 / ▲ 키 | [물총 발사]: Shift 키
         </div>
 
         <!-- 모바일 터치 패널 -->
@@ -126,10 +131,16 @@
                 <button id="btn-left" class="w-16 h-16 bg-gray-800 active:bg-gray-700 border-2 border-gray-600 rounded-xl flex items-center justify-center text-xl text-white select-none touch-none">◀</button>
                 <button id="btn-right" class="w-16 h-16 bg-gray-800 active:bg-gray-700 border-2 border-gray-600 rounded-xl flex items-center justify-center text-xl text-white select-none touch-none">▶</button>
             </div>
-            <!-- 점프 버튼 -->
-            <button id="btn-jump" class="px-8 h-16 bg-emerald-600 active:bg-emerald-500 border-2 border-white rounded-xl flex items-center justify-center text-xs text-white font-bold select-none touch-none retro-btn">
-                JUMP 🚀
-            </button>
+            <!-- 우측 행동 패널 (점프 & 사격) -->
+            <div class="flex gap-2 items-center">
+                <!-- 파란 67을 먹었을 때만 동적으로 노출될 수 있도록 기본 'hidden' 상태로 세팅 -->
+                <button id="btn-shoot" class="hidden px-5 h-16 bg-cyan-600 active:bg-cyan-500 border-2 border-white rounded-xl flex items-center justify-center text-xs text-white font-bold select-none touch-none retro-btn">
+                    SHOOT 💦
+                </button>
+                <button id="btn-jump" class="px-6 h-16 bg-emerald-600 active:bg-emerald-500 border-2 border-white rounded-xl flex items-center justify-center text-xs text-white font-bold select-none touch-none retro-btn">
+                    JUMP 🚀
+                </button>
+            </div>
         </div>
     </div>
 
@@ -140,11 +151,10 @@
 
     <!-- 오디오 엘리먼트 -->
     <audio id="sixSevenAudio" src="six seven!.mp3" preload="auto" loop></audio>
-    <audio id="deathAudio" src="라이스점프 죽는소리.mp3" preload="auto"></audio>
+    <audio id="deathAudio" src="끄아아아아아아아아아아아아아아아아아악!.mp3" preload="auto"></audio>
     <audio id="gameoverAudio" src="에휴우우우우우우우~~!.mp3" preload="auto"></audio>
 
     <script>
-        // --- 글로벌 게임 설정 및 리소스 ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const sixSevenAudio = document.getElementById('sixSevenAudio');
@@ -164,24 +174,54 @@
             { name: "CYBER NEON WAVE", skyStart: "#140526", skyMid: "#2c094d", skyEnd: "#10041a", blockStart: "#6b21a8", blockEnd: "#3b0764", grass: "#f43f5e", accent: "#9f1239" },
             { name: "VOLCANIC INFERNO", skyStart: "#1a0505", skyMid: "#3d0a0a", skyEnd: "#000000", blockStart: "#b91c1c", blockEnd: "#450a0a", grass: "#ea580c", accent: "#9a3412" },
             { name: "DEEP ABYSS COLD", skyStart: "#020f1e", skyMid: "#032242", skyEnd: "#01070e", blockStart: "#0369a1", blockEnd: "#082f49", grass: "#06b6d4", accent: "#0e7490" },
-            { name: "GOLDEN CITADEL", skyStart: "#201302", skyMid: "#452403", skyEnd: "#120800", blockStart: "#ca8a04", blockEnd: "#422006", grass: "#eab308", accent: "#854d0e" }
+            { name: "GOLDEN CITADEL", skyStart: "#201302", skyMid: "#452403", skyEnd: "#120800", blockStart: "#ca8a04", blockEnd: "#422006", grass: "#eab308", accent: "#854d0e" },
+            { name: "NIGHTMARE DIMENSION", skyStart: "#140202", skyMid: "#2e0505", skyEnd: "#000000", blockStart: "#450a0a", blockEnd: "#1a0202", grass: "#f43f5e", accent: "#be123c" }
         ];
 
         // --- 게임 상태 관리 ---
         const gameState = {
             isActive: false,
-            isFever: false, 
-            feverTimeLeft: 0,
+            isWaterGun: false, // 물총 장착 모드
+            isGolden: false, // 황금 비약 활성화 여부
+            isNightmare: false, // 악몽 스테이지 활성화 여부
+            waterGunTimeLeft: 0,
+            goldenTimeLeft: 0,
             score: 0,
             lives: 3,
             cameraX: 0,
             levelWidth: 6000, 
             stage: 1,
             difficulty: 1.0, 
-            boss: null       
+            boss: null,
+            transitionState: {
+                active: false,
+                timer: 0,
+                maxTimer: 75,
+                x: 0,
+                y: 0
+            }
         };
 
-        // --- WEB AUDIO API: 테마별 8비트 BGM 및 효과음 엔진 ---
+        // --- 드럼 사운드 폴(Pool) 시스템 ---
+        const drumPool = [];
+        const drumPoolSize = 6;
+        for (let i = 0; i < drumPoolSize; i++) {
+            const audio = new Audio('쾅!.mp3');
+            audio.preload = 'auto';
+            drumPool.push(audio);
+        }
+        let drumPoolIndex = 0;
+
+        function playDrumBeat() {
+            try {
+                const drum = drumPool[drumPoolIndex];
+                drum.volume = 0.55; 
+                drum.currentTime = 0;
+                drum.play().catch(e => {});
+                drumPoolIndex = (drumPoolIndex + 1) % drumPoolSize;
+            } catch (err) {}
+        }
+
         let audioCtx = null;
         let bgmInterval = null;
 
@@ -194,7 +234,6 @@
             }
         }
 
-        // 효과음 재생 유틸리티
         function playSound(type) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
@@ -261,6 +300,22 @@
                 osc.start(now);
                 osc.stop(now + 0.28);
             }
+            else if (type === 'shoot') {
+                // 물총 발사 전용 이펙트
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(750, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.12);
+                
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.13);
+            }
             else if (type === 'explosion') {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -295,15 +350,15 @@
             }
         }
 
-        // BGM 재생 구동부 (보스전 대응 템포)
         function startBGM() {
             if (!audioCtx) return;
             stopBGM();
 
             const isBossStage = gameState.stage % 5 === 0;
-            const themeIndex = isBossStage ? 2 : (gameState.stage - 1) % THEMES.length;
+            const themeIndex = gameState.isNightmare ? 5 : (isBossStage ? 2 : (gameState.stage - 1) % 5);
             
             const bossMelody = [146.83, 146.83, 164.81, 146.83, 174.61, 174.61, 196.00, 174.61];
+            const nightmareMelody = [110.00, 130.81, 110.00, 146.83, 110.00, 164.81, 146.83, 130.81];
             const melodies = [
                 [261.63, 293.66, 329.63, 349.23, 392.00, 392.00, 440.00, 392.00], 
                 [293.66, 349.23, 440.00, 392.00, 349.23, 440.00, 523.25, 440.00], 
@@ -312,23 +367,40 @@
                 [392.00, 440.00, 493.88, 587.33, 587.33, 523.25, 493.88, 440.00]  
             ];
 
-            const activeMelody = isBossStage ? bossMelody : melodies[themeIndex];
+            const drumPatterns = [
+                [1, 0, 0, 1, 1, 0, 1, 0], 
+                [1, 0, 1, 0, 1, 0, 1, 1], 
+                [1, 1, 0, 1, 0, 1, 1, 0], 
+                [1, 0, 0, 0, 1, 0, 1, 0], 
+                [1, 0, 1, 1, 0, 1, 0, 1]  
+            ];
+            const bossDrumPattern = [1, 1, 0, 1, 1, 1, 0, 1];
+            const nightmareDrumPattern = [1, 1, 1, 0, 1, 1, 1, 1];
+
+            let activeMelody = isBossStage ? bossMelody : (gameState.isNightmare ? nightmareMelody : melodies[themeIndex]);
+            let activeDrumPattern = isBossStage ? bossDrumPattern : (gameState.isNightmare ? nightmareDrumPattern : drumPatterns[themeIndex]);
             let step = 0;
-            const tempo = isBossStage ? 120 : 170;
+            const tempo = isBossStage ? 120 : (gameState.isNightmare ? 110 : 170);
 
             bgmInterval = setInterval(() => {
-                if (gameState.isFever) return; 
-                
+                if ((gameState.isWaterGun || gameState.isGolden) && !gameState.isNightmare) return; // 물총 또는 황금 모드에서는 BGM 정지
+                if (gameState.transitionState.active) return;
+
                 const now = audioCtx.currentTime;
+
+                if (activeDrumPattern[step % activeDrumPattern.length] === 1) {
+                    playDrumBeat();
+                }
+
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 
-                osc.type = isBossStage ? 'sawtooth' : ['square', 'sawtooth', 'triangle', 'sine', 'square'][themeIndex];
+                osc.type = gameState.isNightmare ? 'sawtooth' : (isBossStage ? 'sawtooth' : ['square', 'sawtooth', 'triangle', 'sine', 'square'][themeIndex]);
                 
                 const pitchShift = 1 + (Math.floor(gameState.stage / 2) * 0.002);
                 osc.frequency.setValueAtTime(activeMelody[step % activeMelody.length] * pitchShift, now);
                 
-                gain.gain.setValueAtTime(isBossStage ? 0.045 : 0.025, now); 
+                gain.gain.setValueAtTime(gameState.isNightmare ? 0.05 : (isBossStage ? 0.045 : 0.025), now); 
                 gain.gain.exponentialRampToValueAtTime(0.001, now + (isBossStage ? 0.11 : 0.15));
                 
                 osc.connect(gain);
@@ -367,7 +439,8 @@
         const keys = {
             left: false,
             right: false,
-            up: false
+            up: false,
+            shoot: false
         };
 
         window.addEventListener('keydown', (e) => {
@@ -377,17 +450,27 @@
                 keys.up = true;
                 e.preventDefault();
             }
+            // 기존 F, X를 쉬프트 키(ShiftLeft/ShiftRight/Shift)로 대폭 단순화
+            if (e.key === 'Shift') {
+                keys.shoot = true;
+                e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
+            if (e.key === 'Shift') {
+                keys.shoot = false;
+                e.preventDefault();
+            }
         });
 
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
         const btnJump = document.getElementById('btn-jump');
+        const btnShoot = document.getElementById('btn-shoot');
 
         function setupVirtualButton(btn, keyName) {
             btn.addEventListener('pointerdown', (e) => {
@@ -414,8 +497,8 @@
         setupVirtualButton(btnLeft, 'left');
         setupVirtualButton(btnRight, 'right');
         setupVirtualButton(btnJump, 'up');
+        setupVirtualButton(btnShoot, 'shoot');
 
-        // --- 플레이어 엔티티 정의 ---
         const player = {
             x: 100,
             y: 400,
@@ -429,15 +512,21 @@
             isGrounded: false,
             color: '#10b981', 
             invincibleCooldown: 0, 
+            facing: 'right', 
+            shootCooldown: 0, 
 
             update() {
+                if (gameState.transitionState.active) return; 
+
                 const speedMultiplier = 1 + (Math.floor(gameState.stage / 2) * 0.002);
                 const currentSpeed = this.speed * speedMultiplier;
 
                 if (keys.left) {
                     this.vx = -currentSpeed;
+                    this.facing = 'left';
                 } else if (keys.right) {
                     this.vx = currentSpeed;
+                    this.facing = 'right';
                 } else {
                     this.vx *= 0.8; 
                 }
@@ -459,47 +548,111 @@
                 }
 
                 if (this.invincibleCooldown > 0) this.invincibleCooldown--;
+                if (this.shootCooldown > 0) this.shootCooldown--;
+
+                // 물총 공격 발사 검증
+                if (keys.shoot && gameState.isWaterGun && this.shootCooldown === 0) {
+                    this.fireWater();
+                }
+            },
+
+            fireWater() {
+                this.shootCooldown = 12; // 0.2초 쿨다운
+                playSound('shoot');
+                const bulletVx = this.facing === 'right' ? 16 : -16;
+                waterBullets.push({
+                    x: this.facing === 'right' ? this.x + this.width + 10 : this.x - 22,
+                    y: this.y + 30,
+                    vx: bulletVx,
+                    width: 14,
+                    height: 14,
+                    life: 55 
+                });
             },
 
             draw() {
                 ctx.save();
 
-                if (gameState.isFever) {
-                    const t = Date.now() / 100;
-                    ctx.shadowBlur = 30;
-                    ctx.shadowColor = `hsl(${t % 360}, 100%, 60%)`;
-                    ctx.strokeStyle = `hsl(${(t + 180) % 360}, 100%, 50%)`;
-                    ctx.lineWidth = 4;
-                    ctx.strokeRect(this.x - gameState.cameraX - 5, this.y - 5, this.width + 10, this.height + 10);
+                if (gameState.transitionState.active) {
+                    ctx.translate(this.x - gameState.cameraX + this.width/2, this.y + this.height/2);
+                    ctx.rotate(this.angle);
+                    ctx.scale(this.scale, this.scale);
+                    ctx.translate(-this.width/2, -this.height/2);
+                } else {
+                    ctx.translate(this.x - gameState.cameraX, this.y);
+                }
+
+                // 물총 상태 및 황금 상태 시 광원 연출
+                if (gameState.isWaterGun) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#06b6d4';
+                } else if (gameState.isGolden) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#eab308';
                 } else if (this.invincibleCooldown > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
                     ctx.globalAlpha = 0.3;
                 }
 
-                ctx.fillStyle = gameState.isFever ? '#f59e0b' : this.color;
+                // 플레이어 헬멧 몸통 그리기
+                ctx.fillStyle = gameState.isWaterGun ? '#0891b2' : (gameState.isGolden ? '#eab308' : this.color);
                 ctx.beginPath();
-                ctx.roundRect(this.x - gameState.cameraX, this.y, this.width, this.height, 12);
+                ctx.roundRect(0, 0, this.width, this.height, 12);
                 ctx.fill();
 
+                // 밥알 모양 선글라스 창
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.roundRect(this.x - gameState.cameraX + 5, this.y + 10, this.width - 10, 20, 6);
+                ctx.roundRect(5, 10, this.width - 10, 20, 6);
                 ctx.fill();
 
+                // 눈동자 방향
                 ctx.fillStyle = '#0f172a';
-                let eyeOffset = this.vx >= 0.1 ? 6 : (this.vx <= -0.1 ? -6 : 0);
-                ctx.fillRect(this.x - gameState.cameraX + 15 + eyeOffset, this.y + 16, 6, 8);
-                ctx.fillRect(this.x - gameState.cameraX + 30 + eyeOffset, this.y + 16, 6, 8);
+                let eyeOffset = this.facing === 'right' ? 6 : -6;
+                ctx.fillRect(15 + eyeOffset, 16, 6, 8);
+                ctx.fillRect(30 + eyeOffset, 16, 6, 8);
 
+                // 빨간 배낭 장식
                 ctx.fillStyle = '#ef4444';
-                ctx.fillRect(this.x - gameState.cameraX - 8, this.y + 15, 8, 30);
+                ctx.fillRect(this.facing === 'right' ? -8 : this.width, 15, 8, 30);
 
-                if (gameState.isFever) {
-                    const flameHeight = 10 + Math.random() * 15;
-                    const gradient = ctx.createLinearGradient(0, this.y + 45, 0, this.y + 45 + flameHeight);
-                    gradient.addColorStop(0, '#f97316');
-                    gradient.addColorStop(1, '#ef444400');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(this.x - gameState.cameraX - 8, this.y + 45, 8, flameHeight);
+                // --- 파란 물총 장착 시 플레이어의 무기 시각 연출 추가 ---
+                if (gameState.isWaterGun) {
+                    ctx.save();
+                    // 물총 기계식 디테일 드로잉
+                    ctx.fillStyle = '#22d3ee'; // 수려한 시안 형광색
+                    ctx.strokeStyle = '#0284c7';
+                    ctx.lineWidth = 2.5;
+
+                    if (this.facing === 'right') {
+                        // 우측 조준 파란 물총 그리기
+                        ctx.beginPath();
+                        ctx.roundRect(this.width - 8, 25, 24, 12, 4); // 물총 총열
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#1d4ed8'; // 고압 물탱크
+                        ctx.beginPath();
+                        ctx.roundRect(this.width - 16, 32, 10, 10, 3);
+                        ctx.fill();
+
+                        ctx.fillStyle = '#0f172a'; // 방아쇠/손잡이
+                        ctx.fillRect(this.width - 4, 34, 5, 8);
+                    } else {
+                        // 좌측 조준 파란 물총 그리기
+                        ctx.beginPath();
+                        ctx.roundRect(-16, 25, 24, 12, 4); // 물총 총열
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#1d4ed8'; // 고압 물탱크
+                        ctx.beginPath();
+                        ctx.roundRect(6, 32, 10, 10, 3);
+                        ctx.fill();
+
+                        ctx.fillStyle = '#0f172a'; // 방아쇠/손잡이
+                        ctx.fillRect(-1, 34, 5, 8);
+                    }
+                    ctx.restore();
                 }
 
                 ctx.restore();
@@ -509,15 +662,11 @@
                 this.deductLife(1, false, true);
             },
 
-            deductLife(amount, resetToStart = false, ignoreFever = false) {
-                if (gameState.isFever && !ignoreFever) return; 
-
+            deductLife(amount, resetToStart = false, ignoreWaterGun = false) {
                 playSound('hit');
                 
                 deathAudio.currentTime = 0;
-                deathAudio.play().catch(e => {
-                    console.log("Death audio playback blocked: ", e);
-                });
+                deathAudio.play().catch(e => {});
 
                 gameState.lives -= amount;
                 if (gameState.lives < 0) gameState.lives = 0;
@@ -548,9 +697,9 @@
         let giantMosquitos = [];      
         let explosionParticles = [];  
         let bossProjectiles = [];     
+        let waterBullets = []; 
         let goal = null;
 
-        // --- 절차적 난이도 비례 무한 맵 생성 엔진 ---
         function buildLevel() {
             platforms = [];
             enemies = [];
@@ -559,17 +708,25 @@
             giantMosquitos = [];
             explosionParticles = [];
             bossProjectiles = [];
+            waterBullets = [];
             gameState.boss = null;
 
             document.getElementById('boss-ui').classList.add('hidden');
 
             gameState.difficulty = 1.0 + Math.floor((gameState.stage - 1) / 2) * 0.01;
+            
+            if (gameState.isNightmare) {
+                gameState.difficulty += 0.40;
+                document.getElementById('nightmare-banner').classList.remove('hidden');
+            } else {
+                document.getElementById('nightmare-banner').classList.add('hidden');
+            }
 
             const isBossStage = gameState.stage % 5 === 0;
 
-            if (isBossStage) {
+            if (isBossStage && !gameState.isNightmare) {
                 gameState.levelWidth = 2400;
-                document.getElementById('theme-banner').innerText = `STAGE ${gameState.stage}: 👑BOSS BATTLE (LEVEL OVERLORD)`;
+                document.getElementById('theme-banner').innerText = `STAGE ${gameState.stage}: 👑BOSS BATTLE`;
                 document.getElementById('boss-ui').classList.remove('hidden');
 
                 platforms.push({ x: 0, y: 550, width: 600, height: 200 });
@@ -579,7 +736,7 @@
                 platforms.push({ x: 1100, y: 240, width: 180, height: 35 });
                 platforms.push({ x: 1400, y: 380, width: 180, height: 35 });
 
-                const bossHp = 3 + Math.floor(gameState.stage / 5) * 2;
+                const bossHp = 4 + Math.floor(gameState.stage / 5) * 3;
                 gameState.boss = {
                     x: 1350,
                     y: 430, 
@@ -600,14 +757,14 @@
                 items.push({ x: 300, y: 450, type: 'coin', width: 25, height: 25, collected: false });
                 items.push({ x: 890, y: 300, type: 'coin', width: 25, height: 25, collected: false });
                 items.push({ x: 1190, y: 160, type: 'coin', width: 25, height: 25, collected: false });
-                items.push({ x: 150, y: 380, type: '67', width: 45, height: 45, collected: false });
+                
+                items.push({ x: 150, y: 380, type: 'blue_67', width: 45, height: 45, collected: false });
 
                 document.getElementById('boss-hp-bar').style.width = '100%';
             } 
-            else if (gameState.stage === 1) {
+            else if (gameState.stage === 1 && !gameState.isNightmare) {
                 gameState.levelWidth = 6000;
-                const themeIndex = (gameState.stage - 1) % THEMES.length;
-                const activeTheme = THEMES[themeIndex];
+                const activeTheme = THEMES[0];
                 document.getElementById('theme-banner').innerText = `THEME: ${activeTheme.name} (SPEED: x${gameState.difficulty.toFixed(2)})`;
 
                 platforms.push({ x: 0, y: 550, width: 800, height: 200 });
@@ -634,9 +791,9 @@
                 giantMosquitos.push({ x: 1900, y: 150, width: 65, height: 50, startY: 150, range: 60, angle: 0, speed: 3.0 });
                 giantMosquitos.push({ x: 3900, y: 180, width: 65, height: 50, startY: 180, range: 80, angle: Math.PI, speed: 4.0 });
 
-                items.push({ x: 1050, y: 400, type: '67', width: 45, height: 45, collected: false });
-                items.push({ x: 2120, y: 140, type: '67', width: 45, height: 45, collected: false });
-                items.push({ x: 3900, y: 240, type: '67', width: 45, height: 45, collected: false });
+                items.push({ x: 2050, y: 130, type: '67', width: 45, height: 45, collected: false });
+                items.push({ x: 1050, y: 400, type: 'blue_67', width: 45, height: 45, collected: false });
+                items.push({ x: 3450, y: 330, type: 'fake_67', width: 45, height: 45, collected: false });
 
                 const coinPositions = [
                     {x: 350, y: 480}, {x: 450, y: 450}, {x: 550, y: 480},
@@ -653,15 +810,20 @@
             } 
             else {
                 gameState.levelWidth = Math.min(6000 + (gameState.stage - 2) * 500, 11000);
-                const themeIndex = (gameState.stage - 1) % THEMES.length;
+                const themeIndex = gameState.isNightmare ? 5 : (gameState.stage - 1) % 5;
                 const activeTheme = THEMES[themeIndex];
-                document.getElementById('theme-banner').innerText = `THEME: ${activeTheme.name} (SPEED: x${gameState.difficulty.toFixed(2)})`;
+                
+                document.getElementById('theme-banner').innerText = gameState.isNightmare ? 
+                    `THEME: ⚠️ ${activeTheme.name} ⚠️ (DIFFICULTY: OVERKILL x${gameState.difficulty.toFixed(2)})` : 
+                    `THEME: ${activeTheme.name} (SPEED: x${gameState.difficulty.toFixed(2)})`;
 
                 platforms.push({ x: 0, y: 550, width: 750, height: 200 });
 
                 let currentX = 850;
                 while (currentX < gameState.levelWidth - 800) {
-                    const platformWidth = 160 + Math.random() * 220;
+                    const platformWidth = gameState.isNightmare ? 
+                        (120 + Math.random() * 140) : 
+                        (160 + Math.random() * 220);
                     const platformY = 240 + Math.random() * 300;
                     const height = (platformY > 480) ? (720 - platformY) : 40;
 
@@ -672,26 +834,26 @@
                         height: height
                     });
 
-                    const enemyProb = 0.35 * gameState.difficulty;
-                    const mineProb = 0.30 * gameState.difficulty;
-                    const mosquitoProb = 0.25 * gameState.difficulty;
+                    const enemyProb = (gameState.isNightmare ? 0.65 : 0.35) * gameState.difficulty;
+                    const mineProb = (gameState.isNightmare ? 0.70 : 0.30) * gameState.difficulty;
+                    const mosquitoProb = (gameState.isNightmare ? 0.55 : 0.25) * gameState.difficulty;
 
-                    if (Math.random() < enemyProb && platformWidth > 180) {
+                    if (Math.random() < enemyProb && platformWidth > 130) {
                         const enemyWidth = 50 + Math.random() * 15;
                         const patrolSpeed = (2.2 + Math.random() * 3.0) * gameState.difficulty;
                         enemies.push({
-                            x: currentX + 30,
+                            x: currentX + 15,
                             y: platformY - 60,
                             width: enemyWidth,
                             height: 60,
-                            minX: currentX + 10,
-                            maxX: currentX + platformWidth - enemyWidth - 10,
+                            minX: currentX + 5,
+                            maxX: currentX + platformWidth - enemyWidth - 5,
                             speed: patrolSpeed,
-                            color: '#f87171'
+                            color: gameState.isNightmare ? '#b91c1c' : '#f87171'
                         });
                     }
 
-                    if (Math.random() < mineProb && platformWidth > 120) {
+                    if (Math.random() < mineProb && platformWidth > 100) {
                         const mineX = currentX + (platformWidth / 2) - 12 + (Math.random() * 40 - 20);
                         mines.push({
                             x: mineX,
@@ -717,11 +879,30 @@
                         });
                     }
 
-                    if (Math.random() < 0.22) {
+                    const randVal = Math.random();
+                    if (randVal < 0.05) {
                         items.push({
                             x: currentX + (platformWidth / 2) - 22,
                             y: platformY - 90,
                             type: '67',
+                            width: 45,
+                            height: 45,
+                            collected: false
+                        });
+                    } else if (randVal < 0.18) {
+                        items.push({
+                            x: currentX + (platformWidth / 2) - 22,
+                            y: platformY - 90,
+                            type: 'blue_67',
+                            width: 45,
+                            height: 45,
+                            collected: false
+                        });
+                    } else if (randVal < 0.28) {
+                        items.push({
+                            x: currentX + (platformWidth / 2) - 22,
+                            y: platformY - 90,
+                            type: 'fake_67',
                             width: 45,
                             height: 45,
                             collected: false
@@ -740,8 +921,8 @@
                         }
                     }
 
-                    const baseGap = 115;
-                    const gapVariation = 110 * Math.min(gameState.difficulty, 1.8);
+                    const baseGap = gameState.isNightmare ? 165 : 115;
+                    const gapVariation = (gameState.isNightmare ? 130 : 110) * Math.min(gameState.difficulty, 1.8);
                     const gap = baseGap + Math.random() * gapVariation;
                     currentX += platformWidth + gap;
                 }
@@ -764,7 +945,6 @@
             }
         }
 
-        // --- 물리 충돌 판정 (AABB) ---
         function checkCollision(rect1, rect2) {
             return rect1.x < rect2.x + rect2.width &&
                    rect1.x + rect1.width > rect2.x &&
@@ -800,7 +980,6 @@
             }
         }
 
-        // --- 지뢰 폭사 이펙트 파티클 소환 ---
         function createExplosion(x, y) {
             playSound('explosion');
             const particleCount = 25;
@@ -819,30 +998,110 @@
             }
         }
 
-        // --- 무적 스위치 ---
-        function activateFeverMode() {
-            gameState.isFever = true;
-            gameState.feverTimeLeft = 360; 
+        function createWaterSplash(x, y) {
+            const count = 15;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1.5 + Math.random() * 5;
+                explosionParticles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 1,
+                    size: 2 + Math.random() * 4,
+                    color: i % 2 === 0 ? '#22d3ee' : '#38bdf8',
+                    life: 15 + Math.random() * 12
+                });
+            }
+        }
+
+        function activateWaterGunMode() {
+            gameState.isWaterGun = true;
+            gameState.waterGunTimeLeft = 480; 
             document.getElementById('fever-banner').classList.remove('hidden');
 
-            sixSevenAudio.currentTime = 0;
-            sixSevenAudio.play().catch(e => {
-                console.log("Audio playback blocked: ", e);
-            });
+            // 파란 67을 먹었을 때만 화면 우측 하단에 'SHOOT' 모바일 가상버튼 동적 노출
+            document.getElementById('btn-shoot').classList.remove('hidden');
 
+            if (!gameState.isGolden) {
+                sixSevenAudio.currentTime = 0;
+                sixSevenAudio.play().catch(e => {});
+                stopBGM();
+            }
+        }
+
+        function deactivateWaterGunMode() {
+            gameState.isWaterGun = false;
+            document.getElementById('fever-banner').classList.add('hidden');
+            
+            // 물총 비활성화 시 화면 우측 하단 'SHOOT' 모바일 버튼 숨김
+            document.getElementById('btn-shoot').classList.add('hidden');
+
+            if (!gameState.isGolden) {
+                sixSevenAudio.pause();
+                startBGM();
+            }
+        }
+
+        function activateGoldenMode() {
+            gameState.isGolden = true;
+            gameState.goldenTimeLeft = 480;
+
+            if (!gameState.isWaterGun) {
+                sixSevenAudio.currentTime = 0;
+                sixSevenAudio.play().catch(e => {});
+                stopBGM();
+            }
+        }
+
+        function deactivateGoldenMode() {
+            gameState.isGolden = false;
+
+            if (!gameState.isWaterGun) {
+                sixSevenAudio.pause();
+                startBGM();
+            }
+        }
+
+        function triggerFake67Suck(targetX, targetY) {
+            gameState.transitionState.active = true;
+            gameState.transitionState.timer = gameState.transitionState.maxTimer;
+            gameState.transitionState.x = targetX;
+            gameState.transitionState.y = targetY;
+
+            sixSevenAudio.currentTime = 0;
+            sixSevenAudio.play().catch(e => {});
             stopBGM();
         }
 
-        function deactivateFeverMode() {
-            gameState.isFever = false;
-            document.getElementById('fever-banner').classList.add('hidden');
-            sixSevenAudio.pause();
-            startBGM();
-        }
-
-        // --- 메인 업데이트 루프 ---
         function update() {
             if (!gameState.isActive) return;
+
+            if (gameState.transitionState.active) {
+                gameState.transitionState.timer--;
+                const progress = 1 - (gameState.transitionState.timer / gameState.transitionState.maxTimer);
+                
+                player.x += (gameState.transitionState.x - player.width / 2 - player.x) * 0.12;
+                player.y += (gameState.transitionState.y - player.height / 2 - player.y) * 0.12;
+                player.angle = progress * Math.PI * 10; 
+                player.scale = 1 - progress; 
+
+                if (gameState.transitionState.timer <= 0) {
+                    gameState.transitionState.active = false;
+                    player.scale = 1;
+                    player.angle = 0;
+                    
+                    gameState.isNightmare = true; 
+                    player.x = 100;
+                    player.y = 100;
+                    player.vx = 0;
+                    player.vy = 0;
+
+                    buildLevel();
+                    startBGM(); 
+                }
+                return; 
+            }
 
             player.update();
             resolvePlatformCollisions();
@@ -851,10 +1110,110 @@
             gameState.cameraX += (targetCameraX - gameState.cameraX) * 0.1;
             gameState.cameraX = Math.max(0, Math.min(gameState.cameraX, gameState.levelWidth - canvas.width));
 
-            if (gameState.isFever) {
-                gameState.feverTimeLeft--;
-                if (gameState.feverTimeLeft <= 0) {
-                    deactivateFeverMode();
+            if (gameState.isWaterGun) {
+                gameState.waterGunTimeLeft--;
+                if (gameState.waterGunTimeLeft <= 0) {
+                    deactivateWaterGunMode();
+                }
+            }
+
+            if (gameState.isGolden) {
+                gameState.goldenTimeLeft--;
+                if (gameState.goldenTimeLeft <= 0) {
+                    deactivateGoldenMode();
+                }
+            }
+
+            // --- 물총 투사체 업데이트 및 충돌 검증 ---
+            for (let i = waterBullets.length - 1; i >= 0; i--) {
+                const b = waterBullets[i];
+                b.x += b.vx;
+                b.life--;
+
+                if (b.life <= 0 || b.x < gameState.cameraX || b.x > gameState.cameraX + canvas.width) {
+                    waterBullets.splice(i, 1);
+                    continue;
+                }
+
+                let hitPlatform = false;
+                for (let platform of platforms) {
+                    if (checkCollision(b, platform)) {
+                        createWaterSplash(b.x + b.width / 2, b.y + b.height / 2);
+                        waterBullets.splice(i, 1);
+                        hitPlatform = true;
+                        break;
+                    }
+                }
+                if (hitPlatform) continue;
+
+                let hitTarget = false;
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (checkCollision(b, enemies[j])) {
+                        createWaterSplash(b.x + b.width / 2, b.y + b.height / 2);
+                        createExplosion(enemies[j].x + enemies[j].width / 2, enemies[j].y + enemies[j].height / 2);
+                        enemies.splice(j, 1);
+                        gameState.score += 250;
+                        updateScoreDisplay();
+                        waterBullets.splice(i, 1);
+                        hitTarget = true;
+                        break;
+                    }
+                }
+                if (hitTarget) continue;
+
+                for (let j = giantMosquitos.length - 1; j >= 0; j--) {
+                    if (checkCollision(b, giantMosquitos[j])) {
+                        createWaterSplash(b.x + b.width / 2, b.y + b.height / 2);
+                        createExplosion(giantMosquitos[j].x + giantMosquitos[j].width / 2, giantMosquitos[j].y + giantMosquitos[j].height / 2);
+                        giantMosquitos.splice(j, 1);
+                        gameState.score += 500;
+                        updateScoreDisplay();
+                        waterBullets.splice(i, 1);
+                        hitTarget = true;
+                        break;
+                    }
+                }
+                if (hitTarget) continue;
+
+                for (let j = mines.length - 1; j >= 0; j--) {
+                    if (!mines[j].exploded && checkCollision(b, mines[j])) {
+                        mines[j].exploded = true;
+                        createWaterSplash(b.x + b.width / 2, b.y + b.height / 2);
+                        createExplosion(mines[j].x + mines[j].width / 2, mines[j].y + mines[j].height / 2);
+                        gameState.score += 150;
+                        updateScoreDisplay();
+                        waterBullets.splice(i, 1);
+                        hitTarget = true;
+                        break;
+                    }
+                }
+                if (hitTarget) continue;
+
+                if (gameState.boss && checkCollision(b, gameState.boss)) {
+                    createWaterSplash(b.x + b.width / 2, b.y + b.height / 2);
+                    const boss = gameState.boss;
+                    if (boss.hurtTimer === 0 && boss.hp > 0) {
+                        boss.hp--;
+                        boss.hurtTimer = 35;
+                        playSound('boss_hit');
+                        createExplosion(boss.x + boss.width / 2, boss.y + 20);
+
+                        const hpPercent = (boss.hp / boss.maxHp) * 100;
+                        document.getElementById('boss-hp-bar').style.width = `${hpPercent}%`;
+
+                        if (boss.hp <= 0) {
+                            playSound('clear');
+                            createExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2);
+                            gameState.score += 2500;
+                            updateScoreDisplay();
+
+                            goal = { x: boss.x + boss.width / 2 - 35, y: 350, width: 70, height: 200, reached: false };
+                            gameState.boss = null;
+                            document.getElementById('boss-ui').classList.add('hidden');
+                        }
+                    }
+                    waterBullets.splice(i, 1);
+                    continue;
                 }
             }
 
@@ -905,7 +1264,7 @@
                                 document.getElementById('boss-ui').classList.add('hidden');
                             }
                         }
-                    } else if (player.invincibleCooldown === 0 && !gameState.isFever) {
+                    } else if (player.invincibleCooldown === 0) {
                         player.deductLife(2, false);
                     }
                 }
@@ -923,7 +1282,7 @@
 
                 if (checkCollision(player, proj)) {
                     bossProjectiles.splice(i, 1);
-                    if (player.invincibleCooldown === 0 && !gameState.isFever) {
+                    if (player.invincibleCooldown === 0) {
                         player.deductLife(1, false);
                     }
                 }
@@ -936,12 +1295,7 @@
                 }
 
                 if (checkCollision(player, enemy)) {
-                    if (gameState.isFever) {
-                        enemies.splice(enemies.indexOf(enemy), 1);
-                        gameState.score += 200;
-                        playSound('item');
-                        updateScoreDisplay();
-                    } else if (player.invincibleCooldown === 0) {
+                    if (player.invincibleCooldown === 0) {
                         player.deductLife(1, false);
                     }
                 }
@@ -957,12 +1311,7 @@
                 mosquito.y = mosquito.startY + Math.sin(mosquito.angle) * mosquito.range;
 
                 if (checkCollision(player, mosquito)) {
-                    if (gameState.isFever) {
-                        giantMosquitos.splice(giantMosquitos.indexOf(mosquito), 1);
-                        gameState.score += 400; 
-                        playSound('item');
-                        updateScoreDisplay();
-                    } else if (player.invincibleCooldown === 0) {
+                    if (player.invincibleCooldown === 0) {
                         player.deductLife(2, false);
                     }
                 }
@@ -972,13 +1321,7 @@
                 if (!mine.exploded && checkCollision(player, mine)) {
                     mine.exploded = true;
                     createExplosion(mine.x + mine.width / 2, mine.y + mine.height / 2);
-
-                    if (!gameState.isFever) {
-                        player.deductLife(1, true);
-                    } else {
-                        gameState.score += 300;
-                        updateScoreDisplay();
-                    }
+                    player.deductLife(1, true);
                 }
             }
 
@@ -995,12 +1338,23 @@
 
             for (let item of items) {
                 if (!item.collected && checkCollision(player, item)) {
-                    item.collected = true;
-                    if (item.type === '67') {
+                    if (item.type === 'fake_67') {
+                        item.collected = true;
+                        triggerFake67Suck(item.x + item.width / 2, item.y + item.height / 2);
+                    } else if (item.type === '67') {
+                        item.collected = true;
+                        playSound('item');
+                        gameState.lives = Math.min(5, gameState.lives + 2);
+                        document.getElementById('lives-display').innerText = gameState.lives;
+                        gameState.score += 800;
+                        activateGoldenMode();
+                    } else if (item.type === 'blue_67') {
+                        item.collected = true;
                         playSound('item');
                         gameState.score += 500;
-                        activateFeverMode();
+                        activateWaterGunMode();
                     } else {
+                        item.collected = true;
                         playSound('item');
                         gameState.score += 100;
                     }
@@ -1014,10 +1368,9 @@
             }
         }
 
-        // --- 메인 드로잉 ---
         function draw() {
             const isBossStage = gameState.stage % 5 === 0;
-            const themeIndex = isBossStage ? 2 : (gameState.stage - 1) % THEMES.length;
+            const themeIndex = gameState.isNightmare ? 5 : (isBossStage ? 2 : (gameState.stage - 1) % 5);
             const theme = THEMES[themeIndex];
 
             const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -1035,7 +1388,7 @@
                 ctx.fillRect(starX, starY, starSize, starSize);
             }
 
-            ctx.fillStyle = theme.skyStart === '#1a0505' ? '#3a020255' : '#1e1e2f33';
+            ctx.fillStyle = theme.skyStart === '#1a0505' || theme.skyStart === '#140202' ? '#3a020255' : '#1e1e2f33';
             for (let i = 0; i < 15; i++) {
                 const w = 180;
                 const h = 200 + Math.sin(i) * 100;
@@ -1155,7 +1508,7 @@
 
                 ctx.fillStyle = '#fbbf24';
                 ctx.font = 'bold 9px monospace';
-                ctx.fillText('👑BOSS', mosquito.x - gameState.cameraX + 12, mosquito.y - 2);
+                ctx.fillText('👑MOSQ', mosquito.x - gameState.cameraX + 12, mosquito.y - 2);
 
                 ctx.restore();
             }
@@ -1170,18 +1523,43 @@
                 ctx.restore();
             }
 
+            for (let b of waterBullets) {
+                ctx.save();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#06b6d4';
+                ctx.fillStyle = '#22d3ee';
+                ctx.beginPath();
+                ctx.arc(b.x - gameState.cameraX + b.width / 2, b.y + b.height / 2, b.width / 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(b.x - gameState.cameraX + b.width / 3, b.y + b.height / 3, b.width / 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
             for (let item of items) {
                 if (item.collected) continue;
 
                 ctx.save();
                 const hoverOffset = Math.sin(Date.now() / 150 + item.x) * 6; 
 
-                if (item.type === '67') {
+                if (item.type === '67' || item.type === 'fake_67' || item.type === 'blue_67') {
                     const pulse = Math.abs(Math.sin(Date.now() / 200)) * 10 + 10;
                     ctx.shadowBlur = pulse;
-                    ctx.shadowColor = '#fbbf24';
 
-                    ctx.fillStyle = '#fbbf24';
+                    if (item.type === '67') {
+                        ctx.shadowColor = '#eab308';
+                        ctx.fillStyle = '#fbbf24';
+                    } else if (item.type === 'blue_67') {
+                        ctx.shadowColor = '#06b6d4';
+                        ctx.fillStyle = '#22d3ee';
+                    } else {
+                        ctx.shadowColor = '#ec4899';
+                        ctx.fillStyle = '#ec4899';
+                    }
+
                     ctx.beginPath();
                     ctx.arc(item.x - gameState.cameraX + item.width / 2, item.y + item.height / 2 + hoverOffset, item.width / 2, 0, Math.PI * 2);
                     ctx.fill();
@@ -1203,6 +1581,32 @@
 
                     ctx.strokeStyle = '#fef08a';
                     ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            if (gameState.transitionState.active) {
+                ctx.save();
+                ctx.translate(gameState.transitionState.x - gameState.cameraX, gameState.transitionState.y);
+                const rotation = (Date.now() / 100);
+                ctx.rotate(rotation);
+                
+                for (let i = 0; i < 4; i++) {
+                    ctx.rotate(Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.strokeStyle = `hsla(${(Date.now() / 6 + i * 90) % 360}, 100%, 65%, 0.75)`;
+                    ctx.lineWidth = 5;
+                    for (let radius = 5; radius < 240; radius += 3) {
+                        const theta = radius * 0.04;
+                        const rx = Math.cos(theta) * radius;
+                        const ry = Math.sin(theta) * radius;
+                        if (radius === 5) {
+                            ctx.moveTo(rx, ry);
+                        } else {
+                            ctx.lineTo(rx, ry);
+                        }
+                    }
                     ctx.stroke();
                 }
                 ctx.restore();
@@ -1345,7 +1749,6 @@
             animationFrameId = requestAnimationFrame(loop);
         }
 
-        // --- 게임 시작 및 재도전 플로우 ---
         function startStage(mode = 'start') {
             initAudio();
             
@@ -1353,25 +1756,35 @@
                 gameState.stage = 1;
                 gameState.score = 0;
                 gameState.lives = 3;
+                gameState.isNightmare = false; 
             } else if (mode === 'next') {
                 gameState.stage++;
                 gameState.lives = Math.min(gameState.lives + 1, 5); 
+                gameState.isNightmare = false; 
             } else if (mode === 'retry') {
                 gameState.stage = Math.max(1, gameState.stage - 1);
                 gameState.lives = 3; 
+                gameState.isNightmare = false; 
             }
 
             gameState.isActive = true;
-            gameState.isFever = false;
+            gameState.isWaterGun = false;
+            gameState.isGolden = false;
             gameState.cameraX = 0;
             bossProjectiles = []; 
+            waterBullets = [];
             
+            // 모바일 슈팅 버튼을 숨겨 초기화
+            document.getElementById('btn-shoot').classList.add('hidden');
+
             player.x = 100;
             player.y = 400;
             player.vx = 0;
             player.vy = 0;
             player.isGrounded = false;
             player.invincibleCooldown = 0;
+            player.scale = 1;
+            player.angle = 0;
 
             document.getElementById('stage-display').innerText = gameState.stage;
             document.getElementById('lives-display').innerText = gameState.lives;
@@ -1381,6 +1794,7 @@
             document.getElementById('gameover-screen').classList.add('hidden');
             document.getElementById('clear-screen').classList.add('hidden');
             document.getElementById('fever-banner').classList.add('hidden');
+            document.getElementById('nightmare-banner').classList.add('hidden');
 
             buildLevel();
 
@@ -1400,9 +1814,7 @@
             sixSevenAudio.pause();
 
             gameoverAudio.currentTime = 0;
-            gameoverAudio.play().catch(e => {
-                console.log("Game over audio playback blocked: ", e);
-            });
+            gameoverAudio.play().catch(e => {});
             
             const prevStage = Math.max(1, gameState.stage - 1);
             
@@ -1434,7 +1846,7 @@
             if (document.hidden) {
                 stopBGM();
                 sixSevenAudio.pause();
-            } else if (gameState.isActive && !gameState.isFever) {
+            } else if (gameState.isActive && !gameState.isWaterGun) {
                 startBGM();
             }
         });
