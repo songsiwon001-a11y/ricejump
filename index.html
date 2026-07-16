@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>라이스점프</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Rice Jump!</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -33,15 +32,33 @@
 </head>
 <body class="flex flex-col items-center justify-start min-h-screen p-2 overflow-y-auto text-white">
 
-    <!-- 게임 헤더 및 스코어 보드 -->
     <div class="w-full max-w-4xl flex flex-wrap justify-between items-center mb-2 px-4 z-10 mt-2">
         <div class="flex flex-col">
             <h1 class="text-xl md:text-2xl text-yellow-400 retro-text tracking-widest animate-pulse">RICE JUMP!</h1>
-            <span id="stage-badge" class="text-[10px] text-emerald-400 mt-1 font-bold">STAGE 1</span>
+            <div class="flex items-center gap-2 mt-1">
+                <span id="stage-badge" class="text-[10px] text-emerald-400 font-bold">STAGE 1</span>
+                <button id="rec-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600 hover:bg-red-500 cursor-pointer transition-all duration-300"></button>
+            </div>
         </div>
         <div class="flex items-center space-x-3 text-xs md:text-sm">
             <div id="nightmare-indicator" class="hidden bg-red-950 px-2.5 py-1 rounded border border-red-600 animate-bounce">
                 <span class="text-red-500 text-[10px] font-bold">☠ NIGHTMARE ☠</span>
+            </div>
+            <select id="lang-select" class="bg-gray-900 border-2 border-gray-700 text-white text-[10px] px-2 py-1.5 rounded-lg outline-none cursor-pointer focus:border-cyan-400">
+                <option value="ko" selected>한국어</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="th">ไทย</option>
+                <option value="ru">Русский</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+            </select>
+            <div class="flex items-center bg-gray-900 px-3 py-1.5 rounded-lg border-2 border-gray-700">
+                <span class="text-yellow-400 mr-2">⏱</span>
+                <span id="timer-display" class="text-white">100</span>
             </div>
             <div class="flex items-center bg-gray-900 px-3 py-1.5 rounded-lg border-2 border-gray-700">
                 <span class="text-red-500 mr-2">❤</span>
@@ -54,12 +71,10 @@
         </div>
     </div>
 
-    <!-- 메인 게임 컨테이너 -->
     <div class="relative w-full max-w-4xl aspect-[16/9] bg-slate-900 rounded-xl overflow-hidden border-4 border-slate-700">
-        <!-- 보스 체력 표시 바 -->
         <div id="boss-hp-container" class="absolute top-4 left-1/2 -translate-x-1/2 w-2/3 max-w-md bg-black/70 border-2 border-red-600 p-1.5 rounded-lg hidden z-10">
             <div class="flex justify-between text-[8px] md:text-[9px] mb-1">
-                <span class="text-red-500 font-bold">BOSS : BIG INSECT MACHINE</span>
+                <span id="boss-hp-title" class="text-red-500 font-bold">BOSS : BIG INSECT MACHINE</span>
                 <span id="boss-hp-text" class="text-white">100%</span>
             </div>
             <div class="w-full bg-gray-800 h-3.5 rounded border border-gray-600 overflow-hidden">
@@ -67,26 +82,41 @@
             </div>
         </div>
 
-        <!-- 게임 캔버스 -->
         <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
-        <!-- 인트로/대기 스크린 Overlay -->
-        <div id="start-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-6 z-20">
-            <h2 class="text-3xl md:text-5xl text-yellow-400 mb-6 retro-text animate-bounce">RICE JUMP!</h2>
-            <p class="text-xs md:text-[11px] text-gray-400 max-w-lg leading-relaxed mb-8">
-                장애물을 뛰어넘고 목적지까지 도달하세요!<br><br>
-                맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 67을 찾아내세요!<br>
-                황금 67은 생명력을 회복시키고, 파란색 67은 물총 플레이어 활성화 입니다.<br>
-                수상한 핑크빛 67은 주의하세요!
+        <div id="audio-unlock-screen" class="absolute inset-0 bg-black flex flex-col items-center justify-center text-center p-6 z-30">
+            <h2 id="unlock-title" class="text-3xl md:text-5xl text-yellow-400 mb-6 retro-text animate-bounce">RICE JUMP!</h2>
+            <p id="unlock-desc" class="text-xs md:text-sm text-gray-300 mb-8 max-w-md leading-relaxed">
+                시작하려면 화면 아무 곳이나 탭하세요!<br>
+                모험 음악이 활성화됩니다.
             </p>
-            <button id="start-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer">
-                모험 시작!
+            <button id="audio-unlock-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer">
+                TAP TO START
             </button>
         </div>
 
-        <!-- 게임 오버 Overlay -->
+        <div id="start-screen" class="absolute inset-0 bg-black/85 hidden flex flex-col items-center justify-center text-center p-6 z-20">
+            <h2 class="text-3xl md:text-5xl text-yellow-400 mb-6 retro-text animate-bounce">RICE JUMP!</h2>
+            <p id="start-desc" class="text-xs md:text-[11px] text-gray-400 max-w-lg leading-relaxed mb-8">
+                장애물을 뛰어넘고 목적지까지 도달하세요!<br><br>
+                맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 보상을 찾아내세요.<br>
+                황금 비약은 생명력을 회복시키고, 파란색 비약은 시원한 물줄기 총을 선사합니다.<br>
+                수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!
+            </p>
+            <div class="flex flex-col items-center gap-2">
+                <button id="start-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer">
+                    모험 시작!
+                </button>
+                <p id="demo-desc" class="text-[9px] text-gray-500 mt-2 animate-pulse">15초간 대기하면 오토 데모가 시작됩니다.</p>
+            </div>
+        </div>
+
+        <div id="demo-banner" class="absolute top-4 left-4 bg-red-600/90 text-white px-3 py-1.5 rounded-lg border border-white text-[10px] font-bold hidden z-20 animate-pulse">
+            ★ AUTO DEMO MODE - TAP ANY KEY TO PLAY ★
+        </div>
+
         <div id="gameover-screen" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
-            <h2 class="text-4xl md:text-5xl text-red-600 mb-4 retro-text animate-pulse">RETRY</h2>
+            <h2 id="gameover-title" class="text-4xl md:text-5xl text-red-600 mb-4 retro-text animate-pulse">RETRY</h2>
             <p id="gameover-desc" class="text-xs text-gray-400 mb-8 leading-relaxed">
                 모든 생명력을 소모했습니다.<br>
                 이전 단계로 돌아가 다시 도전합니다.
@@ -96,9 +126,8 @@
             </button>
         </div>
 
-        <!-- 스테이지 클리어 Overlay -->
         <div id="clear-screen" class="absolute inset-0 bg-black/90 hidden flex flex-col items-center justify-center text-center p-6 z-20">
-            <h2 class="text-3xl md:text-4xl text-emerald-400 mb-4 retro-text animate-pulse">STAGE CLEAR!!</h2>
+            <h2 id="clear-title" class="text-3xl md:text-4xl text-emerald-400 mb-4 retro-text animate-pulse">STAGE CLEAR!!</h2>
             <p id="clear-desc" class="text-xs text-yellow-300 mb-4">보상으로 생명력이 회복되었습니다!</p>
             <p id="final-score" class="text-sm text-white mb-8">현재 점수: 0</p>
             <button id="next-btn" class="retro-btn px-8 py-4 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold rounded-lg border-2 border-white text-sm cursor-pointer">
@@ -106,28 +135,33 @@
             </button>
         </div>
 
-        <!-- 물총 상태 알림 배너 -->
+        <div id="ending-screen" class="absolute inset-0 bg-black hidden flex flex-col items-center justify-center text-center p-6 z-25">
+            <h2 id="ending-title" class="text-3xl md:text-5xl text-yellow-400 mb-6 retro-text animate-bounce">CONGRATULATIONS!</h2>
+            <p id="ending-desc" class="text-xs md:text-sm text-gray-300 mb-8 max-w-md leading-relaxed">
+                당신은 50개의 스테이지를 모두 돌파하고 쌀 세계를 구했습니다!<br>
+                플레이해주셔서 진심으로 감사합니다!
+            </p>
+            <button id="end-restart-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer">
+                처음부터 다시하기
+            </button>
+        </div>
+
         <div id="fever-banner" class="absolute top-4 left-1/2 -translate-x-1/2 bg-cyan-500 text-black px-4 py-1.5 rounded-full text-[9px] font-bold border-2 border-white hidden animate-pulse z-10">
             ★ WATER GUN MODE ACTIVE ★
         </div>
     </div>
 
-    <!-- 조작법 안내 및 모바일 컨트롤러 -->
     <div class="w-full max-w-4xl mt-3 px-4 flex flex-col md:flex-row justify-between items-center gap-4 z-10">
-        <!-- 키보드 조작 안내 -->
-        <div class="hidden md:block text-[9px] text-gray-500 leading-relaxed">
-            [좌우 이동]: ◀ ▶ / A, D | [점프]: Space / ▲ | [물총 발사]: Shift 키 (물총 획득 시 활성화)
+        <div id="controls-guide" class="hidden md:block text-[9px] text-gray-500 leading-relaxed">
+            [좌우 이동]: ◀ ▶ / A, D | [점프]: Space / ▲ | [물총 발사]: Shift (물총 획득 시 활성화)
         </div>
 
-        <!-- 모바일 터치 패널 -->
         <div class="flex justify-between w-full md:hidden gap-4 mt-2">
-            <!-- 왼쪽/오른쪽 이동 패드 -->
             <div class="flex gap-2">
                 <button id="btn-left" class="w-14 h-14 bg-gray-800 active:bg-gray-700 border-2 border-gray-600 rounded-xl flex items-center justify-center text-lg text-white select-none pointer-events-auto touch-none">◀</button>
                 <button id="btn-right" class="w-14 h-14 bg-gray-800 active:bg-gray-700 border-2 border-gray-600 rounded-xl flex items-center justify-center text-lg text-white select-none pointer-events-auto touch-none">▶</button>
             </div>
             
-            <!-- 사격 및 점프 패널 -->
             <div class="flex gap-2 items-center">
                 <button id="btn-shoot" class="hidden px-5 h-14 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-300 rounded-xl flex items-center justify-center text-xs text-white font-bold select-none pointer-events-auto touch-none">
                     SHOOT 💦
@@ -144,14 +178,13 @@
     </footer>
 
     <script>
-        // 글로벌 로컬 사운드 매핑
+        const helloAudio = new Audio('안녕하세요.mp3');
         const sixSevenAudio = new Audio('six seven!.mp3');
         sixSevenAudio.loop = true;
 
         const deathAudio = new Audio('라이스점프 죽는소리.mp3');
         const gameoverAudio = new Audio('에휴우우우우우우우~~!.mp3');
 
-        // 드럼 오디오 풀 구축 (레이턴시 보완용)
         const DRUM_POOL_SIZE = 8;
         const drumPool = [];
         for (let i = 0; i < DRUM_POOL_SIZE; i++) {
@@ -178,18 +211,58 @@
         resizeCanvas();
 
         let audioCtx = null;
-        let bgmInterval = null;
+        let masterGain = null;
+        let bgmTimeout = null;
+        let titleMusicInterval = null;
+        let endingMusicInterval = null;
+        let demoTimeout = null;
+        let timerInterval = null;
 
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                masterGain.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            routeAudioElements();
         }
 
-        // 8비트 합성 신시사이저 소리 생성
+        let helloSource, sixSevenSource, deathSource, gameoverSource;
+        const drumSources = [];
+
+        function routeAudioElements() {
+            if (!audioCtx) return;
+            try {
+                if (!helloSource) {
+                    helloSource = audioCtx.createMediaElementSource(helloAudio);
+                    helloSource.connect(masterGain);
+                }
+                if (!sixSevenSource) {
+                    sixSevenSource = audioCtx.createMediaElementSource(sixSevenAudio);
+                    sixSevenSource.connect(masterGain);
+                }
+                if (!deathSource) {
+                    deathSource = audioCtx.createMediaElementSource(deathAudio);
+                    deathSource.connect(masterGain);
+                }
+                if (!gameoverSource) {
+                    gameoverSource = audioCtx.createMediaElementSource(gameoverAudio);
+                    gameoverSource.connect(masterGain);
+                }
+                if (drumSources.length === 0) {
+                    drumPool.forEach(drum => {
+                        const src = audioCtx.createMediaElementSource(drum);
+                        src.connect(masterGain);
+                        drumSources.push(src);
+                    });
+                }
+            } catch (err) {}
+        }
+
         function playSynthSound(type) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
@@ -203,7 +276,7 @@
                 gain.gain.setValueAtTime(0.12, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(masterGain);
                 osc.start(now);
                 osc.stop(now + 0.2);
             } 
@@ -216,7 +289,7 @@
                 gain.gain.setValueAtTime(0.15, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(masterGain);
                 osc.start(now);
                 osc.stop(now + 0.15);
             }
@@ -230,7 +303,7 @@
                 gain.gain.setValueAtTime(0.1, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(masterGain);
                 osc.start(now);
                 osc.stop(now + 0.3);
             }
@@ -243,7 +316,7 @@
                 gain.gain.setValueAtTime(0.15, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(masterGain);
                 osc.start(now);
                 osc.stop(now + 0.25);
             }
@@ -257,12 +330,11 @@
                     gain.gain.setValueAtTime(0.08, now + idx * 0.08);
                     gain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.08 + 0.2);
                     osc.connect(gain);
-                    gain.connect(audioCtx.destination);
+                    gain.connect(masterGain);
                     osc.start(now + idx * 0.08);
                     osc.stop(now + idx * 0.08 + 0.25);
                 });
             }
-            // 미스터리 벽돌 아래에서 타격 시 (retro bump/spring sound)
             else if (type === 'block_hit') {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -273,11 +345,10 @@
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(masterGain);
                 osc.start(now);
                 osc.stop(now + 0.2);
             }
-            // 식세븐(골드/파란/핑크) 획득 시 신디사이저 상승 아르페지오 팬페어
             else if (type === 'six_seven') {
                 const notes = [261.6, 329.6, 392.0, 523.3, 659.3, 784.0, 1046.5];
                 notes.forEach((f, idx) => {
@@ -288,18 +359,160 @@
                     gain.gain.setValueAtTime(0.12, now + idx * 0.06);
                     gain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.06 + 0.15);
                     osc.connect(gain);
-                    gain.connect(audioCtx.destination);
+                    gain.connect(masterGain);
                     osc.start(now + idx * 0.06);
                     osc.stop(now + idx * 0.06 + 0.2);
                 });
             }
         }
 
+        function playRecordStartFeedback() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            const oscClick = audioCtx.createOscillator();
+            const gainClick = audioCtx.createGain();
+            oscClick.type = 'sine';
+            oscClick.frequency.setValueAtTime(1200, now);
+            oscClick.frequency.exponentialRampToValueAtTime(100, now + 0.03);
+            gainClick.gain.setValueAtTime(0.3, now);
+            gainClick.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+            oscClick.connect(gainClick);
+            gainClick.connect(masterGain);
+            oscClick.start(now);
+            oscClick.stop(now + 0.04);
+            
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const oscBeep = audioCtx.createOscillator();
+                const gainBeep = audioCtx.createGain();
+                oscBeep.type = 'sine';
+                oscBeep.frequency.setValueAtTime(freq, now + 0.05 + idx * 0.06);
+                gainBeep.gain.setValueAtTime(0.15, now + 0.05 + idx * 0.06);
+                gainBeep.exponentialRampToValueAtTime(0.001, now + 0.05 + idx * 0.06 + 0.05);
+                oscBeep.connect(gainBeep);
+                gainBeep.connect(masterGain);
+                oscBeep.start(now + 0.05 + idx * 0.06);
+                oscBeep.stop(now + 0.05 + idx * 0.06 + 0.06);
+            });
+        }
+
+        function playTitleMusic() {
+            if (!audioCtx) return;
+            stopTitleMusic();
+
+            let step = 0;
+            const melody = [
+                523.25, 587.33, 659.25, 698.46, 783.99, 698.46, 659.25, 587.33,
+                659.25, 698.46, 783.99, 880.00, 987.77, 880.00, 783.99, 698.46
+            ];
+            const bass = [
+                261.63, 261.63, 329.63, 329.63, 349.23, 349.23, 392.00, 392.00
+            ];
+
+            titleMusicInterval = setInterval(() => {
+                const now = audioCtx.currentTime;
+                
+                const oscMelody = audioCtx.createOscillator();
+                const gainMelody = audioCtx.createGain();
+                oscMelody.type = 'triangle';
+                oscMelody.frequency.setValueAtTime(melody[step % melody.length], now);
+                gainMelody.gain.setValueAtTime(0.04, now);
+                gainMelody.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                oscMelody.connect(gainMelody);
+                gainMelody.connect(masterGain);
+                oscMelody.start(now);
+                oscMelody.stop(now + 0.22);
+
+                const oscBass = audioCtx.createOscillator();
+                const gainBass = audioCtx.createGain();
+                oscBass.type = 'sawtooth';
+                oscBass.frequency.setValueAtTime(bass[Math.floor(step / 2) % bass.length], now);
+                gainBass.gain.setValueAtTime(0.015, now);
+                gainBass.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                oscBass.connect(gainBass);
+                gainBass.connect(masterGain);
+                oscBass.start(now);
+                oscBass.stop(now + 0.45);
+
+                if (step % 4 === 2) {
+                    const bufferSize = audioCtx.sampleRate * 0.08;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    const noiseGain = audioCtx.createGain();
+                    noiseGain.gain.setValueAtTime(0.012, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    noise.connect(noiseGain);
+                    noiseGain.connect(masterGain);
+                    noise.start(now);
+                }
+
+                step++;
+            }, 250);
+        }
+
+        function stopTitleMusic() {
+            if (titleMusicInterval) {
+                clearInterval(titleMusicInterval);
+                titleMusicInterval = null;
+            }
+        }
+
+        function playEndingMusic() {
+            if (!audioCtx) return;
+            stopTitleMusic();
+            stopBGM();
+            sixSevenAudio.pause();
+            if (endingMusicInterval) clearInterval(endingMusicInterval);
+
+            let step = 0;
+            const melody = [523.25, 659.25, 783.99, 1046.50, 880.00, 987.77, 1174.66, 1318.51];
+            endingMusicInterval = setInterval(() => {
+                const now = audioCtx.currentTime;
+                
+                const oscSoft = audioCtx.createOscillator();
+                const gainSoft = audioCtx.createGain();
+                oscSoft.type = 'sine';
+                oscSoft.frequency.setValueAtTime(melody[step % melody.length], now);
+                gainSoft.gain.setValueAtTime(0.04, now);
+                gainSoft.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                oscSoft.connect(gainSoft);
+                gainSoft.connect(masterGain);
+                oscSoft.start(now);
+                oscSoft.stop(now + 0.55);
+
+                const oscPad = audioCtx.createOscillator();
+                const gainPad = audioCtx.createGain();
+                oscPad.type = 'triangle';
+                oscPad.frequency.setValueAtTime(melody[(step + 2) % melody.length] / 2, now);
+                gainPad.gain.setValueAtTime(0.025, now);
+                gainPad.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+                oscPad.connect(gainPad);
+                gainPad.connect(masterGain);
+                oscPad.start(now);
+                oscPad.stop(now + 0.75);
+
+                step++;
+            }, 350);
+        }
+
+        function stopEndingMusic() {
+            if (endingMusicInterval) {
+                clearInterval(endingMusicInterval);
+                endingMusicInterval = null;
+            }
+        }
+
         const THEMES = [
-            { name: "EMERALD FOREST", sky1: "#090d16", sky2: "#111827", sky3: "#1e1b4b", block1: "#1f2937", block2: "#111827", trim: "#10b981", notes: [261, 293, 329, 392], drumPattern: [1, 0, 1, 0, 1, 1, 0, 0] },
-            { name: "CYBER NEON WAVE", sky1: "#1e0b36", sky2: "#110421", sky3: "#030008", block1: "#3b0764", block2: "#120024", trim: "#ec4899", notes: [293, 349, 440, 523], drumPattern: [1, 1, 0, 1, 1, 0, 1, 0] },
-            { name: "VOLCANIC INFERNO", sky1: "#2d0606", sky2: "#150202", sky3: "#000000", block1: "#450a0a", block2: "#1c0000", trim: "#f97316", notes: [220, 261, 311, 392], drumPattern: [1, 0, 1, 1, 1, 0, 1, 1] },
-            { name: "FROZEN GLACIER", sky1: "#051622", sky2: "#020b11", sky3: "#0b1c28", block1: "#0f2d4a", block2: "#041524", trim: "#06b6d4", notes: [311, 349, 415, 466], drumPattern: [1, 0, 0, 1, 1, 0, 0, 1] }
+            { name: "EMERALD FOREST", sky1: "#090d16", sky2: "#111827", sky3: "#1e1b4b", block1: "#1f2937", block2: "#111827", trim: "#10b981", notes: [261.63, 293.66, 329.63, 392.00], drumPattern: [1, 0, 1, 0, 1, 1, 0, 0] },
+            { name: "CYBER NEON WAVE", sky1: "#1e0b36", sky2: "#110421", sky3: "#030008", block1: "#3b0764", block2: "#120024", trim: "#ec4899", notes: [293.66, 349.23, 440.00, 523.25], drumPattern: [1, 1, 0, 1, 1, 0, 1, 0] },
+            { name: "VOLCANIC INFERNO", sky1: "#2d0606", sky2: "#150202", sky3: "#000000", block1: "#450a0a", block2: "#1c0000", trim: "#f97316", notes: [220.00, 261.63, 311.13, 392.00], drumPattern: [1, 0, 1, 1, 1, 0, 1, 1] },
+            { name: "FROZEN GLACIER", sky1: "#051622", sky2: "#020b11", sky3: "#0b1c28", block1: "#0f2d4a", block2: "#041524", trim: "#06b6d4", notes: [311.13, 349.23, 415.30, 466.16], drumPattern: [1, 0, 0, 1, 1, 0, 0, 1] }
         ];
 
         const gameState = {
@@ -308,70 +521,135 @@
             difficulty: 1.0,
             score: 0,
             lives: 3,
+            timeLeft: 100,
             cameraX: 0,
             levelWidth: 6000,
             isGolden: false,
             goldenTimeLeft: 0,
             isWaterGun: false,
             isNightmare: false,
+            isDemo: false,
             transitionState: { active: false, x: 0, y: 0, progress: 0 }
         };
 
         const keys = { left: false, right: false, up: false, shoot: false };
 
-        // BGM 멜로디 및 비트 패턴 제어
-        function startBGM() {
-            if (!audioCtx) return;
-            stopBGM();
+        function getSpeedFactor(timeLeft, isBoss) {
+            let factor = 1.0;
+            if (isBoss) {
+                if (timeLeft <= 3) factor = 128.0;
+                else if (timeLeft <= 5) factor = 64.0;
+                else if (timeLeft <= 10) factor = 16.0;
+                else if (timeLeft <= 15) factor = 4.0;
+                else if (timeLeft <= 30) factor = 2.0;
+                else if (timeLeft <= 50) factor = 1.5;
+            } else {
+                if (timeLeft <= 3) factor = 128.0;
+                else if (timeLeft <= 5) factor = 64.0;
+                else if (timeLeft <= 10) factor = 16.0;
+                else if (timeLeft <= 15) factor = 4.0;
+                else if (timeLeft <= 30) factor = 2.0;
+                else if (timeLeft <= 60) factor = 1.5;
+            }
+            return factor;
+        }
 
-            let step = 0;
+        function playNextBgmBeat(step) {
+            if (endingMusicInterval) return;
+            if (!gameState.isActive) {
+                bgmTimeout = setTimeout(() => playNextBgmBeat(step), 250);
+                return;
+            }
+
+            const isBossStage = (gameState.stage % 5 === 0);
+            const baseTempo = isBossStage ? 140 : 180;
+            const speedFactor = getSpeedFactor(gameState.timeLeft, isBossStage);
+            const currentTempo = baseTempo / speedFactor;
+
+            if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare || gameState.transitionState.active) {
+                bgmTimeout = setTimeout(() => playNextBgmBeat(step), currentTempo);
+                return;
+            }
+
+            const now = audioCtx.currentTime;
             const currentThemeIdx = (gameState.stage - 1) % THEMES.length;
             const theme = THEMES[currentThemeIdx];
             const scale = theme.notes;
             const pattern = theme.drumPattern;
 
-            const isBossStage = (gameState.stage % 5 === 0);
-            const tempo = isBossStage ? 140 : 180;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = isBossStage ? 'sawtooth' : 'square';
+            const pitch = isBossStage 
+                ? [146.8, 164.8, 174.6, 220.0][step % 4] 
+                : scale[step % scale.length];
+            
+            osc.frequency.setValueAtTime(pitch, now);
+            gain.gain.setValueAtTime(isBossStage ? 0.02 : 0.035, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (isBossStage ? 0.12 : 0.16) / speedFactor);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(now);
+            osc.stop(now + 0.18 / speedFactor);
 
-            bgmInterval = setInterval(() => {
-                if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare || gameState.transitionState.active) {
-                    return;
+            if (step % 2 === 0) {
+                const chordNotes = [
+                    scale[step % scale.length],
+                    scale[(step + 2) % scale.length] * (step % 4 === 0 ? 1 : 1.2)
+                ];
+                chordNotes.forEach(cp => {
+                    const oscChord = audioCtx.createOscillator();
+                    const gainChord = audioCtx.createGain();
+                    oscChord.type = 'sine';
+                    oscChord.frequency.setValueAtTime(cp, now);
+                    gainChord.gain.setValueAtTime(0.012, now);
+                    gainChord.gain.exponentialRampToValueAtTime(0.001, now + 0.3 / speedFactor);
+                    oscChord.connect(gainChord);
+                    gainChord.connect(masterGain);
+                    oscChord.start(now);
+                    oscChord.stop(now + 0.35 / speedFactor);
+                });
+            }
+
+            if (step % 2 === 0) {
+                const oscBass = audioCtx.createOscillator();
+                const gainBass = audioCtx.createGain();
+                oscBass.type = 'triangle';
+                const bassPitch = isBossStage 
+                    ? [73.4, 82.4, 87.3, 110.0][Math.floor(step / 2) % 4]
+                    : scale[step % scale.length] / 2;
+                oscBass.frequency.setValueAtTime(bassPitch, now);
+                gainBass.gain.setValueAtTime(0.045, now);
+                gainBass.gain.exponentialRampToValueAtTime(0.001, now + 0.3 / speedFactor);
+                oscBass.connect(gainBass);
+                gainBass.connect(masterGain);
+                oscBass.start(now);
+                oscBass.stop(now + 0.35 / speedFactor);
+            }
+
+            if (isBossStage) {
+                if (step % 2 === 0) playDrumBeat();
+            } else {
+                if (pattern[step % pattern.length] === 1) {
+                    playDrumBeat();
                 }
+            }
 
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+            bgmTimeout = setTimeout(() => {
+                playNextBgmBeat(step + 1);
+            }, currentTempo);
+        }
 
-                osc.type = isBossStage ? 'sawtooth' : 'square';
-                const pitch = isBossStage 
-                    ? [146.8, 164.8, 174.6, 220.0][step % 4] 
-                    : scale[step % scale.length];
-                
-                osc.frequency.setValueAtTime(pitch, now);
-                gain.gain.setValueAtTime(isBossStage ? 0.02 : 0.03, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + (isBossStage ? 0.12 : 0.16));
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                osc.stop(now + 0.18);
-
-                if (isBossStage) {
-                    if (step % 2 === 0) playDrumBeat();
-                } else {
-                    if (pattern[step % pattern.length] === 1) {
-                        playDrumBeat();
-                    }
-                }
-
-                step++;
-            }, tempo);
+        function startBGM() {
+            if (!audioCtx) return;
+            stopBGM();
+            playNextBgmBeat(0);
         }
 
         function stopBGM() {
-            if (bgmInterval) {
-                clearInterval(bgmInterval);
-                bgmInterval = null;
+            if (bgmTimeout) {
+                clearTimeout(bgmTimeout);
+                bgmTimeout = null;
             }
         }
 
@@ -452,6 +730,14 @@
                     deactivateWaterGunMode();
                 }
 
+                if (gameState.isDemo) {
+                    this.x = 100;
+                    this.y = 100;
+                    this.vy = 0;
+                    this.vx = 0;
+                    return;
+                }
+
                 gameState.lives -= amount;
                 if (gameState.lives < 0) gameState.lives = 0;
                 document.getElementById('lives-display').innerText = gameState.lives;
@@ -477,7 +763,7 @@
 
                 if (gameState.isGolden) {
                     ctx.shadowBlur = 25;
-                    ctx.shadowColor = '#f59e0b';
+                    ctx.shadowColor = '#fbbf24';
                 } else if (gameState.isWaterGun) {
                     ctx.shadowBlur = 15;
                     ctx.shadowColor = '#06b6d4';
@@ -490,23 +776,19 @@
                 ctx.roundRect(this.x - gameState.cameraX, this.y, this.width, this.height, 10);
                 ctx.fill();
 
-                // 바이저 라인
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
                 ctx.roundRect(this.x - gameState.cameraX + (this.facingRight ? 12 : 4), this.y + 10, this.width - 16, 18, 5);
                 ctx.fill();
 
-                // 눈동자
                 ctx.fillStyle = '#1e293b';
                 const eyeX = this.facingRight ? this.x - gameState.cameraX + 26 : this.x - gameState.cameraX + 12;
                 ctx.fillRect(eyeX, this.y + 15, 5, 8);
                 ctx.fillRect(eyeX + 10, this.y + 15, 5, 8);
 
-                // 백팩 부스터
                 ctx.fillStyle = '#3b82f6';
                 ctx.fillRect(this.facingRight ? this.x - gameState.cameraX - 6 : this.x - gameState.cameraX + this.width, this.y + 18, 6, 26);
 
-                // 손에 장착된 물총 드로잉
                 if (gameState.isWaterGun) {
                     ctx.fillStyle = '#06b6d4';
                     ctx.strokeStyle = '#ffffff';
@@ -545,7 +827,6 @@
             }
         }
 
-        // 미스터리 벽돌(?) 타격 시 보상 생성
         function spawnItemFromBrick(brick) {
             if (!brick.itemType) return;
             
@@ -556,7 +837,6 @@
                 itemHeight = 25;
             }
 
-            // 위쪽으로 튕겨 나오는 수직 애니메이션 예약
             const newItem = {
                 x: brick.x + (brick.width - itemWidth) / 2,
                 y: brick.y - 10,
@@ -615,7 +895,6 @@
             document.getElementById('boss-hp-container').classList.add('hidden');
 
             if (gameState.stage === 1) {
-                // 1단계 고정 레이아웃
                 gameState.levelWidth = 6000;
                 platforms.push({ x: 0, y: 550, width: 800, height: 200 });
                 platforms.push({ x: 950, y: 480, width: 300, height: 240 });
@@ -628,16 +907,13 @@
                 platforms.push({ x: 4150, y: 240, width: 220, height: 40 });
                 platforms.push({ x: 4500, y: 550, width: 1500, height: 200 });
 
-                // 일반 배회 기계 몬스터만 스폰 (지뢰 완전 삭제)
                 enemies.push({ x: 500, y: 490, width: 50, height: 60, minX: 300, maxX: 700, speed: 2.5, type: 'normal' });
                 enemies.push({ x: 2450, y: 440, width: 50, height: 60, minX: 2350, maxX: 2750, speed: 3.5, type: 'normal' });
 
-                // 미스터리 벽돌 배치
                 bricks.push({ x: 1050, y: 280, width: 50, height: 50, itemType: 'golden', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 2100, y: 80, width: 50, height: 50, itemType: 'blue', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 3900, y: 160, width: 50, height: 50, itemType: 'fake', isHit: false, bumpOffset: 0 });
 
-                // 보너스 코인 벽돌
                 bricks.push({ x: 400, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 455, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 510, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
@@ -645,7 +921,6 @@
                 goal = { x: 5800, y: 350, width: 70, height: 200 };
             } 
             else {
-                // 2단계 이상: 무한 절차적 생성 알고리즘 (지뢰 지대 제거)
                 gameState.levelWidth = 4500 + Math.min(2500, gameState.stage * 300);
                 let currentX = 0;
                 platforms.push({ x: 0, y: 550, width: 700, height: 200 });
@@ -660,7 +935,6 @@
 
                     const platformMidX = currentX + gap + width / 2;
 
-                    // 일반 배회형 몬스터만 가끔 스폰
                     const rand = Math.random();
                     if (rand < 0.35) {
                         enemies.push({
@@ -675,7 +949,6 @@
                         });
                     }
 
-                    // 플랫폼 위에 미스터리 벽돌 무리 배치
                     if (Math.random() < 0.7) {
                         let numBricks = Math.floor(Math.random() * 2) + 2; 
                         let startBx = platformMidX - (numBricks * 55) / 2;
@@ -719,7 +992,6 @@
         function resolveCollisions() {
             player.isGrounded = false;
 
-            // 1. 발판 충돌 판정
             for (let platform of platforms) {
                 if (checkCollision(player, platform)) {
                     const prevY = player.y - player.vy;
@@ -743,29 +1015,25 @@
                 }
             }
 
-            // 2. 미스터리 벽돌 충돌 및 머리 들이받기 판정 (Web Audio 효과음 포함)
             for (let brick of bricks) {
                 if (checkCollision(player, brick)) {
                     const prevY = player.y - player.vy;
                     
-                    // 벽돌 위에 탑승
                     if (prevY + player.height <= brick.y + 10) {
                         player.y = brick.y - player.height;
                         player.vy = 0;
                         player.isGrounded = true;
                     } 
-                    // 아래에서 점프하여 들이받음
                     else if (prevY >= brick.y + brick.height - 10) {
                         player.y = brick.y + brick.height;
                         player.vy = 0;
                         if (!brick.isHit) {
                             brick.isHit = true;
                             brick.bumpOffset = -15; 
-                            playSynthSound('block_hit'); // 아래에서 칠 때 신시사이저 타격음 재생
+                            playSynthSound('block_hit');
                             spawnItemFromBrick(brick);
                         }
                     } 
-                    // 좌우 벽 막힘
                     else {
                         const prevX = player.x - player.vx;
                         if (prevX + player.width <= brick.x) {
@@ -844,7 +1112,6 @@
 
                 platforms.push({ x: currentX + gap, y: y, width: width, height: 720 - y });
                 
-                // 가짜 67 전용 미스터리 박스 지대 구축
                 bricks.push({
                     x: currentX + gap + 20,
                     y: y - 160,
@@ -871,8 +1138,127 @@
             stopBGM();
         }
 
+        function handleDemoAI() {
+            if (!gameState.isDemo) return;
+
+            keys.left = false;
+            keys.right = true;
+
+            let blockedAhead = false;
+            let gapAhead = true;
+            const playerBottomY = player.y + player.height;
+
+            for (let p of platforms) {
+                if (p.x < player.x + 140 && p.x + p.width > player.x + 40) {
+                    if (Math.abs(p.y - playerBottomY) < 120) {
+                        gapAhead = false;
+                    }
+                }
+                if (p.x > player.x && p.x < player.x + 80) {
+                    if (player.y + player.height > p.y && player.y < p.y + p.height) {
+                        blockedAhead = true;
+                    }
+                }
+            }
+
+            for (let b of bricks) {
+                if (!b.isHit && Math.abs(b.x - player.x) < 25 && player.isGrounded) {
+                    keys.up = true;
+                }
+            }
+
+            if ((blockedAhead || gapAhead) && player.isGrounded) {
+                if (Math.random() < 0.3) {
+                    keys.up = true;
+                }
+            } else if (!player.isGrounded) {
+                if (Math.random() < 0.2) {
+                    keys.up = false;
+                }
+            }
+
+            if (gameState.isWaterGun && Math.random() < 0.08) {
+                keys.shoot = true;
+            } else {
+                keys.shoot = false;
+            }
+        }
+
+        function startAutoDemo() {
+            stopTitleMusic();
+            gameState.isDemo = true;
+            gameState.isActive = true;
+            gameState.stage = 1;
+            gameState.cameraX = 0;
+            
+            document.getElementById('demo-banner').classList.remove('hidden');
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('audio-unlock-screen').classList.add('hidden');
+
+            buildLevel();
+            startBGM();
+
+            player.x = 100;
+            player.y = 100;
+            player.vx = 0;
+            player.vy = 0;
+            player.isGrounded = false;
+
+            activateWaterGunMode();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            loop();
+        }
+
+        function stopAutoDemo() {
+            if (!gameState.isDemo) return;
+            gameState.isDemo = false;
+            gameState.isActive = false;
+            deactivateWaterGunMode();
+            deactivateGoldenMode();
+            stopBGM();
+
+            document.getElementById('demo-banner').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+
+            keys.left = false;
+            keys.right = false;
+            keys.up = false;
+            keys.shoot = false;
+
+            playTitleMusic();
+            resetDemoTimer();
+        }
+
+        function resetDemoTimer() {
+            if (demoTimeout) clearTimeout(demoTimeout);
+            if (!gameState.isActive && !gameState.isDemo) {
+                demoTimeout = setTimeout(() => {
+                    startAutoDemo();
+                }, 15000);
+            }
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!gameState.isActive || gameState.isDemo || gameState.transitionState.active) return;
+                gameState.timeLeft--;
+                document.getElementById('timer-display').innerText = String(gameState.timeLeft).padStart(3, '0');
+                if (gameState.timeLeft <= 0) {
+                    player.deductLife(1, true, true);
+                    const isBossStage = (gameState.stage % 5 === 0);
+                    gameState.timeLeft = isBossStage ? 150 : 100;
+                }
+            }, 1000);
+        }
+
         function update() {
             if (!gameState.isActive) return;
+
+            if (gameState.isDemo) {
+                handleDemoAI();
+            }
 
             if (gameState.transitionState.active) {
                 gameState.transitionState.progress += 0.02;
@@ -888,7 +1274,6 @@
             player.update();
             resolveCollisions();
 
-            // 카메라 연출
             const targetCameraX = player.x - canvas.width / 2.5;
             gameState.cameraX += (targetCameraX - gameState.cameraX) * 0.1;
             gameState.cameraX = Math.max(0, Math.min(gameState.cameraX, gameState.levelWidth - canvas.width));
@@ -900,7 +1285,6 @@
                 }
             }
 
-            // 벽돌 반동 애니메이션 감쇠
             for (let brick of bricks) {
                 if (brick.bumpOffset < 0) {
                     brick.bumpOffset += 1.5;
@@ -908,7 +1292,6 @@
                 }
             }
 
-            // 아이템 발사 오름 애니메이션 제어
             for (let item of items) {
                 if (item.isPopping) {
                     item.y -= 3;
@@ -918,7 +1301,6 @@
                 }
             }
 
-            // 투사체 업데이트 및 처단 판정
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i];
                 b.x += b.vx;
@@ -958,7 +1340,6 @@
                 }
             }
 
-            // 보스 인공지능 패턴
             if (boss) {
                 boss.x += boss.vx;
                 if (boss.x < 100 || boss.x > gameState.levelWidth - 100 - boss.width) {
@@ -1002,7 +1383,6 @@
                 }
             }
 
-            // 일반 장애물 기동 루프 (지뢰 충돌 완전 제외)
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
 
@@ -1021,15 +1401,14 @@
 
                 if (checkCollision(player, e)) {
                     if (e.type === 'normal') {
-                        // 머리 위에서 낙하하며 밟았는지 판정
                         const isFallingOnTop = (player.vy > 0 && (player.y + player.height - player.vy) <= e.y + 20);
                         if (isFallingOnTop) {
-                            player.vy = -13; // 마리오처럼 위로 튕겨 오름
+                            player.vy = -13; 
                             spawnExplosion(e.x + e.width / 2, e.y + e.height / 2, '#ef4444', 15);
                             enemies.splice(i, 1);
                             gameState.score += 150;
                             updateScoreDisplay();
-                            playSynthSound('item_get'); // 밟을 때 사운드 효과
+                            playSynthSound('item_get'); 
                         } else {
                             if (gameState.isGolden) {
                                 spawnExplosion(e.x, e.y, '#fbbf24', 12);
@@ -1041,7 +1420,6 @@
                             }
                         }
                     } else {
-                        // 투사체 타입 적 충돌 처리
                         if (gameState.isGolden) {
                             spawnExplosion(e.x, e.y, '#fbbf24', 12);
                             enemies.splice(i, 1);
@@ -1054,7 +1432,6 @@
                 }
             }
 
-            // 아이템 획득 판정 (온전하게 복구)
             for (let i = items.length - 1; i >= 0; i--) {
                 const item = items[i];
                 if (!item.collected && checkCollision(player, item)) {
@@ -1081,7 +1458,7 @@
                         };
                     } 
                     else {
-                        playSynthSound('item_get'); // 코인 등 일반 획득음
+                        playSynthSound('item_get'); 
                         gameState.score += 100;
                     }
                     updateScoreDisplay();
@@ -1089,7 +1466,16 @@
             }
 
             if (goal && checkCollision(player, goal)) {
-                triggerStageClear();
+                if (gameState.isDemo) {
+                    gameState.stage = (gameState.stage % 4) + 1;
+                    buildLevel();
+                    player.x = 100;
+                    player.y = 100;
+                    player.vx = 0;
+                    player.vy = 0;
+                } else {
+                    triggerStageClear();
+                }
             }
 
             for (let i = particles.length - 1; i >= 0; i--) {
@@ -1105,7 +1491,6 @@
             const currentThemeIdx = (gameState.stage - 1) % THEMES.length;
             const theme = THEMES[currentThemeIdx];
 
-            // 하늘 그라데이션
             const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             if (gameState.isNightmare) {
                 skyGradient.addColorStop(0, '#1c0303');
@@ -1119,7 +1504,6 @@
             ctx.fillStyle = skyGradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 반짝이는 별무리
             ctx.fillStyle = '#ffffff';
             for (let i = 0; i < 40; i++) {
                 const starX = (Math.sin(i * 98765) * 0.5 + 0.5) * canvas.width;
@@ -1128,7 +1512,6 @@
                 ctx.fillRect(starX, starY, starSize, starSize);
             }
 
-            // 1. 디딤대 발판 그리기
             for (let platform of platforms) {
                 const blockGradient = ctx.createLinearGradient(
                     platform.x - gameState.cameraX, platform.y,
@@ -1143,7 +1526,6 @@
                 ctx.fillRect(platform.x - gameState.cameraX, platform.y, platform.width, 12);
             }
 
-            // 2. 미스터리 벽돌(?) 렌더링
             for (let brick of bricks) {
                 ctx.save();
                 const bx = brick.x - gameState.cameraX;
@@ -1163,7 +1545,6 @@
                     ctx.lineWidth = 3.5;
                     ctx.strokeRect(bx, by, brick.width, brick.height);
 
-                    // "?" 심볼
                     ctx.fillStyle = '#78350f';
                     ctx.font = 'bold 24px monospace';
                     ctx.textAlign = 'center';
@@ -1185,7 +1566,6 @@
                 ctx.restore();
             }
 
-            // 3. 물총 사격 투사체 그리기
             for (let b of bullets) {
                 ctx.fillStyle = '#67e8f9';
                 ctx.beginPath();
@@ -1193,7 +1573,6 @@
                 ctx.fill();
             }
 
-            // 4. 일반 몬스터 그리기 (지뢰 렌더링 코드 제거)
             for (let e of enemies) {
                 ctx.save();
                 if (e.type === 'projectile') {
@@ -1214,7 +1593,6 @@
                 ctx.restore();
             }
 
-            // 5. 비약 및 획득 가능 아이템 렌더링
             for (let item of items) {
                 ctx.save();
                 const hover = item.isPopping ? 0 : Math.sin(Date.now() / 150 + item.x) * 6;
@@ -1259,7 +1637,6 @@
                     ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
                 } 
                 else {
-                    // 코인 아이템
                     ctx.fillStyle = '#eab308';
                     ctx.strokeStyle = '#fef08a';
                     ctx.lineWidth = 1.5;
@@ -1271,7 +1648,6 @@
                 ctx.restore();
             }
 
-            // 6. 보스 렌더링
             if (boss) {
                 ctx.save();
                 if (boss.damageFlash > 0 && Math.floor(Date.now() / 60) % 2 === 0) {
@@ -1289,7 +1665,6 @@
                 ctx.restore();
             }
 
-            // 7. 목적지 플래그 렌더링
             if (goal) {
                 ctx.save();
                 const flagY = goal.y + Math.sin(Date.now() / 250) * 8;
@@ -1306,7 +1681,6 @@
                 ctx.restore();
             }
 
-            // 8. 플레이어 및 폭발 파티클 그리기
             player.draw();
 
             for (let p of particles) {
@@ -1316,7 +1690,6 @@
                 ctx.fill();
             }
 
-            // 9. 차원 소용돌이 왜곡 연출
             if (gameState.transitionState.active) {
                 ctx.save();
                 const tx = gameState.transitionState.x - gameState.cameraX;
@@ -1352,6 +1725,7 @@
             boss = null;
             document.getElementById('boss-hp-container').classList.add('hidden');
             playSynthSound('clear');
+            playDrumBeat();
 
             goal = { x: 1400, y: 350, width: 70, height: 200 };
         }
@@ -1363,8 +1737,304 @@
             animationFrameId = requestAnimationFrame(loop);
         }
 
+        const TRANSLATIONS = {
+            ko: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "시작하려면 화면 아무 곳이나 탭하세요!<br>모험 음악이 활성화됩니다.",
+                unlockBtn: "탭해서 시작",
+                startDesc: "장애물을 뛰어넘고 목적지까지 도달하세요!<br><br>맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 보상을 찾아내세요.<br>황금 비약은 생명력을 회복시키고, 파란색 비약은 시원한 물줄기 총을 선사합니다.<br>수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!",
+                startBtn: "모험 시작!",
+                demoDesc: "15초간 대기하면 오토 데모가 시작됩니다.",
+                demoBanner: "★ 오토 데모 모드 - 조작시 시작 화면으로 ★",
+                gameoverTitle: "재도전",
+                gameoverDesc: "모든 생명력을 소모했습니다.<br>이전 단계로 돌아가 다시 도전합니다.",
+                restartBtn: "다시 도전하기",
+                clearTitle: "STAGE CLEAR!!",
+                clearDesc: "보상으로 생명력이 회복되었습니다!",
+                finalScore: "현재 점수: ",
+                nextBtn: "다음 단계로 진입",
+                endingTitle: "축하합니다!",
+                endingDesc: "당신은 50개의 스테이지를 모두 돌파하고 쌀 세계를 구했습니다!<br>플레이해주셔서 진심으로 감사합니다!",
+                endRestartBtn: "처음부터 다시하기",
+                feverBanner: "★ 물총 모드 활성화 ★",
+                bossHpTitle: "BOSS : 대형 곤충 머신",
+                controlsGuide: "[좌우 이동]: ◀ ▶ / A, D | [점프]: Space / ▲ | [물총 발사]: Shift (물총 획득 시 활성화)",
+                btnShoot: "SHOOT 💦",
+                btnJump: "JUMP 🚀",
+                stageBadge: "STAGE "
+            },
+            en: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "Tap anywhere to unlock the audio and music engine!",
+                unlockBtn: "TAP TO START",
+                startDesc: "Jump over platforms and make your way to the goal!<br><br>Hit the Mystery Bricks (?) to unlock powerups.<br>Golden 67 restores 2 Hearts immediately.<br>Blue 67 grants you the Water Gun! Beware of fake Pink 67!",
+                startBtn: "START ADVENTURE",
+                demoDesc: "AUTO DEMO RUNS AFTER 15 SECONDS",
+                demoBanner: "★ AUTO DEMO MODE - TAP ANY KEY TO PLAY ★",
+                gameoverTitle: "RETRY",
+                gameoverDesc: "All lives lost. Retrying the previous stage.",
+                restartBtn: "TRY AGAIN",
+                clearTitle: "STAGE CLEAR!!",
+                clearDesc: "Bonus life restored!",
+                finalScore: "SCORE: ",
+                nextBtn: "NEXT STAGE",
+                endingTitle: "CONGRATULATIONS!",
+                endingDesc: "You have cleared Stage 50 and saved the rice world!<br>Thank you for playing Rice Jump!",
+                endRestartBtn: "PLAY AGAIN",
+                feverBanner: "★ WATER GUN MODE ACTIVE ★",
+                bossHpTitle: "BOSS : BIG INSECT MACHINE",
+                controlsGuide: "[Left/Right]: ◀ ▶ / A, D | [Jump]: Space / ▲ | [Shoot]: Shift (When gun is active)",
+                btnShoot: "SHOOT 💦",
+                btnJump: "JUMP 🚀",
+                stageBadge: "STAGE "
+            },
+            zh: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "点击屏幕任意位置开始！<br>将启用冒险音乐。",
+                unlockBtn: "点击开始",
+                startDesc: "跳过障碍物到达目的地！<br><br>用头撞击地图各处的神秘砖块(?)以寻找隐藏奖励。<br>金色秘药恢复生命值，蓝色秘药提供水枪。<br>注意：奇怪的粉色秘密箱子会引发时空扭曲！",
+                startBtn: "开始冒险！",
+                demoDesc: "等待15秒将自动开始演示。",
+                demoBanner: "★ 自动演示模式 - 按任意键开始游戏 ★",
+                gameoverTitle: "重新挑战",
+                gameoverDesc: "消耗了所有生命值。<br>返回上一关重新挑战。",
+                restartBtn: "再次挑战",
+                clearTitle: "通关成功！！",
+                clearDesc: "生命值已作为奖励恢复！",
+                finalScore: "当前分数: ",
+                nextBtn: "进入下一关",
+                endingTitle: "恭喜通关！",
+                endingDesc: "你成功突破了所有50个关卡，拯救了米之世界！<br>衷心感谢你的游玩！",
+                endRestartBtn: "重新开始",
+                feverBanner: "★ 水枪模式激活 ★",
+                bossHpTitle: "首领：巨型昆虫机器",
+                controlsGuide: "[左右移动]: ◀ ▶ / A, D | [跳跃]: Space / ▲ | [发射水枪]: Shift (获得水枪时可用)",
+                btnShoot: "发射 💦",
+                btnJump: "跳跃 🚀",
+                stageBadge: "关卡 "
+            },
+            ja: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "画面をタップして開始してください！<br>冒険の音楽が有効になります。",
+                unlockBtn: "タップしてスタート",
+                startDesc: "障害物を飛び越えて目的地を目指しましょう！<br><br>マップのあちこちにある謎のレンガ(?)を頭突きして、隠された報酬を見つけ出してください。<br>黄金の秘薬は体力を回復し、青色の秘薬は水鉄砲を授けます。<br>怪しいピンクの秘密の箱は、奇妙な時空の歪みを引き起こすので注意してください！",
+                startBtn: "冒険開始！",
+                demoDesc: "15秒間待つとオートデモが開始されます。",
+                demoBanner: "★ オートデモモード - キーを押してプレイ ★",
+                gameoverTitle: "リトライ",
+                gameoverDesc: "すべての体力を失いました。<br>前のステージに戻って再挑戦します。",
+                restartBtn: "もう一度挑戦する",
+                clearTitle: "ステージクリア！！",
+                clearDesc: "報酬として体力が回復しました！",
+                finalScore: "現在のスコア: ",
+                nextBtn: "次のステージへ",
+                endingTitle: "おめでとうございます！",
+                endingDesc: "あなたは50個のステージをすべて突破し、お米の世界を救いました！<br>プレイしていただき誠にありがとうございました！",
+                endRestartBtn: "最初からやり直す",
+                feverBanner: "★ 水鉄砲モード有効化 ★",
+                bossHpTitle: "ボス：巨大昆虫マシン",
+                controlsGuide: "[左右移動]: ◀ ▶ / A, D | [ジャンプ]: Space / ▲ | [水鉄砲発射]: Shift (獲得時のみ)",
+                btnShoot: "シュート 💦",
+                btnJump: "ジャンプ 🚀",
+                stageBadge: "ステージ "
+            },
+            th: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "แตะที่ใดก็ได้บนหน้าจอเพื่อเริ่ม!<br>เพลงประกอบจะเปิดใช้งาน",
+                unlockBtn: "แตะเพื่อเริ่ม",
+                startDesc: "กระโดดข้ามสิ่งกีดขวางเพื่อไปให้ถึงจุดหมาย!<br><br>โหม่งบล็อกปริศนา (?) เพื่อค้นหารับรางวัลที่ซ่อนอยู่<br>ยาอายุวัฒนะสีทองช่วยฟื้นฟูพลังชีวิต ยาสีน้ำเงินจะให้ปืนฉีดน้ำ<br>ระวังกล่องลับสีชมพูที่อาจทำให้มิติเวลาบิดเบี้ยว!",
+                startBtn: "เริ่มการผจญภัย!",
+                demoDesc: "รอ 15 วินาทีเพื่อเริ่มโหมดสาธิตอัตโนมัติ",
+                demoBanner: "★ โหมดสาธิตอัตโนมัติ - กดปุ่มใดก็ได้เพื่อเล่น ★",
+                gameoverTitle: "ลองใหม่",
+                gameoverDesc: "พลังชีวิตทั้งหมดหมดลงแล้ว<br>กลับไปยังด่านก่อนหน้าเพื่อลองใหม่อีกครั้ง",
+                restartBtn: "ลองใหม่อีกครั้ง",
+                clearTitle: "ผ่านด่านสำเร็จ!!",
+                clearDesc: "ฟื้นฟูพลังชีวิตเป็นรางวัลเรียบร้อย!",
+                finalScore: "คะแนนปัจจุบัน: ",
+                nextBtn: "เข้าสู่ด่านถัดไป",
+                endingTitle: "ยินดีด้วย!",
+                endingDesc: "คุณได้ผ่านด่านทั้งหมด 50 ด่านและช่วยโลกข้าวไว้ได้สำเร็จ!<br>ขอบคุณมากสำหรับการเล่นเกมนี้!",
+                endRestartBtn: "เริ่มใหม่อีกครั้ง",
+                feverBanner: "★ เปิดใช้งานโหมดปืนฉีดน้ำ ★",
+                bossHpTitle: "บอส: แมลงยักษ์จักรกล",
+                controlsGuide: "[เคลื่อนที่]: ◀ ▶ / A, D | [กระโดด]: Space / ▲ | [ยิง]: Shift (เมื่อมีปืน)",
+                btnShoot: "ยิง 💦",
+                btnJump: "กระโดด 🚀",
+                stageBadge: "ด่าน "
+            },
+            ru: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "Нажмите в любом месте экрана для начала!<br>Музыка приключений будет включена.",
+                unlockBtn: "НАЧАТЬ",
+                startDesc: "Перепрыгивайте препятствия и доберитесь до цели!<br><br>Ударьте головой по таинственным кирпичам (?), чтобы найти скрытые награды.<br>Золотой эликсир восстанавливает жизни, а синий дарует водяной пистолет.<br>Остерегайтесь розового секретного ящика — он искажает пространство и время!",
+                startBtn: "Начать приключение!",
+                demoDesc: "Подождите 15 секунд для запуска автодемо.",
+                demoBanner: "★ РЕЖИМ ДЕМО — НАЖМИТЕ КНОПКУ ДЛЯ ИГРЫ ★",
+                gameoverTitle: "ПОПЫТКА",
+                gameoverDesc: "Все жизни потеряны.<br>Возвращение на предыдущий уровень.",
+                restartBtn: "Попробовать снова",
+                clearTitle: "УРОВЕНЬ ПРОЙДЕН!!",
+                clearDesc: "В награду восстановлена жизнь!",
+                finalScore: "Текущий счет: ",
+                nextBtn: "Следующий уровень",
+                endingTitle: "ПОЗДРАВЛЯЕМ!",
+                endingDesc: "Вы прошли все 50 уровней и спасли рисовый мир!<br>Огромное спасибо за игру!",
+                endRestartBtn: "Начать сначала",
+                feverBanner: "★ ВОДЯНОЙ ПИСТОЛЕТ АКТИВИРОВАН ★",
+                bossHpTitle: "БОСС: ГИГАНТСКОЕ НАСЕКОМОЕ",
+                controlsGuide: "[Влево/Вправо]: ◀ ▶ / A, D | [Прыжок]: Space / ▲ | [Выстрел]: Shift (при наличии оружия)",
+                btnShoot: "ВЫСТРЕЛ 💦",
+                btnJump: "ПРЫЖОК 🚀",
+                stageBadge: "УРОВЕНЬ "
+            },
+            pt: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "Toque em qualquer lugar para começar!<br>A música de aventura será ativada.",
+                unlockBtn: "TOCAR PARA INICIAR",
+                startDesc: "Pule sobre os obstáculos e chegue ao seu destino!<br><br>Cabeceie os tijolos misteriosos (?) para encontrar recompensas escondidas.<br>O elixir dourado recupera vida e o elixir azul concede uma pistola de água.<br>Cuidado com a caixa rosa misteriosa, pois ela causa distorções no espaço-tempo!",
+                startBtn: "Iniciar Aventura!",
+                demoDesc: "Aguarde 15 segundos para iniciar a demonstração automática.",
+                demoBanner: "★ MODO DEMO — TOQUE EM QUALQUER TECLA PARA JOGAR ★",
+                gameoverTitle: "REPLAY",
+                gameoverDesc: "Você gastou todas as suas vidas.<br>Retornando ao estágio anterior para tentar novamente.",
+                restartBtn: "Tentar Novamente",
+                clearTitle: "ESTÁGIO CONCLUÍDO!!",
+                clearDesc: "Vida restaurada como recompensa!",
+                finalScore: "Pontuação Atual: ",
+                nextBtn: "Próximo Estágio",
+                endingTitle: "PARABÉNS!",
+                endingDesc: "Você superou todos os 50 estágios e salvou o mundo do arroz!<br>Muito obrigado por jogar!",
+                endRestartBtn: "Jogar Novamente",
+                feverBanner: "★ MODO PISTOLA DE ÁGUA ATIVO ★",
+                bossHpTitle: "CHEFE: MÁQUINA DE INSETO GIGANTE",
+                controlsGuide: "[Mover]: ◀ ▶ / A, D | [Pular]: Space / ▲ | [Disparar]: Shift (quando ativa)",
+                btnShoot: "DISPARAR 💦",
+                btnJump: "PULAR 🚀",
+                stageBadge: "ESTÁGIO "
+            },
+            fr: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "Touchez n'importe où pour démarrer!<br>La musique d'aventure sera activée.",
+                unlockBtn: "TOUCHER POUR COMMENCER",
+                startDesc: "Sautez par-dessus les obstacles et atteignez votre destination!<br><br>Frappez de la tête les briques mystérieuses (?) pour découvrir des récompenses cachées.<br>L'élixir doré restaure de la vie, l'élixir bleu vous offre un pistolet à eau.<br>Attention à l'étrange boîte rose, elle provoque des distorsions spatio-temporelles !",
+                startBtn: "Commencer l'Aventure !",
+                demoDesc: "Attendez 15 secondes pour lancer la démo automatique.",
+                demoBanner: "★ MODE DÉMO — APPUYEZ SUR UNE TOUCHE POUR JOUER ★",
+                gameoverTitle: "RÉESSAYER",
+                gameoverDesc: "Toutes les vies ont été perdues.<br>Retour à l'étape précédente pour réessayer.",
+                restartBtn: "Réessayer",
+                clearTitle: "STAGE CLAIR !!",
+                clearDesc: "La vie a été restaurée en récompense !",
+                finalScore: "Score Actuel : ",
+                nextBtn: "Étape Suivante",
+                endingTitle: "FÉLICITATIONS !",
+                endingDesc: "Vous avez franchi les 50 étapes et sauvé le monde du riz !<br>Merci infiniment d'avoir joué !",
+                endRestartBtn: "Recommencer",
+                feverBanner: "★ MODE PISTOLET À EAU ACTIF ★",
+                bossHpTitle: "BOSS : MACHINE INSECTE GÉANTE",
+                controlsGuide: "[Déplacement]: ◀ ▶ / A, D | [Sauter]: Espace / ▲ | [Tirer]: Shift (si pistolet actif)",
+                btnShoot: "TIRER 💦",
+                btnJump: "SAUTER 🚀",
+                stageBadge: "ÉTAPE "
+            },
+            es: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "¡Toca cualquier parte de la pantalla para comenzar!<br>La música de aventura se activará.",
+                unlockBtn: "TOCAR PARA EMPEZAR",
+                startDesc: "¡Salte los obstáculos y llegue a su destino!<br><br>Golpee con la cabeza los bloques misteriosos (?) para encontrar recompensas ocultas.<br>El elixir dorado restaura vidas, el elixir azul otorga una pistola de agua.<br>¡Cuidado con la caja rosa misteriosa, causa distorciones espacio-temporales!",
+                startBtn: "¡Iniciar Aventura!",
+                demoDesc: "Espere 15 segundos para iniciar la demostración automática.",
+                demoBanner: "★ MODO DEMO — PULSA CUALQUIER TECLA PARA JUGAR ★",
+                gameoverTitle: "REINTENTAR",
+                gameoverDesc: "Has agotado todas tus vidas.<br>Regresando al nivel anterior para volver a intentarlo.",
+                restartBtn: "Intentar de nuevo",
+                clearTitle: "¡NIVEL COMPLETADO!",
+                clearDesc: "¡Se ha restaurado una vida como recompensa!",
+                finalScore: "Puntuación Actual: ",
+                nextBtn: "Siguiente Nivel",
+                endingTitle: "¡FELICITACIONES!",
+                endingDesc: "¡Has superado los 50 niveles y salvado el mundo del arroz!<br>¡Muchas gracias por jugar!",
+                endRestartBtn: "Volver a jugar",
+                feverBanner: "★ MODO PISTOLA DE AGUA ACTIVO ★",
+                bossHpTitle: "JEFE: MÁQUINA DE INSECTO GIGANTE",
+                controlsGuide: "[Mover]: ◀ ▶ / A, D | [Saltar]: Espacio / ▲ | [Disparar]: Shift (con pistola activa)",
+                btnShoot: "DISPARAR 💦",
+                btnJump: "SALTAR 🚀",
+                stageBadge: "NIVEL "
+            },
+            de: {
+                unlockTitle: "RICE JUMP!",
+                unlockDesc: "Tippe irgendwo auf den Bildschirm, um zu starten!<br>Abenteuermusik wird aktiviert.",
+                unlockBtn: "ZUM STARTEN TIPPEN",
+                startDesc: "Springe über Hindernisse und erreiche das Ziel!<br><br>Stoße mit dem Kopf gegen die Geheimnisboxen (?), um Belohnungen zu finden.<br>Das goldene Elixier stellt Leben wieder her, das blaue schenkt dir eine Wasserpistole.<br>Achtung vor der rosa Kiste — sie verursacht Raum-Zeit-Verzerrungen!",
+                startBtn: "Abenteuer starten!",
+                demoDesc: "Warte 15 Sekunden, um die automatische Demo zu starten.",
+                demoBanner: "★ AUTO-DEMO-MODUS — TASTE DRÜCKEN ZUM SPIELEN ★",
+                gameoverTitle: "RETRY",
+                gameoverDesc: "Alle Leben verbraucht.<br>Zurück zum vorherigen Level, um es erneut zu versuchen.",
+                restartBtn: "Nochmal versuchen",
+                clearTitle: "LEVEL BESTANDEN!!",
+                clearDesc: "Als Belohnung wurde ein Leben wiederhergestellt!",
+                finalScore: "Aktueller Punktestand: ",
+                nextBtn: "Nächstes Level",
+                endingTitle: "HERZLICHEN GLÜCKWUNSCH!",
+                endingDesc: "Du hast alle 50 Level abgeschlossen und die Reiswelt gerettet!<br>Vielen Dank fürs Spielen!",
+                endRestartBtn: "Erneut spielen",
+                feverBanner: "★ WASSERPISTOLE AKTIV ★",
+                bossHpTitle: "BOSS: RIESEN-INSEKTEN-MASCHINE",
+                controlsGuide: "[Steuerung]: ◀ ▶ / A, D | [Springen]: Leertaste / ▲ | [Schießen]: Shift (falls aktiv)",
+                btnShoot: "FEUERN 💦",
+                btnJump: "SPRINGEN 🚀",
+                stageBadge: "LEVEL "
+            }
+        };
+
+        let currentLang = 'ko';
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            const t = TRANSLATIONS[lang];
+
+            document.getElementById('unlock-title').innerText = t.unlockTitle;
+            document.getElementById('unlock-desc').innerHTML = t.unlockDesc;
+            document.getElementById('audio-unlock-btn').innerText = t.unlockBtn;
+
+            document.getElementById('start-desc').innerHTML = t.startDesc;
+            document.getElementById('start-btn').innerText = t.startBtn;
+            document.getElementById('demo-desc').innerText = t.demoDesc;
+
+            document.getElementById('demo-banner').innerText = t.demoBanner;
+
+            document.getElementById('gameover-title').innerText = t.gameoverTitle;
+            document.getElementById('restart-btn').innerText = t.restartBtn;
+
+            document.getElementById('clear-title').innerText = t.clearTitle;
+            document.getElementById('clear-desc').innerText = t.clearDesc;
+            document.getElementById('next-btn').innerText = t.nextBtn;
+
+            document.getElementById('ending-title').innerText = t.endingTitle;
+            document.getElementById('ending-desc').innerHTML = t.endingDesc;
+            document.getElementById('end-restart-btn').innerText = t.endRestartBtn;
+
+            document.getElementById('fever-banner').innerText = t.feverBanner;
+            document.getElementById('boss-hp-title').innerText = t.bossHpTitle;
+            document.getElementById('controls-guide').innerText = t.controlsGuide;
+
+            document.getElementById('btn-shoot').innerText = t.btnShoot;
+            document.getElementById('btn-jump').innerText = t.btnJump;
+
+            document.getElementById('stage-badge').innerText = `${t.stageBadge}${gameState.stage}`;
+            updateScoreDisplay();
+        }
+
+        document.getElementById('lang-select').addEventListener('change', (e) => {
+            applyLanguage(e.target.value);
+        });
+
         function startStage(isNext = false) {
             initAudio();
+            if (demoTimeout) clearTimeout(demoTimeout);
 
             if (!isNext) {
                 gameState.score = 0;
@@ -1375,7 +2045,12 @@
             gameState.cameraX = 0;
             gameState.difficulty = 1.0 + Math.floor((gameState.stage - 1) / 2) * 0.01;
 
-            document.getElementById('stage-badge').innerText = `STAGE ${gameState.stage}`;
+            const isBossStage = (gameState.stage % 5 === 0);
+            gameState.timeLeft = isBossStage ? 150 : 100;
+            document.getElementById('timer-display').innerText = String(gameState.timeLeft).padStart(3, '0');
+
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('stage-badge').innerText = `${t.stageBadge}${gameState.stage}`;
             document.getElementById('lives-display').innerText = gameState.lives;
             updateScoreDisplay();
 
@@ -1389,6 +2064,8 @@
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('gameover-screen').classList.add('hidden');
             document.getElementById('clear-screen').classList.add('hidden');
+            document.getElementById('ending-screen').classList.add('hidden');
+            document.getElementById('demo-banner').classList.add('hidden');
 
             buildLevel();
 
@@ -1401,6 +2078,8 @@
                 startBGM();
             }
 
+            startTimer();
+
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             loop();
         }
@@ -1409,12 +2088,35 @@
             gameState.isActive = false;
             stopBGM();
             sixSevenAudio.pause();
+            if (timerInterval) clearInterval(timerInterval);
 
             gameoverAudio.currentTime = 0;
             gameoverAudio.play().catch(e => {});
 
             gameState.stage = Math.max(1, gameState.stage - 1);
-            document.getElementById('gameover-desc').innerHTML = `모든 생명력을 소모했습니다.<br>이전 단계(STAGE ${gameState.stage})로 후퇴하여 도전을 계속합니다.`;
+            
+            const t = TRANSLATIONS[currentLang];
+            if (currentLang === 'ko') {
+                document.getElementById('gameover-desc').innerHTML = `모든 생명력을 소모했습니다.<br>이전 단계(STAGE ${gameState.stage})로 돌아가 다시 도전합니다.`;
+            } else if (currentLang === 'en') {
+                document.getElementById('gameover-desc').innerHTML = `All lives lost.<br>Retrying previous stage (STAGE ${gameState.stage}).`;
+            } else if (currentLang === 'zh') {
+                document.getElementById('gameover-desc').innerHTML = `所有生命值已耗尽。<br>返回上一关（第 ${gameState.stage} 关）重新挑战。`;
+            } else if (currentLang === 'ja') {
+                document.getElementById('gameover-desc').innerHTML = `すべての体力を失いました。<br>前のステージ（ステージ ${gameState.stage}）に戻って再挑戦します。`;
+            } else if (currentLang === 'th') {
+                document.getElementById('gameover-desc').innerHTML = `พลังชีวิตหมดแล้ว<br>กลับไปยังด่านก่อนหน้า (ด่าน ${gameState.stage}) เพื่อลองใหม่อีกครั้ง`;
+            } else if (currentLang === 'ru') {
+                document.getElementById('gameover-desc').innerHTML = `Все жизни потеряны.<br>Возврат на предыдущий этап (УРОВЕНЬ ${gameState.stage}) для повторной попытки.`;
+            } else if (currentLang === 'pt') {
+                document.getElementById('gameover-desc').innerHTML = `Todas as vidas perdidas.<br>Retornando à fase anterior (FASE ${gameState.stage}) para tentar de novo.`;
+            } else if (currentLang === 'fr') {
+                document.getElementById('gameover-desc').innerHTML = `Toutes les vies ont été perdues.<br>Retour à l'étape précédente (STAGE ${gameState.stage}) pour réessayer.`;
+            } else if (currentLang === 'es') {
+                document.getElementById('gameover-desc').innerHTML = `Has perdido todas tus vidas.<br>Regresando al nivel anterior (NIVEL ${gameState.stage}) para reintentar.`;
+            } else if (currentLang === 'de') {
+                document.getElementById('gameover-desc').innerHTML = `Alle Leben verbraucht.<br>Zurück zum vorherigen Level (LEVEL ${gameState.stage}) für einen neuen Versuch.`;
+            }
             document.getElementById('gameover-screen').classList.remove('hidden');
         }
 
@@ -1422,15 +2124,42 @@
             gameState.isActive = false;
             stopBGM();
             sixSevenAudio.pause();
+            if (timerInterval) clearInterval(timerInterval);
+            
             playSynthSound('clear');
+            playDrumBeat();
+
+            if (gameState.stage >= 50) {
+                triggerEnding();
+                return;
+            }
 
             gameState.lives = Math.min(5, gameState.lives + 1);
 
-            document.getElementById('final-score').innerText = `현재 점수: ${gameState.score}`;
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('final-score').innerText = `${t.finalScore}${gameState.score}`;
             document.getElementById('clear-screen').classList.remove('hidden');
         }
 
+        function triggerEnding() {
+            gameState.isActive = false;
+            stopBGM();
+            sixSevenAudio.pause();
+            if (timerInterval) clearInterval(timerInterval);
+
+            document.getElementById('ending-screen').classList.remove('hidden');
+            playEndingMusic();
+        }
+
+        function handleUserAction() {
+            if (gameState.isDemo) {
+                stopAutoDemo();
+            }
+            resetDemoTimer();
+        }
+
         window.addEventListener('keydown', (e) => {
+            handleUserAction();
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
             if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -1450,27 +2179,47 @@
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shoot = false;
         });
 
-        // 모바일 터치 패널 이벤트 매핑
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
         const btnJump = document.getElementById('btn-jump');
         const btnShoot = document.getElementById('btn-shoot');
 
-        btnLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.left = true; });
+        btnLeft.addEventListener('pointerdown', (e) => { handleUserAction(); e.preventDefault(); keys.left = true; });
         btnLeft.addEventListener('pointerup', (e) => { e.preventDefault(); keys.left = false; });
         btnLeft.addEventListener('pointerleave', (e) => { e.preventDefault(); keys.left = false; });
 
-        btnRight.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.right = true; });
+        btnRight.addEventListener('pointerdown', (e) => { handleUserAction(); e.preventDefault(); keys.right = true; });
         btnRight.addEventListener('pointerup', (e) => { e.preventDefault(); keys.right = false; });
         btnRight.addEventListener('pointerleave', (e) => { e.preventDefault(); keys.right = false; });
 
-        btnJump.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.up = true; });
+        btnJump.addEventListener('pointerdown', (e) => { handleUserAction(); e.preventDefault(); keys.up = true; });
         btnJump.addEventListener('pointerup', (e) => { e.preventDefault(); keys.up = false; });
 
-        btnShoot.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.shoot = true; });
+        btnShoot.addEventListener('pointerdown', (e) => { handleUserAction(); e.preventDefault(); keys.shoot = true; });
         btnShoot.addEventListener('pointerup', (e) => { e.preventDefault(); keys.shoot = false; });
 
+        const unlockScreen = document.getElementById('audio-unlock-screen');
+        const unlockBtn = document.getElementById('audio-unlock-btn');
+
+        function unlockAudio() {
+            initAudio();
+            unlockScreen.classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+
+            helloAudio.currentTime = 0;
+            helloAudio.play().catch(e => {});
+
+            playTitleMusic();
+            resetDemoTimer();
+            applyLanguage('ko');
+        }
+
+        unlockBtn.addEventListener('click', unlockAudio);
+        unlockScreen.addEventListener('click', unlockAudio);
+
         document.getElementById('start-btn').addEventListener('click', () => {
+            handleUserAction();
+            stopTitleMusic();
             gameState.stage = 1;
             deactivateWaterGunMode();
             deactivateGoldenMode();
@@ -1478,28 +2227,153 @@
         });
 
         document.getElementById('restart-btn').addEventListener('click', () => {
+            handleUserAction();
             deactivateWaterGunMode();
             deactivateGoldenMode();
             startStage(false);
         });
 
         document.getElementById('next-btn').addEventListener('click', () => {
+            handleUserAction();
             gameState.stage++;
             startStage(true);
+        });
+
+        document.getElementById('end-restart-btn').addEventListener('click', () => {
+            stopEndingMusic();
+            handleUserAction();
+            gameState.stage = 1;
+            deactivateWaterGunMode();
+            deactivateGoldenMode();
+            startStage(false);
         });
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopBGM();
+                stopTitleMusic();
+                stopEndingMusic();
                 sixSevenAudio.pause();
-            } else if (gameState.isActive) {
-                if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare) {
-                    sixSevenAudio.play().catch(e => {});
-                } else {
-                    startBGM();
+            } else {
+                if (gameState.isActive) {
+                    if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare) {
+                        sixSevenAudio.play().catch(e => {});
+                    } else {
+                        startBGM();
+                    }
+                } else if (!gameState.isActive && !gameState.isDemo) {
+                    playTitleMusic();
                 }
             }
         });
+
+        canvas.addEventListener('pointerdown', handleUserAction);
+
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordTimeout = null;
+        let recordingMicStream = null;
+
+        const recDotBtn = document.getElementById('rec-dot');
+
+        async function toggleRecording() {
+            initAudio();
+            routeAudioElements();
+
+            if (!isRecording) {
+                playRecordStartFeedback();
+                recordedChunks = [];
+                
+                const canvasStream = canvas.captureStream(30);
+                const audioDestination = audioCtx.createMediaStreamDestination();
+                masterGain.connect(audioDestination);
+
+                const combinedStream = new MediaStream();
+                canvasStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
+
+                if (gameState.stage >= 10) {
+                    try {
+                        recordingMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        const micSource = audioCtx.createMediaStreamSource(recordingMicStream);
+                        micSource.connect(audioDestination);
+                    } catch (e) {}
+                }
+
+                audioDestination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+
+                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm;codecs=vp8,opus' };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/mp4' };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = {};
+                }
+
+                try {
+                    mediaRecorder = new MediaRecorder(combinedStream, options);
+                } catch (e) {
+                    mediaRecorder = new MediaRecorder(combinedStream);
+                }
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `RiceJump_Stage${gameState.stage}_Rec.mp4`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+
+                    if (recordingMicStream) {
+                        recordingMicStream.getTracks().forEach(track => track.stop());
+                        recordingMicStream = null;
+                    }
+
+                    recDotBtn.classList.remove('bg-red-500', 'animate-pulse', 'shadow-[0_0_10px_#ef4444]');
+                    recDotBtn.classList.add('bg-gray-600');
+                    isRecording = false;
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                recDotBtn.classList.remove('bg-gray-600');
+                recDotBtn.classList.add('bg-red-500', 'animate-pulse', 'shadow-[0_0_10px_#ef4444]');
+
+                recordTimeout = setTimeout(() => {
+                    if (isRecording) {
+                        stopRecording();
+                    }
+                }, 60000);
+
+            } else {
+                stopRecording();
+            }
+        }
+
+        function stopRecording() {
+            if (recordTimeout) clearTimeout(recordTimeout);
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        recDotBtn.addEventListener('click', toggleRecording);
     </script>
 </body>
 </html>
