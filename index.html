@@ -198,6 +198,9 @@
                 drum.currentTime = 0;
                 drum.play().catch(e => {});
                 nextDrumIdx = (nextDrumIdx + 1) % DRUM_POOL_SIZE;
+                if (navigator.vibrate) {
+                    navigator.vibrate(60);
+                }
             } catch (e) {}
         }
 
@@ -217,6 +220,7 @@
         let endingMusicInterval = null;
         let demoTimeout = null;
         let timerInterval = null;
+        let lightningFlashFrames = 0;
 
         function initAudio() {
             if (!audioCtx) {
@@ -261,6 +265,32 @@
                     });
                 }
             } catch (err) {}
+        }
+
+        let vibrationInterval = null;
+        function startSixSevenVibration() {
+            stopSixSevenVibration();
+            if (!navigator.vibrate) return;
+            const pattern = [125, 125, 250, 125, 1000];
+            const cycleTime = 1750;
+            navigator.vibrate(pattern);
+            vibrationInterval = setInterval(() => {
+                if (sixSevenAudio.paused) {
+                    stopSixSevenVibration();
+                } else {
+                    navigator.vibrate(pattern);
+                }
+            }, cycleTime);
+        }
+
+        function stopSixSevenVibration() {
+            if (vibrationInterval) {
+                clearInterval(vibrationInterval);
+                vibrationInterval = null;
+            }
+            if (navigator.vibrate) {
+                navigator.vibrate(0);
+            }
         }
 
         function playSynthSound(type) {
@@ -366,6 +396,76 @@
             }
         }
 
+        function playLightningSynth() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            const bufferSize = audioCtx.sampleRate * 1.0;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noiseNode = audioCtx.createBufferSource();
+            noiseNode.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1200, now);
+            filter.frequency.exponentialRampToValueAtTime(60, now + 0.6);
+
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(1.0, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+            noiseNode.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(masterGain);
+            noiseNode.start(now);
+
+            const rumbleOsc = audioCtx.createOscillator();
+            const rumbleGain = audioCtx.createGain();
+            rumbleOsc.type = 'sawtooth';
+            rumbleOsc.frequency.setValueAtTime(45, now);
+            rumbleOsc.frequency.linearRampToValueAtTime(25, now + 2.0);
+
+            const lpFilter = audioCtx.createBiquadFilter();
+            lpFilter.type = 'lowpass';
+            lpFilter.frequency.setValueAtTime(100, now);
+
+            rumbleGain.gain.setValueAtTime(0.9, now);
+            rumbleGain.gain.linearRampToValueAtTime(0.5, now + 0.3);
+            rumbleGain.gain.linearRampToValueAtTime(0.8, now + 0.7);
+            rumbleGain.gain.linearRampToValueAtTime(0.2, now + 1.2);
+            rumbleGain.gain.linearRampToValueAtTime(0.5, now + 1.6);
+            rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
+
+            rumbleOsc.connect(lpFilter);
+            lpFilter.connect(rumbleGain);
+            rumbleGain.connect(masterGain);
+
+            rumbleOsc.start(now);
+            rumbleOsc.stop(now + 2.5);
+        }
+
+        async function tryPhoneFlash() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const track = stream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities();
+                if (capabilities.torch) {
+                    await track.applyConstraints({ advanced: [{ torch: true }] });
+                    setTimeout(async () => {
+                        await track.applyConstraints({ advanced: [{ torch: false }] });
+                        track.stop();
+                    }, 1200);
+                } else {
+                    track.stop();
+                }
+            } catch (e) {}
+        }
+
         function playRecordStartFeedback() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
@@ -468,6 +568,7 @@
             stopTitleMusic();
             stopBGM();
             sixSevenAudio.pause();
+            stopSixSevenVibration();
             if (endingMusicInterval) clearInterval(endingMusicInterval);
 
             let step = 0;
@@ -653,6 +754,39 @@
             }
         }
 
+        let currentSixSevenSrc = 'six seven!.mp3';
+        function updateSixSevenBGM() {
+            let targetSrc = 'six seven!.mp3';
+            const isBoss = (gameState.stage % 5 === 0);
+            const limit60 = isBoss ? 50 : 60;
+
+            if (gameState.timeLeft <= 3) {
+                targetSrc = 'six seven!(3s left).mp3';
+            } else if (gameState.timeLeft <= 5) {
+                targetSrc = 'six seven!(5s left).mp3';
+            } else if (gameState.timeLeft <= 10) {
+                targetSrc = 'six seven!(10s left).mp3';
+            } else if (gameState.timeLeft <= 15) {
+                targetSrc = 'six seven!(15s left).mp3';
+            } else if (gameState.timeLeft <= 30) {
+                targetSrc = 'six seven!(30s left).mp3';
+            } else if (gameState.timeLeft <= limit60) {
+                targetSrc = 'six seven!(60s left both 50s).mp3';
+            }
+
+            if (currentSixSevenSrc !== targetSrc) {
+                currentSixSevenSrc = targetSrc;
+                const wasPlaying = !sixSevenAudio.paused;
+                const prevTime = sixSevenAudio.currentTime;
+                sixSevenAudio.src = targetSrc;
+                sixSevenAudio.load();
+                if (wasPlaying) {
+                    sixSevenAudio.currentTime = prevTime;
+                    sixSevenAudio.play().catch(e => {});
+                }
+            }
+        }
+
         const player = {
             x: 100,
             y: 400,
@@ -725,6 +859,10 @@
                 
                 deathAudio.currentTime = 0;
                 deathAudio.play().catch(e => {});
+
+                if (navigator.vibrate) {
+                    navigator.vibrate(1000);
+                }
 
                 if (!ignoreWaterGun) {
                     deactivateWaterGunMode();
@@ -873,6 +1011,19 @@
                 platforms.push({ x: 1100, y: 380, width: 250, height: 30 });
                 platforms.push({ x: 600, y: 240, width: 400, height: 30 });
 
+                if (gameState.stage % 10 === 0) {
+                    bricks.push({
+                        x: 775,
+                        y: 120,
+                        width: 50,
+                        height: 50,
+                        itemType: 'lightning',
+                        isHit: false,
+                        bumpOffset: 0,
+                        isSpecial: true
+                    });
+                }
+
                 boss = {
                     x: 800,
                     y: 350,
@@ -992,6 +1143,9 @@
         function resolveCollisions() {
             player.isGrounded = false;
 
+            const cycle = (Date.now() / 1000) % 10;
+            const isSpecialVisible = cycle < 3;
+
             for (let platform of platforms) {
                 if (checkCollision(player, platform)) {
                     const prevY = player.y - player.vy;
@@ -1016,6 +1170,8 @@
             }
 
             for (let brick of bricks) {
+                if (brick.isSpecial && !isSpecialVisible) continue;
+
                 if (checkCollision(player, brick)) {
                     const prevY = player.y - player.vy;
                     
@@ -1054,8 +1210,10 @@
             document.getElementById('btn-shoot').classList.remove('hidden');
 
             if (!gameState.isGolden) {
+                updateSixSevenBGM();
                 sixSevenAudio.currentTime = 0;
                 sixSevenAudio.play().catch(e => {});
+                startSixSevenVibration();
                 stopBGM();
             }
         }
@@ -1067,6 +1225,7 @@
 
             if (!gameState.isGolden && !gameState.isNightmare) {
                 sixSevenAudio.pause();
+                stopSixSevenVibration();
                 startBGM();
             }
         }
@@ -1076,8 +1235,10 @@
             gameState.goldenTimeLeft = 360; 
             player.color = '#fbbf24';
 
+            updateSixSevenBGM();
             sixSevenAudio.currentTime = 0;
             sixSevenAudio.play().catch(e => {});
+            startSixSevenVibration();
             stopBGM();
         }
 
@@ -1087,6 +1248,7 @@
 
             if (!gameState.isWaterGun && !gameState.isNightmare) {
                 sixSevenAudio.pause();
+                stopSixSevenVibration();
                 startBGM();
             }
         }
@@ -1135,6 +1297,7 @@
 
             sixSevenAudio.currentTime = 0;
             sixSevenAudio.play().catch(e => {});
+            startSixSevenVibration();
             stopBGM();
         }
 
@@ -1245,10 +1408,18 @@
                 if (!gameState.isActive || gameState.isDemo || gameState.transitionState.active) return;
                 gameState.timeLeft--;
                 document.getElementById('timer-display').innerText = String(gameState.timeLeft).padStart(3, '0');
+                
+                if (gameState.isWaterGun || gameState.isGolden) {
+                    updateSixSevenBGM();
+                }
+
                 if (gameState.timeLeft <= 0) {
                     player.deductLife(1, true, true);
                     const isBossStage = (gameState.stage % 5 === 0);
                     gameState.timeLeft = isBossStage ? 150 : 100;
+                    if (gameState.isWaterGun || gameState.isGolden) {
+                        updateSixSevenBGM();
+                    }
                 }
             }, 1000);
         }
@@ -1457,6 +1628,27 @@
                             progress: 0
                         };
                     } 
+                    else if (item.type === 'lightning') {
+                        playLightningSynth();
+                        tryPhoneFlash();
+                        lightningFlashFrames = 40;
+                        if (navigator.vibrate) {
+                            navigator.vibrate([200, 50, 100, 50, 300, 100, 150, 50, 500]);
+                        }
+                        gameState.isActive = false;
+                        stopBGM();
+                        sixSevenAudio.pause();
+                        stopSixSevenVibration();
+
+                        setTimeout(() => {
+                            gameState.stage++;
+                            if (gameState.stage > 50) {
+                                triggerEnding();
+                            } else {
+                                startStage(true);
+                            }
+                        }, 1200);
+                    }
                     else {
                         playSynthSound('item_get'); 
                         gameState.score += 100;
@@ -1526,7 +1718,12 @@
                 ctx.fillRect(platform.x - gameState.cameraX, platform.y, platform.width, 12);
             }
 
+            const cycle = (Date.now() / 1000) % 10;
+            const isSpecialVisible = cycle < 3;
+
             for (let brick of bricks) {
+                if (brick.isSpecial && !isSpecialVisible) continue;
+
                 ctx.save();
                 const bx = brick.x - gameState.cameraX;
                 const by = brick.y + brick.bumpOffset;
@@ -1534,18 +1731,23 @@
                 if (!brick.isHit) {
                     const grad = ctx.createLinearGradient(bx, by, bx, by + brick.height);
                     const pulse = Math.floor(Date.now() / 150) % 2 === 0;
-                    grad.addColorStop(0, pulse ? '#fbbf24' : '#f59e0b');
-                    grad.addColorStop(1, pulse ? '#f59e0b' : '#d97706');
+                    if (brick.isSpecial) {
+                        grad.addColorStop(0, pulse ? '#ef4444' : '#b91c1c');
+                        grad.addColorStop(1, pulse ? '#b91c1c' : '#991b1b');
+                    } else {
+                        grad.addColorStop(0, pulse ? '#fbbf24' : '#f59e0b');
+                        grad.addColorStop(1, pulse ? '#f59e0b' : '#d97706');
+                    }
                     ctx.fillStyle = grad;
                     ctx.beginPath();
                     ctx.roundRect(bx, by, brick.width, brick.height, 6);
                     ctx.fill();
 
-                    ctx.strokeStyle = '#78350f';
+                    ctx.strokeStyle = brick.isSpecial ? '#7f1d1d' : '#78350f';
                     ctx.lineWidth = 3.5;
                     ctx.strokeRect(bx, by, brick.width, brick.height);
 
-                    ctx.fillStyle = '#78350f';
+                    ctx.fillStyle = brick.isSpecial ? '#ffffff' : '#78350f';
                     ctx.font = 'bold 24px monospace';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -1636,6 +1838,25 @@
                     ctx.textBaseline = 'middle';
                     ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
                 } 
+                else if (item.type === 'lightning') {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(item.x - gameState.cameraX + 22, item.y + 22 + hover, 22, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#facc15';
+                    ctx.beginPath();
+                    ctx.moveTo(item.x - gameState.cameraX + 22, item.y + 10 + hover);
+                    ctx.lineTo(item.x - gameState.cameraX + 14, item.y + 26 + hover);
+                    ctx.lineTo(item.x - gameState.cameraX + 22, item.y + 26 + hover);
+                    ctx.lineTo(item.x - gameState.cameraX + 20, item.y + 36 + hover);
+                    ctx.lineTo(item.x - gameState.cameraX + 30, item.y + 20 + hover);
+                    ctx.lineTo(item.x - gameState.cameraX + 22, item.y + 20 + hover);
+                    ctx.closePath();
+                    ctx.fill();
+                }
                 else {
                     ctx.fillStyle = '#eab308';
                     ctx.strokeStyle = '#fef08a';
@@ -1705,6 +1926,18 @@
                 ctx.beginPath();
                 ctx.arc(tx, ty, radius, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
+            }
+
+            if (lightningFlashFrames > 0) {
+                lightningFlashFrames--;
+                ctx.save();
+                if (Math.floor(lightningFlashFrames / 3) % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                } else {
+                    ctx.fillStyle = 'rgba(255, 240, 150, 0.9)';
+                }
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.restore();
             }
         }
@@ -1817,7 +2050,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "画面をタップして開始してください！<br>冒険の音楽が有効になります。",
                 unlockBtn: "タップしてスタート",
-                startDesc: "障害物を飛び越えて目的地を目指しましょう！<br><br>マップのあちこちにある謎のレンガ(?)を頭突きして、隠された報酬を見つけ出してください。<br>黄金の秘薬は体力を回復し、青色の秘薬は水鉄砲を授けます。<br>怪しいピンクの秘密の箱は、奇妙な時空の歪みを引き起こすので注意してください！",
+                startDesc: "障害物を飛び越えて目的地を目指しましょう！<br><br>マップのあちこちにある謎のレンガ(?)を頭突きして、隠された報酬を見つけ出してください。<br>黄金の秘薬は体力を回復し、青い秘薬は水鉄砲を与えます。<br>謎のピンク秘密箱は時空の歪みを引き起こすのでご注意ください！",
                 startBtn: "冒険開始！",
                 demoDesc: "15秒間待つとオートデモが開始されます。",
                 demoBanner: "★ オートデモモード - キーを押してプレイ ★",
@@ -1829,8 +2062,8 @@
                 finalScore: "現在のスコア: ",
                 nextBtn: "次のステージへ",
                 endingTitle: "おめでとうございます！",
-                endingDesc: "あなたは50個のステージをすべて突破し、お米の世界を救いました！<br>プレイしていただき誠にありがとうございました！",
-                endRestartBtn: "最初からやり直す",
+                endingDesc: "あなたは50個のステージをすべて突破し、米の世界を救いました！<br>プレイしていただき、誠にありがとうございました！",
+                endRestartBtn: "最初からやり直しす",
                 feverBanner: "★ 水鉄砲モード有効化 ★",
                 bossHpTitle: "ボス：巨大昆虫マシン",
                 controlsGuide: "[左右移動]: ◀ ▶ / A, D | [ジャンプ]: Space / ▲ | [水鉄砲発射]: Shift (獲得時のみ)",
@@ -2071,9 +2304,13 @@
 
             sixSevenAudio.pause();
             sixSevenAudio.currentTime = 0;
+            stopSixSevenVibration();
             
-            if (gameState.isWaterGun) {
+            currentSixSevenSrc = '';
+            if (gameState.isWaterGun || gameState.isGolden) {
+                updateSixSevenBGM();
                 sixSevenAudio.play().catch(e => {});
+                startSixSevenVibration();
             } else {
                 startBGM();
             }
@@ -2088,6 +2325,7 @@
             gameState.isActive = false;
             stopBGM();
             sixSevenAudio.pause();
+            stopSixSevenVibration();
             if (timerInterval) clearInterval(timerInterval);
 
             gameoverAudio.currentTime = 0;
@@ -2124,6 +2362,7 @@
             gameState.isActive = false;
             stopBGM();
             sixSevenAudio.pause();
+            stopSixSevenVibration();
             if (timerInterval) clearInterval(timerInterval);
             
             playSynthSound('clear');
@@ -2145,6 +2384,7 @@
             gameState.isActive = false;
             stopBGM();
             sixSevenAudio.pause();
+            stopSixSevenVibration();
             if (timerInterval) clearInterval(timerInterval);
 
             document.getElementById('ending-screen').classList.remove('hidden');
@@ -2208,6 +2448,10 @@
 
             helloAudio.currentTime = 0;
             helloAudio.play().catch(e => {});
+            
+            if (navigator.vibrate) {
+                navigator.vibrate(250);
+            }
 
             playTitleMusic();
             resetDemoTimer();
@@ -2254,10 +2498,12 @@
                 stopTitleMusic();
                 stopEndingMusic();
                 sixSevenAudio.pause();
+                stopSixSevenVibration();
             } else {
                 if (gameState.isActive) {
                     if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare) {
                         sixSevenAudio.play().catch(e => {});
+                        startSixSevenVibration();
                     } else {
                         startBGM();
                     }
