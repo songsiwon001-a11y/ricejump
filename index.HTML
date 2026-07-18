@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>rice jump!</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const monsterKillAudio = new Audio('몬스터 죽는 소리.mp3');
+    monsterKillAudio.volume = 0.4;
+    const kwangAudio = new Audio('쾅!.mp3');
+    kwangAudio.volume = 0.8;
+
+    const drumFiles = [
+        'rice jump drum.mp3',
+        'rice jump drum2.mp3',
+        'rice jump drum3.mp3',
+        'rice jump drum4.mp3',
+        'rice jump drum5.mp3'
+    ];
+
+    let player = { x: 50, y: 300, w: 30, h: 30, vy: 0, grounded: false };
+    let monsters = [];
+    let bullets = [];
+    let boss = null;
+    let score = 0;
+    let stage = 1;
+
+    function playRandomDrum() {
+        const randomIndex = Math.floor(Math.random() * drumFiles.length);
+        const drum = new Audio(drumFiles[randomIndex]);
+        drum.volume = 0.3;
+        drum.play();
+        drum.onended = playRandomDrum;
+    }
+
+    function getRequiredHits(stage) {
+        if (stage === 5) return 1;
+        if (stage === 10) return 2;
+        if (stage === 15) return 4;
+        if (stage >= 20 && stage % 5 === 0) return 8;
+        return 0;
+    }
+
+    function update() {
+        player.vy += 0.8;
+        player.y += player.vy;
+        if (player.y + player.h > canvas.height - 50) {
+            player.y = canvas.height - 50 - player.h;
+            player.vy = 0;
+            player.grounded = true;
+        }
+
+        bullets.forEach((b, bIdx) => {
+            b.x += b.vx;
+            
+            if (boss && b.x < boss.x + boss.w && b.x + 10 > boss.x) {
+                boss.hitCount++;
+                bullets.splice(bIdx, 1);
+                if (boss.hitCount >= getRequiredHits(stage)) {
+                    kwangAudio.play();
+                    boss = null;
+                    score += 100;
+                    stage++;
+                }
+            }
+        });
+
+        if (!boss) {
+            monsters.forEach((m, mIdx) => {
+                if (player.x < m.x + m.w && player.x + player.w > m.x &&
+                    player.y + player.h > m.y && player.y < m.y + m.h) {
+                    
+                    if (player.vy > 0) {
+                        monsters.splice(mIdx, 1);
+                        monsterKillAudio.play();
+                        player.vy = -10;
+                    } else {
+                        location.reload();
+                    }
+                }
+            });
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = 'red';
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+
+        if (boss) {
+            ctx.fillStyle = 'purple';
+            ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
+        }
+
+        monsters.forEach(m => { ctx.fillStyle = 'green'; ctx.fillRect(m.x, m.y, m.w, m.h); });
+        bullets.forEach(b => { ctx.fillStyle = 'black'; ctx.fillRect(b.x, b.y, 10, 5); });
+
+        requestAnimationFrame(() => {
+            update();
+            draw();
+        });
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && player.grounded) {
+            player.vy = -15;
+            player.grounded = false;
+        }
+        if (e.code === 'KeyZ') {
+            bullets.push({ x: player.x + player.w, y: player.y + 10, vx: 10 });
+        }
+    });
+
+    function spawnBoss() {
+        if (getRequiredHits(stage) > 0) {
+            boss = { x: canvas.width - 100, y: 200, w: 50, h: 50, hitCount: 0 };
+        }
+    }
+
+    playRandomDrum();
+    draw();
+    spawnBoss();
+</script>
+</body>
+</html>
