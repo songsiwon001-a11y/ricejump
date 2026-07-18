@@ -74,12 +74,19 @@
                     boss = null;
                     score += 100;
                     stage++;
+                    spawnBoss();
                 }
             }
         });
 
         if (!boss) {
+            if (Math.random() < 0.02) {
+                monsters.push({ x: canvas.width, y: canvas.height - 80, w: 30, h: 30 });
+            }
             monsters.forEach((m, mIdx) => {
+                m.x -= 5;
+                if (m.x + m.w < 0) monsters.splice(mIdx, 1);
+                
                 if (player.x < m.x + m.w && player.x + player.w > m.x &&
                     player.y + player.h > m.y && player.y < m.y + m.h) {
                     
@@ -134,6 +141,13 @@
     playRandomDrum();
     draw();
     spawnBoss();
+
+    const langSelect = document.getElementById('langSelect');
+    if (langSelect) {
+        langSelect.addEventListener('change', () => {
+            new Audio('lenguege_change.wav').play();
+        });
+    }
 </script>
 </body>
 </html>
