@@ -100,7 +100,8 @@
                 장애물을 뛰어넘고 목적지까지 도달하세요!<br><br>
                 맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 보상을 찾아내세요.<br>
                 황금 비약은 생명력을 회복시키고, 파란색 비약은 시원한 물줄기 총을 선사합니다.<br>
-                수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!
+                수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!<br>
+                카메라 아이템을 먹으면 1분간 플레이가 자동으로 녹화됩니다.
             </p>
             <div class="flex flex-col items-center gap-2">
                 <button id="start-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer">
@@ -179,6 +180,7 @@
     <script>
         const helloAudio = new Audio('안녕하세요.mp3');
         const sixSevenAudio = new Audio('six seven!.mp3');
+        const cameraAudio = new Audio('screen_record_camera.mp3');
         sixSevenAudio.loop = true;
 
         const deathAudio = new Audio('라이스점프 죽는소리.mp3');
@@ -237,7 +239,7 @@
             routeAudioElements();
         }
 
-        let helloSource, sixSevenSource, deathSource, gameoverSource;
+        let helloSource, sixSevenSource, deathSource, gameoverSource, cameraSource;
         const drumSources = [];
 
         function routeAudioElements() {
@@ -258,6 +260,10 @@
                 if (!gameoverSource) {
                     gameoverSource = audioCtx.createMediaElementSource(gameoverAudio);
                     gameoverSource.connect(masterGain);
+                }
+                if (!cameraSource) {
+                    cameraSource = audioCtx.createMediaElementSource(cameraAudio);
+                    cameraSource.connect(masterGain);
                 }
                 if (drumSources.length === 0) {
                     drumGain = audioCtx.createGain();
@@ -494,7 +500,7 @@
                 oscBeep.type = 'sine';
                 oscBeep.frequency.setValueAtTime(freq, now + 0.05 + idx * 0.06);
                 gainBeep.gain.setValueAtTime(0.15, now + 0.05 + idx * 0.06);
-                gainBeep.exponentialRampToValueAtTime(0.001, now + 0.05 + idx * 0.06 + 0.05);
+                gainBeep.gain.exponentialRampToValueAtTime(0.001, now + 0.05 + idx * 0.06 + 0.05);
                 oscBeep.connect(gainBeep);
                 gainBeep.connect(masterGain);
                 oscBeep.start(now + 0.05 + idx * 0.06);
@@ -1032,6 +1038,10 @@
             spawnExplosion(brick.x + brick.width / 2, brick.y, '#fbbf24', 10);
         }
 
+        function getBombChance(stage) {
+            return Math.min(0.25, Math.max(0, stage - 2) * 0.006);
+        }
+
         function buildLevel() {
             platforms = [];
             bricks = [];
@@ -1111,6 +1121,7 @@
                 bricks.push({ x: 400, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 455, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 510, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
+                bricks.push({ x: 2800, y: 340, width: 50, height: 50, itemType: 'camera', isHit: false, bumpOffset: 0 });
 
                 goal = { x: 5800, y: 350, width: 70, height: 200 };
             } 
@@ -1151,7 +1162,9 @@
                         for (let bIdx = 0; bIdx < numBricks; bIdx++) {
                             let randItem = null;
                             let randVal = Math.random();
-                            if (randVal < 0.05) randItem = 'golden';
+                            if (Math.random() < getBombChance(gameState.stage)) randItem = 'bomb';
+                            else if (Math.random() < 0.05) randItem = 'camera';
+                            else if (randVal < 0.05) randItem = 'golden';
                             else if (randVal < 0.12) randItem = 'blue';
                             else if (randVal < 0.18) randItem = 'fake';
                             else if (randVal < 0.65) randItem = 'coin';
@@ -1671,6 +1684,31 @@
                             progress: 0
                         };
                     } 
+                    else if (item.type === 'camera') {
+                        if (!gameState.isDemo) {
+                            startRecording(false);
+                            cameraAudio.currentTime = 0;
+                            cameraAudio.play().catch(e => {});
+                            gameState.score += 100;
+                        }
+                    }
+                    else if (item.type === 'bomb') {
+                        if (gameState.isDemo) {
+                            spawnExplosion(item.x, item.y, '#ef4444', 12);
+                        } else {
+                            playSynthSound('six_seven');
+                            spawnExplosion(player.x + player.width / 2, player.y + player.height / 2, '#ef4444', 40);
+                            gameState.lives = 0;
+                            document.getElementById('lives-display').innerText = gameState.lives;
+                            gameState.isActive = false;
+                            stopBGM();
+                            updateSixSevenBGM();
+                            sixSevenAudio.currentTime = 0;
+                            sixSevenAudio.play().catch(e => {});
+                            startSixSevenVibration();
+                            setTimeout(triggerGameOver, 1500);
+                        }
+                    }
                     else if (item.type === 'lightning') {
                         playLightningSynth();
                         tryPhoneFlash();
@@ -1881,6 +1919,44 @@
                     ctx.textBaseline = 'middle';
                     ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
                 } 
+                else if (item.type === 'camera') {
+                    const cx = item.x - gameState.cameraX;
+                    const cy = item.y + hover;
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#93c5fd';
+                    ctx.fillStyle = '#e5e7eb';
+                    ctx.beginPath();
+                    ctx.roundRect(cx, cy + 8, 45, 30, 6);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.fillRect(cx + 6, cy + 2, 14, 8);
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath();
+                    ctx.arc(cx + 22, cy + 24, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.beginPath();
+                    ctx.arc(cx + 22, cy + 24, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(cx + 38, cy + 14, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                else if (item.type === 'bomb') {
+                    ctx.fillStyle = '#dc2626';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(item.x - gameState.cameraX + 22, item.y + 22 + hover, 22, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
+                }
                 else if (item.type === 'lightning') {
                     ctx.fillStyle = '#ef4444';
                     ctx.shadowBlur = 20;
@@ -2018,7 +2094,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "시작하려면 화면 아무 곳이나 탭하세요!<br>모험 음악이 활성화됩니다.",
                 unlockBtn: "탭해서 시작",
-                startDesc: "장애물을 뛰어넘고 목적지까지 도달하세요!<br><br>맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 보상을 찾아내세요.<br>황금 비약은 생명력을 회복시키고, 파란색 비약은 시원한 물줄기 총을 선사합니다.<br>수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!",
+                startDesc: "장애물을 뛰어넘고 목적지까지 도달하세요!<br><br>맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 보상을 찾아내세요.<br>황금 비약은 생명력을 회복시키고, 파란색 비약은 시원한 물줄기 총을 선사합니다.<br>수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!<br>카메라 아이템을 먹으면 1분간 플레이가 자동으로 녹화됩니다.",
                 startBtn: "모험 시작!",
                 demoDesc: "15초간 대기하면 오토 데모가 시작됩니다.",
                 demoBanner: "★ 오토 데모 모드 - 조작시 시작 화면으로 ★",
@@ -2043,7 +2119,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "Tap anywhere to unlock the audio and music engine!",
                 unlockBtn: "TAP TO START",
-                startDesc: "Jump over platforms and make your way to the goal!<br><br>Hit the Mystery Bricks (?) to unlock powerups.<br>Golden 67 restores 2 Hearts immediately.<br>Blue 67 grants you the Water Gun! Beware of fake Pink 67!",
+                startDesc: "Jump over platforms and make your way to the goal!<br><br>Hit the Mystery Bricks (?) to unlock powerups.<br>Golden 67 restores 2 Hearts immediately.<br>Blue 67 grants you the Water Gun! Beware of fake Pink 67!<br>Grab the Camera to auto-record one minute of gameplay!",
                 startBtn: "START ADVENTURE",
                 demoDesc: "AUTO DEMO RUNS AFTER 15 SECONDS",
                 demoBanner: "★ AUTO DEMO MODE - TAP ANY KEY TO PLAY ★",
@@ -2068,7 +2144,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "点击屏幕任意位置开始！<br>将启用冒险音乐。",
                 unlockBtn: "点击开始",
-                startDesc: "跳过障碍物到达目的地！<br><br>用头撞击地图各处的神秘砖块(?)以寻找隐藏奖励。<br>金色秘药恢复生命值，蓝色秘药提供水枪。<br>注意：奇怪的粉色秘密箱子会引发时空扭曲！",
+                startDesc: "跳过障碍物到达目的地！<br><br>用头撞击地图各处的神秘砖块(?)以寻找隐藏奖励。<br>金色秘药恢复生命值，蓝色秘药提供水枪。<br>注意：奇怪的粉色秘密箱子会引发时空扭曲！<br>吃到相机道具后将自动录制一分钟游戏画面！",
                 startBtn: "开始冒险！",
                 demoDesc: "等待15秒将自动开始演示。",
                 demoBanner: "★ 自动演示模式 - 按任意键开始游戏 ★",
@@ -2093,7 +2169,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "画面をタップして開始してください！<br>冒険の音楽が有効になります。",
                 unlockBtn: "タップしてスタート",
-                startDesc: "障害物を飛び越えて目的地を目指しましょう！<br><br>マップのあちこちにある謎のレンガ(?)を頭突きして、隠された報酬を見つけ出してください。<br>黄金の秘薬は体力を回復し、青い秘薬は水鉄砲を与えます。<br>謎のピンク秘密箱は時空の歪みを引き起こすのでご注意ください！",
+                startDesc: "障害物を飛び越えて目的地を目指しましょう！<br><br>マップのあちこちにある謎のレンガ(?)を頭突きして、隠された報酬を見つけ出してください。<br>黄金の秘薬は体力を回復し、青い秘薬は水鉄砲を与えます。<br>謎のピンク秘密箱は時空の歪みを引き起こすのでご注意ください！<br>カメラアイテムを取ると、1分間のプレイが自動で録画されます！",
                 startBtn: "冒険開始！",
                 demoDesc: "15秒間待つとオートデモが開始されます。",
                 demoBanner: "★ オートデモモード - キーを押してプレイ ★",
@@ -2118,7 +2194,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "แตะที่ใดก็ได้บนหน้าจอเพื่อเริ่ม!<br>เพลงประกอบจะเปิดใช้งาน",
                 unlockBtn: "แตะเพื่อเริ่ม",
-                startDesc: "กระโดดข้ามสิ่งกีดขวางเพื่อไปให้ถึงจุดหมาย!<br><br>โหม่งบล็อกปริศนา (?) เพื่อค้นหารับรางวัลที่ซ่อนอยู่<br>ยาอายุวัฒนะสีทองช่วยฟื้นฟูพลังชีวิต ยาสีน้ำเงินจะให้ปืนฉีดน้ำ<br>ระวังกล่องลับสีชมพูที่อาจทำให้มิติเวลาบิดเบี้ยว!",
+                startDesc: "กระโดดข้ามสิ่งกีดขวางเพื่อไปให้ถึงจุดหมาย!<br><br>โหม่งบล็อกปริศนา (?) เพื่อค้นหารับรางวัลที่ซ่อนอยู่<br>ยาอายุวัฒนะสีทองช่วยฟื้นฟูพลังชีวิต ยาสีน้ำเงินจะให้ปืนฉีดน้ำ<br>ระวังกล่องลับสีชมพูที่อาจทำให้มิติเวลาบิดเบี้ยว!<br>เก็บไอเทมกล้องเพื่อบันทึกการเล่นอัตโนมัติ 1 นาที!",
                 startBtn: "เริ่มการผจญภัย!",
                 demoDesc: "รอ 15 วินาทีเพื่อเริ่มโหมดสาธิตอัตโนมัติ",
                 demoBanner: "★ โหมดสาธิตอัตโนมัติ - กดปุ่มใดก็ได้เพื่อเล่น ★",
@@ -2143,7 +2219,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "Нажмите в любом месте экрана для начала!<br>Музыка приключений будет включена.",
                 unlockBtn: "НАЧАТЬ",
-                startDesc: "Перепрыгивайте препятствия и доберитесь до цели!<br><br>Ударьте головой по таинственным кирпичам (?), чтобы найти скрытые награды.<br>Золотой эликсир восстанавливает жизни, а синий дарует водяной пистолет.<br>Остерегайтесь розового секретного ящика — он искажает пространство и время!",
+                startDesc: "Перепрыгивайте препятствия и доберитесь до цели!<br><br>Ударьте головой по таинственным кирпичам (?), чтобы найти скрытые награды.<br>Золотой эликсир восстанавливает жизни, а синий дарует водяной пистолет.<br>Остерегайтесь розового секретного ящика — он искажает пространство и время!<br>Подберите камеру — игра автоматически запишется в течение минуты!",
                 startBtn: "Начать приключение!",
                 demoDesc: "Подождите 15 секунд для запуска автодемо.",
                 demoBanner: "★ РЕЖИМ ДЕМО — НАЖМИТЕ КНОПКУ ДЛЯ ИГРЫ ★",
@@ -2168,7 +2244,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "Toque em qualquer lugar para começar!<br>A música de aventura será ativada.",
                 unlockBtn: "TOCAR PARA INICIAR",
-                startDesc: "Pule sobre os obstáculos e chegue ao seu destino!<br><br>Cabeceie os tijolos misteriosos (?) para encontrar recompensas escondidas.<br>O elixir dourado recupera vida e o elixir azul concede uma pistola de água.<br>Cuidado com a caixa rosa misteriosa, pois ela causa distorções no espaço-tempo!",
+                startDesc: "Pule sobre os obstáculos e chegue ao seu destino!<br><br>Cabeceie os tijolos misteriosos (?) para encontrar recompensas escondidas.<br>O elixir dourado recupera vida e o elixir azul concede uma pistola de água.<br>Cuidado com a caixa rosa misteriosa, pois ela causa distorções no espaço-tempo!<br>Pegue a câmera para gravar automaticamente um minuto de jogo!",
                 startBtn: "Iniciar Aventura!",
                 demoDesc: "Aguarde 15 segundos para iniciar a demonstração automática.",
                 demoBanner: "★ MODO DEMO — TOQUE EM QUALQUER TECLA PARA JOGAR ★",
@@ -2193,7 +2269,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "Touchez n'importe où pour démarrer!<br>La musique d'aventure sera activée.",
                 unlockBtn: "TOUCHER POUR COMMENCER",
-                startDesc: "Sautez par-dessus les obstacles et atteignez votre destination!<br><br>Frappez de la tête les briques mystérieuses (?) pour découvrir des récompenses cachées.<br>L'élixir doré restaure de la vie, l'élixir bleu vous offre un pistolet à eau.<br>Attention à l'étrange boîte rose, elle provoque des distorsions spatio-temporelles !",
+                startDesc: "Sautez par-dessus les obstacles et atteignez votre destination!<br><br>Frappez de la tête les briques mystérieuses (?) pour découvrir des récompenses cachées.<br>L'élixir doré restaure de la vie, l'élixir bleu vous offre un pistolet à eau.<br>Attention à l'étrange boîte rose, elle provoque des distorsions spatio-temporelles !<br>Prenez la caméra pour enregistrer automatiquement une minute de jeu !",
                 startBtn: "Commencer l'Aventure !",
                 demoDesc: "Attendez 15 secondes pour lancer la démo automatique.",
                 demoBanner: "★ MODE DÉMO — APPUYEZ SUR UNE TOUCHE POUR JOUER ★",
@@ -2218,7 +2294,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "¡Toca cualquier parte de la pantalla para comenzar!<br>La música de aventura se activará.",
                 unlockBtn: "TOCAR PARA EMPEZAR",
-                startDesc: "¡Salte los obstáculos y llegue a su destino!<br><br>Golpee con la cabeza los bloques misteriosos (?) para encontrar recompensas ocultas.<br>El elixir dorado restaura vidas, el elixir azul otorga una pistola de agua.<br>¡Cuidado con la caja rosa misteriosa, causa distorciones espacio-temporales!",
+                startDesc: "¡Salte los obstáculos y llegue a su destino!<br><br>Golpee con la cabeza los bloques misteriosos (?) para encontrar recompensas ocultas.<br>El elixir dorado restaura vidas, el elixir azul otorga una pistola de agua.<br>¡Cuidado con la caja rosa misteriosa, causa distorciones espacio-temporales!<br>¡Recoge la cámara para grabar automáticamente un minuto de partida!",
                 startBtn: "¡Iniciar Aventura!",
                 demoDesc: "Espere 15 segundos para iniciar la demostración automática.",
                 demoBanner: "★ MODO DEMO — PULSA CUALQUIER TECLA PARA JUGAR ★",
@@ -2243,7 +2319,7 @@
                 unlockTitle: "RICE JUMP!",
                 unlockDesc: "Tippe irgendwo auf den Bildschirm, um zu starten!<br>Abenteuermusik wird aktiviert.",
                 unlockBtn: "ZUM STARTEN TIPPEN",
-                startDesc: "Springe über Hindernisse und erreiche das Ziel!<br><br>Stoße mit dem Kopf gegen die Geheimnisboxen (?), um Belohnungen zu finden.<br>Das goldene Elixier stellt Leben wieder her, das blaue schenkt dir eine Wasserpistole.<br>Achtung vor der rosa Kiste — sie verursacht Raum-Zeit-Verzerrungen!",
+                startDesc: "Springe über Hindernisse und erreiche das Ziel!<br><br>Stoße mit dem Kopf gegen die Geheimnisboxen (?), um Belohnungen zu finden.<br>Das goldene Elixier stellt Leben wieder her, das blaue schenkt dir eine Wasserpistole.<br>Achtung vor der rosa Kiste — sie verursacht Raum-Zeit-Verzerrungen!<br>Schnapp dir die Kamera, um automatisch eine Minute Spielgeschehen aufzuzeichnen!",
                 startBtn: "Abenteuer starten!",
                 demoDesc: "Warte 15 Sekunden, um die automatische Demo zu starten.",
                 demoBanner: "★ AUTO-DEMO-MODUS — TASTE DRÜCKEN ZUM SPIELEN ★",
@@ -2563,95 +2639,108 @@
         let recordedChunks = [];
         let recordTimeout = null;
         let recordingMicStream = null;
+        let recordingDestination = null;
 
         const recDotBtn = document.getElementById('rec-dot');
 
-        async function toggleRecording() {
+        function pickRecordingOptions() {
+            const candidates = [
+                'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+                'video/mp4',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp8,opus',
+                'video/webm'
+            ];
+            for (const type of candidates) {
+                if (window.MediaRecorder && MediaRecorder.isTypeSupported(type)) return { mimeType: type };
+            }
+            return {};
+        }
+
+        async function startRecording(withMic) {
+            if (isRecording) return;
+            isRecording = true;
             initAudio();
             routeAudioElements();
+            recordedChunks = [];
 
-            if (!isRecording) {
-                playRecordStartFeedback();
-                recordedChunks = [];
-                
-                const canvasStream = canvas.captureStream(30);
-                const audioDestination = audioCtx.createMediaStreamDestination();
-                masterGain.connect(audioDestination);
+            const canvasStream = canvas.captureStream(30);
+            recordingDestination = audioCtx.createMediaStreamDestination();
+            masterGain.connect(recordingDestination);
 
-                const combinedStream = new MediaStream();
-                canvasStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
+            const combinedStream = new MediaStream();
+            canvasStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
 
-                if (gameState.stage >= 10) {
-                    try {
-                        recordingMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        const micSource = audioCtx.createMediaStreamSource(recordingMicStream);
-                        micSource.connect(audioDestination);
-                    } catch (e) {}
-                }
-
-                audioDestination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
-
-                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'video/webm;codecs=vp8,opus' };
-                }
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'video/mp4' };
-                }
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = {};
-                }
-
+            if (withMic && gameState.stage >= 10) {
                 try {
-                    mediaRecorder = new MediaRecorder(combinedStream, options);
-                } catch (e) {
-                    mediaRecorder = new MediaRecorder(combinedStream);
+                    recordingMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const micSource = audioCtx.createMediaStreamSource(recordingMicStream);
+                    micSource.connect(recordingDestination);
+                } catch (e) {}
+            }
+
+            recordingDestination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+
+            const options = pickRecordingOptions();
+            try {
+                mediaRecorder = new MediaRecorder(combinedStream, options);
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(combinedStream);
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
                 }
+            };
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data && event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
+            mediaRecorder.onstop = () => {
+                const mime = mediaRecorder.mimeType || options.mimeType || 'video/mp4';
+                const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+                const blob = new Blob(recordedChunks, { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `RiceJump_Stage${gameState.stage}_Rec.${ext}`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
 
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `RiceJump_Stage${gameState.stage}_Rec.mp4`;
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
-                    }, 100);
+                if (recordingMicStream) {
+                    recordingMicStream.getTracks().forEach(track => track.stop());
+                    recordingMicStream = null;
+                }
+                try { masterGain.disconnect(recordingDestination); } catch (e) {}
+                recordingDestination = null;
 
-                    if (recordingMicStream) {
-                        recordingMicStream.getTracks().forEach(track => track.stop());
-                        recordingMicStream = null;
-                    }
+                recDotBtn.classList.remove('bg-red-500', 'animate-pulse', 'shadow-[0_0_10px_#ef4444]');
+                recDotBtn.classList.add('bg-gray-600');
+                isRecording = false;
+            };
 
-                    recDotBtn.classList.remove('bg-red-500', 'animate-pulse', 'shadow-[0_0_10px_#ef4444]');
-                    recDotBtn.classList.add('bg-gray-600');
-                    isRecording = false;
-                };
+            mediaRecorder.start();
 
-                mediaRecorder.start();
-                isRecording = true;
+            recDotBtn.classList.remove('bg-gray-600');
+            recDotBtn.classList.add('bg-red-500', 'animate-pulse', 'shadow-[0_0_10px_#ef4444]');
 
-                recDotBtn.classList.remove('bg-gray-600');
-                recDotBtn.classList.add('bg-red-500', 'animate-pulse', 'shadow-[0_0_10px_#ef4444]');
+            recordTimeout = setTimeout(() => {
+                if (isRecording) {
+                    stopRecording();
+                }
+            }, 60000);
+        }
 
-                recordTimeout = setTimeout(() => {
-                    if (isRecording) {
-                        stopRecording();
-                    }
-                }, 60000);
-
-            } else {
+        function toggleRecording() {
+            if (isRecording) {
                 stopRecording();
+            } else {
+                initAudio();
+                playRecordStartFeedback();
+                startRecording(true);
             }
         }
 
