@@ -27,6 +27,232 @@
             transform: translateY(4px);
             box-shadow: 0px 2px 0px #1f2937;
         }
+
+        [hidden] { display: none !important; }
+        @media (max-width: 767px), (max-height: 500px) {
+            #start-screen {
+                justify-content: flex-start;
+                padding: 10px 12px;
+            }
+            #start-screen h2 {
+                order: 1;
+                font-size: 18px;
+                margin-bottom: 8px;
+            }
+            #start-screen > div {
+                order: 2;
+                flex-shrink: 0;
+            }
+            #start-screen #start-btn {
+                padding: 9px 22px;
+                font-size: 11px;
+            }
+            #start-screen #demo-desc {
+                font-size: 7px;
+                margin-top: 2px;
+            }
+            #start-screen #start-desc {
+                order: 3;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                font-size: 7px;
+                line-height: 1.6;
+                margin: 8px 0 0;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        .rp-open-btn {
+            margin-top: 12px;
+            padding: 8px 18px;
+            font-family: inherit;
+            font-size: 9px;
+            color: #6ee7b7;
+            background: #0b1f19;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            cursor: pointer;
+            letter-spacing: 0.08em;
+        }
+        .rp-open-btn:hover { background: #12372c; }
+        .rp-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.8);
+        }
+        .rp-modal {
+            position: relative;
+            width: 100%;
+            max-width: 560px;
+            height: min(86vh, 640px);
+            display: flex;
+            flex-direction: column;
+            background: #0f172a;
+            border: 3px solid #10b981;
+            border-radius: 14px;
+            padding: 18px 16px 14px;
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.25);
+        }
+        .rp-close {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            color: #9ca3af;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+        }
+        .rp-close:hover { color: #fff; }
+        .rp-view {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        .rp-title {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #facc15;
+            text-align: center;
+            margin: 14px 18px 8px;
+            word-break: keep-all;
+        }
+        .rp-sub {
+            font-size: 8px;
+            line-height: 1.8;
+            color: #9ca3af;
+            text-align: center;
+            margin: 0 6px 12px;
+            word-break: keep-all;
+        }
+        .rp-log {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+            background: #020617;
+            border: 2px solid #1f2937;
+            border-radius: 10px;
+        }
+        .rp-msg {
+            max-width: 86%;
+            padding: 8px 10px;
+            font-size: 9px;
+            line-height: 1.7;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .rp-msg.bot {
+            align-self: flex-start;
+            background: #1e293b;
+            color: #e5e7eb;
+        }
+        .rp-msg.user {
+            align-self: flex-end;
+            background: #059669;
+            color: #fff;
+        }
+        .rp-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .rp-input {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-family: inherit;
+            font-size: 16px;
+            color: #fff;
+            background: #020617;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 10px 12px;
+            outline: none;
+        }
+        .rp-input:focus { border-color: #10b981; }
+        .rp-send {
+            flex: 0 0 auto;
+            font-family: inherit;
+            font-size: 10px;
+            color: #000;
+            font-weight: 800;
+            background: #10b981;
+            border: none;
+            border-radius: 8px;
+            padding: 0 14px;
+            cursor: pointer;
+        }
+        .rp-send:hover { background: #34d399; }
+        .rp-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin: 0 24px 10px 0;
+        }
+        .rp-small-btn {
+            font-family: inherit;
+            font-size: 8px;
+            color: #e5e7eb;
+            background: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 8px 10px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .rp-small-btn:hover { background: #374151; }
+        .rp-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            align-content: start;
+            padding: 4px 2px;
+        }
+        .rp-item {
+            font-family: inherit;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #fff;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 10px;
+            padding: 14px 8px;
+            cursor: pointer;
+            word-break: keep-all;
+        }
+        .rp-item:hover { border-color: #10b981; }
+        .rp-item.playing { background: #065f46; border-color: #34d399; }
+        .rp-frame {
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            background: #fff;
+            border: 2px solid #374151;
+            border-radius: 8px;
+        }
+        .rp-note {
+            font-size: 7px;
+            line-height: 1.7;
+            color: #9ca3af;
+            margin-top: 8px;
+            text-align: center;
+        }
     </style>
 <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-auto{pointer-events:auto}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.left-1\/2{left:50%}.left-4{left:1rem}.top-4{top:1rem}.z-10{z-index:10}.z-20{z-index:20}.z-30{z-index:30}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.mr-2{margin-right:0.5rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-6{margin-top:1.5rem}.block{display:block}.flex{display:flex}.hidden{display:none}.aspect-\[16\/9\]{aspect-ratio:16/9}.h-14{height:3.5rem}.h-2\.5{height:0.625rem}.h-3\.5{height:0.875rem}.h-full{height:100%}.min-h-screen{min-height:100vh}.w-14{width:3.5rem}.w-2\.5{width:0.625rem}.w-2\/3{width:66.666667%}.w-full{width:100%}.max-w-4xl{max-width:56rem}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes bounce{0%, 100%{transform:translateY(-25%);animation-timing-function:cubic-bezier(0.8,0,1,1)}50%{transform:none;animation-timing-function:cubic-bezier(0,0,0.2,1)}}.animate-bounce{animation:bounce 1s infinite}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.cursor-pointer{cursor:pointer}.touch-none{touch-action:none}.select-none{-webkit-user-select:none;user-select:none}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-start{justify-content:flex-start}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-4{gap:1rem}.space-x-3 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(0.75rem * var(--tw-space-x-reverse));margin-left:calc(0.75rem * calc(1 - var(--tw-space-x-reverse)))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.rounded{border-radius:0.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-4{border-width:4px}.border-cyan-300{--tw-border-opacity:1;border-color:rgb(103 232 249 / var(--tw-border-opacity, 1))}.border-gray-600{--tw-border-opacity:1;border-color:rgb(75 85 99 / var(--tw-border-opacity, 1))}.border-gray-700{--tw-border-opacity:1;border-color:rgb(55 65 81 / var(--tw-border-opacity, 1))}.border-red-600{--tw-border-opacity:1;border-color:rgb(220 38 38 / var(--tw-border-opacity, 1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85 / var(--tw-border-opacity, 1))}.border-white{--tw-border-opacity:1;border-color:rgb(255 255 255 / var(--tw-border-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-black\/70{background-color:rgb(0 0 0 / 0.7)}.bg-black\/85{background-color:rgb(0 0 0 / 0.85)}.bg-black\/90{background-color:rgb(0 0 0 / 0.9)}.bg-black\/95{background-color:rgb(0 0 0 / 0.95)}.bg-cyan-500{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-cyan-600{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129 / var(--tw-bg-opacity, 1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-gray-600{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity, 1))}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity, 1))}.bg-gray-900{--tw-bg-opacity:1;background-color:rgb(17 24 39 / var(--tw-bg-opacity, 1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity, 1))}.bg-red-600\/90{background-color:rgb(220 38 38 / 0.9)}.bg-red-950{--tw-bg-opacity:1;background-color:rgb(69 10 10 / var(--tw-bg-opacity, 1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42 / var(--tw-bg-opacity, 1))}.bg-yellow-400{--tw-bg-opacity:1;background-color:rgb(250 204 21 / var(--tw-bg-opacity, 1))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-red-600{--tw-gradient-from:#dc2626 var(--tw-gradient-from-position);--tw-gradient-to:rgb(220 38 38 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-amber-500{--tw-gradient-to:#f59e0b var(--tw-gradient-to-position)}.p-1\.5{padding:0.375rem}.p-2{padding:0.5rem}.p-6{padding:1.5rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-4{padding-top:1rem;padding-bottom:1rem}.text-center{text-align:center}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[8px\]{font-size:8px}.text-\[9px\]{font-size:9px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.leading-relaxed{line-height:1.625}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-black{--tw-text-opacity:1;color:rgb(0 0 0 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-yellow-300{--tw-text-opacity:1;color:rgb(253 224 71 / var(--tw-text-opacity, 1))}.text-yellow-400{--tw-text-opacity:1;color:rgb(250 204 21 / var(--tw-text-opacity, 1))}.outline-none{outline:2px solid transparent;outline-offset:2px}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.duration-75{transition-duration:75ms}.hover\:bg-emerald-400:hover{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.hover\:bg-red-500:hover{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.hover\:bg-yellow-300:hover{--tw-bg-opacity:1;background-color:rgb(253 224 71 / var(--tw-bg-opacity, 1))}.focus\:border-cyan-400:focus{--tw-border-opacity:1;border-color:rgb(34 211 238 / var(--tw-border-opacity, 1))}.active\:bg-cyan-500:active{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.active\:bg-emerald-500:active{--tw-bg-opacity:1;background-color:rgb(16 185 129 / var(--tw-bg-opacity, 1))}.active\:bg-gray-700:active{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}@media (min-width: 768px){.md\:block{display:block}.md\:hidden{display:none}.md\:flex-row{flex-direction:row}.md\:text-2xl{font-size:1.5rem;line-height:2rem}.md\:text-4xl{font-size:2.25rem;line-height:2.5rem}.md\:text-5xl{font-size:3rem;line-height:1}.md\:text-\[11px\]{font-size:11px}.md\:text-\[9px\]{font-size:9px}.md\:text-base{font-size:1rem;line-height:1.5rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}}</style></head>
 <body class="flex flex-col items-center justify-start min-h-screen p-2 overflow-y-auto text-white">
@@ -175,7 +401,42 @@
 
     <footer class="w-full max-w-4xl mt-6 mb-4 text-center text-[8px] text-gray-600 tracking-wider">
         © copyright 2026 super rice jamjam studio. All rights reserved.
+        <div><button id="rice-prompt-btn" class="rp-open-btn" type="button">rice prompt</button></div>
     </footer>
+
+    <div id="rp-overlay" class="rp-overlay" hidden>
+        <div class="rp-modal">
+            <button id="rp-close" class="rp-close" type="button" aria-label="닫기">✕</button>
+
+            <div id="rp-view-chat" class="rp-view">
+                <h2 class="rp-title">rice jump!에 모든 기능 사용하기</h2>
+                <p class="rp-sub">rice prompt를 사용하면 명령어 몇 글자만으로 rice jump의 기능들을 사용할 수 있습니다.</p>
+                <div id="rp-log" class="rp-log"></div>
+                <form id="rp-form" class="rp-form" autocomplete="off">
+                    <input id="rp-input" class="rp-input" type="text" placeholder="명령어를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button class="rp-send" type="submit">보내기</button>
+                </form>
+            </div>
+
+            <div id="rp-view-list" class="rp-view" hidden>
+                <div class="rp-bar">
+                    <button class="rp-small-btn rp-back" type="button">← 돌아가기</button>
+                    <button id="rp-stop" class="rp-small-btn" type="button">■ 정지</button>
+                </div>
+                <h2 id="rp-list-title" class="rp-title" style="margin-top:4px"></h2>
+                <div id="rp-list" class="rp-list"></div>
+            </div>
+
+            <div id="rp-view-web" class="rp-view" hidden>
+                <div class="rp-bar">
+                    <button class="rp-small-btn rp-back" type="button">← 돌아가기</button>
+                    <a id="rp-newtab" class="rp-small-btn" href="about:blank" target="_blank" rel="noopener noreferrer">새 탭에서 열기 ↗</a>
+                </div>
+                <iframe id="rp-frame" class="rp-frame" title="rice prompt" referrerpolicy="no-referrer" allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+                <p class="rp-note">사이트가 보이지 않으면 '새 탭에서 열기'를 눌러주세요.</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         const helloAudio = new Audio('안녕하세요.mp3');
@@ -2518,6 +2779,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
+            if (promptOpen) return;
             handleUserAction();
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
@@ -2626,7 +2888,7 @@
                     } else {
                         startBGM();
                     }
-                } else if (!gameState.isActive && !gameState.isDemo) {
+                } else if (!gameState.isActive && !gameState.isDemo && !promptOpen) {
                     playTitleMusic();
                 }
             }
@@ -2752,6 +3014,264 @@
         }
 
         recDotBtn.addEventListener('click', toggleRecording);
+
+        let promptOpen = false;
+        let promptRestore = null;
+        let previewAudio = null;
+
+        const rpOverlay = document.getElementById('rp-overlay');
+        const rpLog = document.getElementById('rp-log');
+        const rpInput = document.getElementById('rp-input');
+        const rpFrame = document.getElementById('rp-frame');
+        const rpList = document.getElementById('rp-list');
+
+        const RP_BGM_LIST = [
+            { label: '지상', data: () => BGM_BY_WORLD[0] },
+            { label: '지하', data: () => BGM_BY_WORLD[1] },
+            { label: '물', data: () => BGM_BY_WORLD[2] },
+            { label: '눈', data: () => BGM_BY_WORLD[3] },
+            { label: '하늘', data: () => BGM_BY_WORLD[4] },
+            { label: '엔딩', data: () => BGM_ENDING }
+        ];
+
+        const RP_SFX_LIST = [
+            { label: '안녕하세요', play: () => rpPlayAudio(helloAudio) },
+            { label: 'six seven', play: () => rpPlayAudio(new Audio('six seven!.mp3')) },
+            { label: 'six seven 효과음', play: () => playSynthSound('six_seven') },
+            { label: '쾅', play: () => playDrumBeat() },
+            { label: 'jump', play: () => playSynthSound('jump') },
+            { label: 'shoot', play: () => playSynthSound('shoot') },
+            { label: '아이템 획득', play: () => playSynthSound('item_get') },
+            { label: '피격', play: () => playSynthSound('hit') },
+            { label: '클리어', play: () => playSynthSound('clear') },
+            { label: '벽돌 타격', play: () => playSynthSound('block_hit') },
+            { label: '번개', play: () => playLightningSynth() },
+            { label: '죽는 소리', play: () => rpPlayAudio(deathAudio) },
+            { label: '게임오버', play: () => rpPlayAudio(gameoverAudio) },
+            { label: '카메라', play: () => rpPlayAudio(cameraAudio) }
+        ];
+
+        function rpPlayAudio(audio) {
+            try {
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
+            } catch (e) {}
+        }
+
+        function rpShowView(name) {
+            ['chat', 'list', 'web'].forEach(v => {
+                document.getElementById('rp-view-' + v).hidden = (v !== name);
+            });
+        }
+
+        function rpAdd(role, text) {
+            const div = document.createElement('div');
+            div.className = 'rp-msg ' + role;
+            div.textContent = text;
+            rpLog.appendChild(div);
+            rpLog.scrollTop = rpLog.scrollHeight;
+        }
+
+        function stopPreview() {
+            if (toneSeqMode === 'preview') stopToneSequence();
+            if (previewAudio) {
+                try { previewAudio.pause(); } catch (e) {}
+                previewAudio = null;
+            }
+            rpList.querySelectorAll('.rp-item.playing').forEach(el => el.classList.remove('playing'));
+        }
+
+        function openPrompt() {
+            if (promptOpen) return;
+            if (gameState.isDemo) stopAutoDemo();
+            promptOpen = true;
+            initAudio();
+            routeAudioElements();
+
+            const endingVisible = !document.getElementById('ending-screen').classList.contains('hidden');
+            const titleVisible = !document.getElementById('start-screen').classList.contains('hidden');
+            promptRestore = {
+                active: gameState.isActive,
+                ending: endingVisible,
+                title: titleVisible && !gameState.isActive
+            };
+
+            if (demoTimeout) {
+                clearTimeout(demoTimeout);
+                demoTimeout = null;
+            }
+            keys.left = false;
+            keys.right = false;
+            keys.up = false;
+            keys.shoot = false;
+            gameState.isActive = false;
+            stopBGM();
+            stopTitleMusic();
+            stopEndingMusic();
+            sixSevenAudio.pause();
+            stopSixSevenVibration();
+
+            if (!rpLog.children.length) {
+                rpAdd('bot', '명령어를 입력해 보세요!\n\nstage숫자 : 원하는 스테이지로 이동 (예: stage15)\nbgm : 배경음악 듣기\nsoundefect : 효과음 듣기\n그 외 : 웹사이트 주소는 바로 열고, 검색어는 구글로 검색해요.');
+            }
+            rpShowView('chat');
+            rpOverlay.hidden = false;
+            setTimeout(() => rpInput.focus(), 50);
+        }
+
+        function closePrompt(restore = true) {
+            if (!promptOpen) return;
+            promptOpen = false;
+            stopPreview();
+            rpFrame.src = 'about:blank';
+            rpOverlay.hidden = true;
+            const r = promptRestore;
+            promptRestore = null;
+            if (!restore || !r) return;
+
+            if (r.active) {
+                gameState.isActive = true;
+                if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare) {
+                    sixSevenAudio.play().catch(() => {});
+                    startSixSevenVibration();
+                } else {
+                    startBGM();
+                }
+            } else if (r.ending) {
+                playEndingMusic();
+            } else if (r.title) {
+                playTitleMusic();
+                resetDemoTimer();
+            }
+        }
+
+        function jumpToStage(n) {
+            closePrompt(false);
+            stopTitleMusic();
+            stopEndingMusic();
+            stopBGM();
+            gameState.stage = n;
+            gameState.transitionState = { active: false, x: 0, y: 0, progress: 0 };
+            deactivateWaterGunMode();
+            deactivateGoldenMode();
+            startStage(false);
+        }
+
+        function rpOpenList(title, entries, onClick) {
+            stopPreview();
+            document.getElementById('rp-list-title').textContent = title;
+            rpList.innerHTML = '';
+            entries.forEach(entry => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rp-item';
+                btn.textContent = entry.label;
+                btn.addEventListener('click', () => onClick(entry, btn));
+                rpList.appendChild(btn);
+            });
+            rpShowView('list');
+        }
+
+        function rpOpenBgmList() {
+            rpOpenList('BGM', RP_BGM_LIST, (entry, btn) => {
+                stopPreview();
+                const data = entry.data();
+                playToneSequence('preview', data.tracks, data.drum || 0, () => true);
+                btn.classList.add('playing');
+            });
+        }
+
+        function rpOpenSfxList() {
+            rpOpenList('SOUND EFFECT', RP_SFX_LIST, (entry, btn) => {
+                initAudio();
+                entry.play();
+                btn.classList.add('playing');
+                setTimeout(() => btn.classList.remove('playing'), 300);
+            });
+        }
+
+        function rpParseUrl(text) {
+            if (/\s/.test(text)) return null;
+            try {
+                if (/^https?:\/\//i.test(text)) return new URL(text).href;
+                if (/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}(:\d+)?([\/?#]\S*)?$/i.test(text)) {
+                    return new URL('https://' + text).href;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function rpOpenWeb(url) {
+            rpFrame.src = url;
+            document.getElementById('rp-newtab').href = url;
+            rpShowView('web');
+        }
+
+        function rpHandle(raw) {
+            const text = raw.trim();
+            if (!text) return;
+            rpAdd('user', text);
+            const lower = text.toLowerCase();
+
+            const stageMatch = lower.match(/^stage\s*(\d+)$/);
+            if (stageMatch) {
+                const n = parseInt(stageMatch[1], 10);
+                if (n >= 1 && n <= 50) {
+                    rpAdd('bot', 'STAGE ' + n + '(으)로 이동합니다!');
+                    setTimeout(() => jumpToStage(n), 350);
+                } else {
+                    rpAdd('bot', '스테이지는 1부터 50까지 있어요.');
+                }
+                return;
+            }
+            if (lower === 'stage') {
+                rpAdd('bot', 'stage15처럼 스테이지 번호를 붙여서 입력해 주세요.');
+                return;
+            }
+            if (lower === 'bgm') {
+                rpAdd('bot', '배경음악 목록을 열어요.');
+                rpOpenBgmList();
+                return;
+            }
+            if (lower === 'soundefect' || lower === 'soundeffect' || lower === 'sfx') {
+                rpAdd('bot', '효과음 목록을 열어요.');
+                rpOpenSfxList();
+                return;
+            }
+
+            const url = rpParseUrl(text);
+            if (url) {
+                rpAdd('bot', url + ' 을(를) 엽니다.');
+                rpOpenWeb(url);
+                return;
+            }
+            rpAdd('bot', '"' + text + '" 을(를) 구글에서 검색합니다.');
+            rpOpenWeb('https://www.google.com/search?igu=1&q=' + encodeURIComponent(text));
+        }
+
+        document.getElementById('rice-prompt-btn').addEventListener('click', openPrompt);
+        document.getElementById('rp-close').addEventListener('click', () => closePrompt(true));
+        rpOverlay.addEventListener('click', (e) => {
+            if (e.target === rpOverlay) closePrompt(true);
+        });
+        document.getElementById('rp-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const value = rpInput.value;
+            rpInput.value = '';
+            rpHandle(value);
+        });
+        document.querySelectorAll('.rp-back').forEach(btn => {
+            btn.addEventListener('click', () => {
+                stopPreview();
+                rpFrame.src = 'about:blank';
+                rpShowView('chat');
+                setTimeout(() => rpInput.focus(), 50);
+            });
+        });
+        document.getElementById('rp-stop').addEventListener('click', stopPreview);
+        window.addEventListener('keydown', (e) => {
+            if (promptOpen && e.key === 'Escape') closePrompt(true);
+        });
     </script>
 
 </body></html>
