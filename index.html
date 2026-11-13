@@ -62,6 +62,77 @@
                 -webkit-overflow-scrolling: touch;
             }
         }
+
+        .cr-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            cursor: pointer;
+        }
+        .cr-view {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #0b1220 0%, #000 75%);
+        }
+        .cr-roll {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            padding: 0 12px;
+            text-align: center;
+            animation: cr-scroll var(--cr-dur, 30s) linear infinite;
+            will-change: transform;
+        }
+        @keyframes cr-scroll {
+            from { transform: translateY(var(--cr-start, 400px)); }
+            to { transform: translateY(var(--cr-end, -1200px)); }
+        }
+        .cr-title {
+            font-size: clamp(20px, 5vw, 38px);
+            color: #facc15;
+            text-shadow: 3px 3px 0 #000;
+            margin: 0 0 18px;
+        }
+        .cr-studio {
+            font-size: clamp(9px, 2vw, 14px);
+            color: #e5e7eb;
+            margin-bottom: 10px;
+        }
+        .cr-head {
+            font-size: clamp(9px, 2vw, 14px);
+            color: #22d3ee;
+            margin: 34px 0 14px;
+        }
+        .cr-row {
+            font-size: clamp(8px, 1.7vw, 12px);
+            line-height: 1.9;
+            color: #e5e7eb;
+        }
+        .cr-row span { color: #9ca3af; }
+        .cr-gap { height: 26px; }
+        .cr-thanks {
+            font-size: clamp(10px, 2.4vw, 16px);
+            line-height: 1.8;
+            color: #facc15;
+            margin-top: 40px;
+            word-break: keep-all;
+        }
+        .cr-hint {
+            flex: 0 0 auto;
+            padding: 8px 10px;
+            font-size: clamp(7px, 1.5vw, 10px);
+            line-height: 1.6;
+            text-align: center;
+            color: #9ca3af;
+            background: #0b0c10;
+            border-top: 2px solid #1f2937;
+        }
         .rp-open-btn {
             margin-top: 12px;
             padding: 8px 18px;
@@ -339,6 +410,35 @@
 
         <div id="demo-banner" class="absolute top-4 left-4 bg-red-600/90 text-white px-3 py-1.5 rounded-lg border border-white text-[10px] font-bold hidden z-20 animate-pulse">
             ★ AUTO DEMO MODE - TAP ANY KEY TO PLAY ★
+        </div>
+
+        <div id="credits-screen" class="cr-screen" hidden>
+            <div id="cr-view" class="cr-view">
+                <div id="cr-roll" class="cr-roll">
+                    <h2 class="cr-title">rice jump!</h2>
+                    <div class="cr-studio">super rice jamjam studio</div>
+                    <div class="cr-studio">made in korea</div>
+                    <div class="cr-gap"></div>
+                    <div class="cr-row"><span>game maker:</span> 송시원, 김하준</div>
+                    <div class="cr-row"><span>bgm:</span> 송시원</div>
+                    <div class="cr-row"><span>sound effect:</span> 송시원</div>
+                    <div class="cr-head">bgm information</div>
+                    <div class="cr-row"><span>overworld bgm:</span> srjs bgm</div>
+                    <div class="cr-row"><span>underground bgm:</span> srjs bgm</div>
+                    <div class="cr-row"><span>underwater bgm:</span> srjs bgm</div>
+                    <div class="cr-row"><span>snowstage:</span> jingle bell</div>
+                    <div class="cr-row"><span>sky:</span> srjs bgm</div>
+                    <div class="cr-row"><span>ending:</span> srjs bgm</div>
+                    <div class="cr-head">sound engines</div>
+                    <div class="cr-row">WebAudioAPI tone.js</div>
+                    <div class="cr-row">mp3 &amp; wav audio files</div>
+                    <div class="cr-gap"></div>
+                    <div class="cr-row"><span>idea by</span> 송시원</div>
+                    <div class="cr-row"><span>updater:</span> 송시원, 김하준</div>
+                    <div class="cr-thanks">이 게임에 접속해 주셔서 감사합니다</div>
+                </div>
+            </div>
+            <div class="cr-hint">그만 보려면 esc 또는 화면 아무 곳을 누르세요</div>
         </div>
 
         <div id="gameover-screen" class="absolute inset-0 bg-black/95 hidden flex flex-col items-center justify-center text-center p-6 z-20">
@@ -3239,6 +3339,11 @@
                 return;
             }
 
+            if (lower === 'cradits' || lower === 'credits') {
+                openCredits();
+                return;
+            }
+
             const url = rpParseUrl(text);
             if (url) {
                 rpAdd('bot', url + ' 을(를) 엽니다.');
@@ -3248,6 +3353,61 @@
             rpAdd('bot', '"' + text + '" 을(를) 구글에서 검색합니다.');
             rpOpenWeb('https://www.google.com/search?igu=1&q=' + encodeURIComponent(text));
         }
+
+
+        let creditsOpen = false;
+        let creditsOpenedAt = 0;
+        let creditsAudio = null;
+
+        function openCredits() {
+            stopPreview();
+            rpOverlay.hidden = true;
+            const screen = document.getElementById('credits-screen');
+            screen.hidden = false;
+            creditsOpen = true;
+            creditsOpenedAt = Date.now();
+
+            const view = document.getElementById('cr-view');
+            const roll = document.getElementById('cr-roll');
+            const viewH = view.clientHeight;
+            const rollH = roll.scrollHeight;
+            const speed = Math.max(28, viewH / 11);
+            roll.style.setProperty('--cr-start', viewH + 'px');
+            roll.style.setProperty('--cr-end', (-rollH) + 'px');
+            roll.style.setProperty('--cr-dur', ((viewH + rollH) / speed) + 's');
+            roll.style.animation = 'none';
+            void roll.offsetWidth;
+            roll.style.animation = '';
+
+            if (!creditsAudio) {
+                creditsAudio = new Audio('cradits_bgm.mp3');
+                creditsAudio.loop = true;
+            }
+            creditsAudio.currentTime = 0;
+            creditsAudio.play().catch(() => {});
+        }
+
+        function closeCredits() {
+            if (!creditsOpen) return;
+            creditsOpen = false;
+            document.getElementById('credits-screen').hidden = true;
+            if (creditsAudio) {
+                creditsAudio.pause();
+                creditsAudio.currentTime = 0;
+            }
+            rpOverlay.hidden = false;
+            setTimeout(() => rpInput.focus(), 50);
+        }
+
+        document.addEventListener('pointerdown', () => {
+            if (creditsOpen && Date.now() - creditsOpenedAt > 400) closeCredits();
+        }, true);
+        window.addEventListener('keydown', (e) => {
+            if (creditsOpen && e.key === 'Escape') {
+                e.stopImmediatePropagation();
+                closeCredits();
+            }
+        }, true);
 
         document.getElementById('rice-prompt-btn').addEventListener('click', openPrompt);
         document.getElementById('rp-close').addEventListener('click', () => closePrompt(true));
