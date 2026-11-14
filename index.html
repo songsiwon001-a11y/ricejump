@@ -133,6 +133,122 @@
             background: #0b0c10;
             border-top: 2px solid #1f2937;
         }
+
+        @media (max-width: 480px) {
+            .st-hdr {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 6px;
+                max-width: 100%;
+            }
+            .st-hdr > * { margin-left: 0 !important; }
+        }
+        .st-open-btn {
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1;
+            color: #fff;
+            background: #111827;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 6px 9px;
+            cursor: pointer;
+        }
+        .st-open-btn:hover { border-color: #22d3ee; }
+        .st-modal {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: #0f172a;
+            border: 3px solid #22d3ee;
+            border-radius: 14px;
+            padding: 18px 18px 14px;
+            box-shadow: 0 0 40px rgba(34, 211, 238, 0.2);
+        }
+        .st-title {
+            font-size: 15px;
+            color: #facc15;
+            text-align: center;
+            margin: 4px 0 14px;
+        }
+        .st-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 4px;
+            border-top: 1px solid #1f2937;
+            font-size: 10px;
+            color: #e5e7eb;
+        }
+        .st-select {
+            font-family: inherit;
+            font-size: 10px;
+            color: #fff;
+            background: #020617;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            cursor: pointer;
+        }
+        .st-select:focus { border-color: #22d3ee; }
+        .st-range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1 1 auto;
+            justify-content: flex-end;
+        }
+        .st-range {
+            width: 100%;
+            max-width: 170px;
+            accent-color: #22d3ee;
+        }
+        .st-pct {
+            min-width: 38px;
+            text-align: right;
+            color: #22d3ee;
+        }
+        .st-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+            flex: 0 0 auto;
+        }
+        .st-switch input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            cursor: pointer;
+            z-index: 1;
+        }
+        .st-track {
+            position: absolute;
+            inset: 0;
+            background: #374151;
+            border-radius: 14px;
+            transition: background 0.15s;
+        }
+        .st-track::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.15s;
+        }
+        .st-switch input:checked + .st-track { background: #10b981; }
+        .st-switch input:checked + .st-track::after { transform: translateX(22px); }
         .rp-open-btn {
             margin-top: 12px;
             padding: 8px 18px;
@@ -256,13 +372,14 @@
         .rp-send {
             flex: 0 0 auto;
             font-family: inherit;
-            font-size: 10px;
+            font-size: 20px;
+            line-height: 1;
             color: #000;
             font-weight: 800;
             background: #10b981;
             border: none;
             border-radius: 8px;
-            padding: 0 14px;
+            padding: 0 16px;
             cursor: pointer;
         }
         .rp-send:hover { background: #34d399; }
@@ -336,10 +453,11 @@
                 <button id="rec-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600 hover:bg-red-500 cursor-pointer transition-all duration-300"></button>
             </div>
         </div>
-        <div class="flex items-center space-x-3 text-xs md:text-sm">
+        <div class="st-hdr flex items-center space-x-3 text-xs md:text-sm">
             <div id="nightmare-indicator" class="hidden bg-red-950 px-2.5 py-1 rounded border border-red-600 animate-bounce">
                 <span class="text-red-500 text-[10px] font-bold">☠ NIGHTMARE ☠</span>
             </div>
+            <button id="settings-btn" class="st-open-btn" type="button" aria-label="설정">⚙</button>
             <select id="lang-select" class="bg-gray-900 border-2 border-gray-700 text-white text-[10px] px-2 py-1.5 rounded-lg outline-none cursor-pointer focus:border-cyan-400">
                 <option value="ko" selected="">한국어</option>
                 <option value="en">English</option>
@@ -504,6 +622,35 @@
         <div><button id="rice-prompt-btn" class="rp-open-btn" type="button">rice prompt</button></div>
     </footer>
 
+    <div id="st-overlay" class="rp-overlay" hidden>
+        <div class="st-modal">
+            <button id="st-close" class="rp-close" type="button" aria-label="닫기">✕</button>
+            <h2 class="st-title">설정</h2>
+            <div class="st-row">
+                <span>드럼 비트</span>
+                <select id="st-drum" class="st-select">
+                    <option value="bang">쾅</option>
+                    <option value="retro">레트로</option>
+                </select>
+            </div>
+            <div id="st-vol-row" class="st-row">
+                <span>쾅 볼륨</span>
+                <div class="st-range-wrap">
+                    <input id="st-vol" class="st-range" type="range" min="0" max="100" step="1" value="30">
+                    <span id="st-pct" class="st-pct">30%</span>
+                </div>
+            </div>
+            <div class="st-row">
+                <span>진동</span>
+                <label class="st-switch"><input id="st-vib" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+            <div class="st-row">
+                <span>사운드</span>
+                <label class="st-switch"><input id="st-snd" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+        </div>
+    </div>
+
     <div id="rp-overlay" class="rp-overlay" hidden>
         <div class="rp-modal">
             <button id="rp-close" class="rp-close" type="button" aria-label="닫기">✕</button>
@@ -514,7 +661,7 @@
                 <div id="rp-log" class="rp-log"></div>
                 <form id="rp-form" class="rp-form" autocomplete="off">
                     <input id="rp-input" class="rp-input" type="text" placeholder="명령어를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false">
-                    <button class="rp-send" type="submit">보내기</button>
+                    <button class="rp-send" type="submit" aria-label="보내기">✈</button>
                 </form>
             </div>
 
@@ -542,6 +689,7 @@
         const helloAudio = new Audio('안녕하세요.mp3');
         const sixSevenAudio = new Audio('six seven!.mp3');
         const cameraAudio = new Audio('screen_record_camera.mp3');
+        const takeLAudio = new Audio('l을가져가.mp3');
         sixSevenAudio.loop = true;
 
         const deathAudio = new Audio('라이스점프 죽는소리.mp3');
@@ -553,8 +701,22 @@
             drumPool.push(new Audio('쾅!.mp3'));
         }
         let nextDrumIdx = 0;
-        const DRUM_VOLUME = 0.3;
+        let drumVolume = 0.3;
+        let drumMode = 'bang';
+        let vibrationEnabled = true;
+        let soundEnabled = true;
         let drumGain = null;
+
+        const VIB_SIX_SEVEN = [125, 125, 125, 125, 250, 125, 1000];
+        const VIB_BLOCK = [500, 500, 500];
+        const VIB_LIGHTNING = [100, 300, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        const VIB_HIT = [1000];
+        const VIB_START = [250];
+
+        function vib(p) {
+            if (p !== 0 && !vibrationEnabled) return;
+            if (navigator.vibrate) navigator.vibrate(p);
+        }
 
         function playDrumBeat() {
             try {
@@ -562,9 +724,6 @@
                 drum.currentTime = 0;
                 drum.play().catch(e => {});
                 nextDrumIdx = (nextDrumIdx + 1) % DRUM_POOL_SIZE;
-                if (navigator.vibrate) {
-                    navigator.vibrate(60);
-                }
             } catch (e) {}
         }
 
@@ -600,7 +759,7 @@
             routeAudioElements();
         }
 
-        let helloSource, sixSevenSource, deathSource, gameoverSource, cameraSource;
+        let helloSource, sixSevenSource, deathSource, gameoverSource, cameraSource, takeLSource;
         const drumSources = [];
 
         function routeAudioElements() {
@@ -622,13 +781,17 @@
                     gameoverSource = audioCtx.createMediaElementSource(gameoverAudio);
                     gameoverSource.connect(masterGain);
                 }
+                if (!takeLSource) {
+                    takeLSource = audioCtx.createMediaElementSource(takeLAudio);
+                    takeLSource.connect(masterGain);
+                }
                 if (!cameraSource) {
                     cameraSource = audioCtx.createMediaElementSource(cameraAudio);
                     cameraSource.connect(masterGain);
                 }
                 if (drumSources.length === 0) {
                     drumGain = audioCtx.createGain();
-                    drumGain.gain.setValueAtTime(DRUM_VOLUME, audioCtx.currentTime);
+                    drumGain.gain.setValueAtTime(drumVolume, audioCtx.currentTime);
                     drumGain.connect(masterGain);
                     drumPool.forEach(drum => {
                         const src = audioCtx.createMediaElementSource(drum);
@@ -643,14 +806,14 @@
         function startSixSevenVibration() {
             stopSixSevenVibration();
             if (!navigator.vibrate) return;
-            const pattern = [125, 125, 250, 125, 1000];
-            const cycleTime = 1750;
-            navigator.vibrate(pattern);
+            const pattern = VIB_SIX_SEVEN;
+            const cycleTime = VIB_SIX_SEVEN.reduce((a, b) => a + b, 0);
+            vib(pattern);
             vibrationInterval = setInterval(() => {
                 if (sixSevenAudio.paused) {
                     stopSixSevenVibration();
                 } else {
-                    navigator.vibrate(pattern);
+                    vib(pattern);
                 }
             }, cycleTime);
         }
@@ -661,12 +824,12 @@
                 vibrationInterval = null;
             }
             if (navigator.vibrate) {
-                navigator.vibrate(0);
+                vib(0);
             }
         }
 
         function playSynthSound(type) {
-            if (!audioCtx) return;
+            if (!audioCtx || !soundEnabled) return;
             const now = audioCtx.currentTime;
 
             if (type === 'jump') {
@@ -769,7 +932,7 @@
         }
 
         function playLightningSynth() {
-            if (!audioCtx) return;
+            if (!audioCtx || !soundEnabled) return;
             const now = audioCtx.currentTime;
 
             const bufferSize = audioCtx.sampleRate * 1.0;
@@ -839,7 +1002,7 @@
         }
 
         function playRecordStartFeedback() {
-            if (!audioCtx) return;
+            if (!audioCtx || !soundEnabled) return;
             const now = audioCtx.currentTime;
             
             const oscClick = audioCtx.createOscillator();
@@ -881,6 +1044,14 @@
             const bass = [
                 261.63, 261.63, 329.63, 329.63, 349.23, 349.23, 392.00, 392.00
             ];
+            const titleSine = [
+                392.00, 493.88, 523.25, 493.88, 523.25, 587.33, 523.25, 392.00,
+                349.23, 523.25, 349.23, 523.25, 783.99, 698.46, 587.33, 493.88
+            ];
+            const titleSquare = [
+                329.63, 349.23, 392.00, 440.00, 392.00, 349.23, 329.63, 293.66,
+                329.63, 349.23, 392.00, 349.23, 392.00, 349.23, 293.66, 196.00
+            ];
 
             titleMusicInterval = setInterval(() => {
                 const now = audioCtx.currentTime;
@@ -906,6 +1077,28 @@
                 gainBass.connect(masterGain);
                 oscBass.start(now);
                 oscBass.stop(now + 0.45);
+
+                const oscSine = audioCtx.createOscillator();
+                const gainSine = audioCtx.createGain();
+                oscSine.type = 'sine';
+                oscSine.frequency.setValueAtTime(titleSine[step % titleSine.length], now);
+                gainSine.gain.setValueAtTime(0.03, now);
+                gainSine.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                oscSine.connect(gainSine);
+                gainSine.connect(masterGain);
+                oscSine.start(now);
+                oscSine.stop(now + 0.22);
+
+                const oscSquare = audioCtx.createOscillator();
+                const gainSquare = audioCtx.createGain();
+                oscSquare.type = 'square';
+                oscSquare.frequency.setValueAtTime(titleSquare[step % titleSquare.length], now);
+                gainSquare.gain.setValueAtTime(0.012, now);
+                gainSquare.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                oscSquare.connect(gainSquare);
+                gainSquare.connect(masterGain);
+                oscSquare.start(now);
+                oscSquare.stop(now + 0.22);
 
                 if (step % 4 === 2) {
                     const bufferSize = audioCtx.sampleRate * 0.08;
@@ -1129,6 +1322,13 @@
             });
 
             if (drumSec > 0) {
+                const retroDrum = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: { attack: 0.001, decay: 0.07, sustain: 0 },
+                    volume: -20
+                });
+                retroDrum.connect(masterGain);
+                toneSynths.push(retroDrum);
                 const drumEvents = [];
                 for (let t = 0; t < loopSec - 1e-6; t += drumSec) {
                     drumEvents.push([Math.round(t * SEC_TO_TICKS) + 'i', 1]);
@@ -1136,6 +1336,10 @@
                 const drumPart = new Tone.Part((time) => {
                     if (!shouldPlay()) return;
                     const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+                    if (drumMode === 'retro') {
+                        try { retroDrum.triggerAttackRelease(0.06, time); } catch (e) {}
+                        return;
+                    }
                     setTimeout(playDrumBeat, delay);
                 }, drumEvents);
                 drumPart.loop = true;
@@ -1268,10 +1472,10 @@
                 playSynthSound('hit');
                 
                 deathAudio.currentTime = 0;
-                deathAudio.play().catch(e => {});
+                if (soundEnabled) deathAudio.play().catch(e => {});
 
                 if (navigator.vibrate) {
-                    navigator.vibrate(1000);
+                    vib(VIB_HIT);
                 }
 
                 if (!ignoreWaterGun) {
@@ -1399,6 +1603,14 @@
             spawnExplosion(brick.x + brick.width / 2, brick.y, '#fbbf24', 10);
         }
 
+        function makeMosquito(x, y) {
+            return {
+                x: x, y: y, width: 100, height: 90,
+                hx: x, hy: y, t: Math.random() * 6,
+                hp: 6, type: 'mosquito'
+            };
+        }
+
         function getBombChance(stage) {
             return Math.min(0.25, Math.max(0, stage - 2) * 0.006);
         }
@@ -1483,6 +1695,8 @@
                 bricks.push({ x: 455, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 510, y: 360, width: 50, height: 50, itemType: 'coin', isHit: false, bumpOffset: 0 });
                 bricks.push({ x: 2800, y: 340, width: 50, height: 50, itemType: 'camera', isHit: false, bumpOffset: 0 });
+                bricks.push({ x: 2900, y: 340, width: 50, height: 50, itemType: 'takeL', isHit: false, bumpOffset: 0 });
+                enemies.push(makeMosquito(3050, 300));
 
                 goal = { x: 5800, y: 350, width: 70, height: 200 };
             } 
@@ -1515,6 +1729,10 @@
                         });
                     }
 
+                    if (Math.random() < Math.min(0.14, 0.03 + gameState.stage * 0.003)) {
+                        enemies.push(makeMosquito(platformMidX - 50, Math.max(40, y - 300)));
+                    }
+
                     if (Math.random() < 0.7) {
                         let numBricks = Math.floor(Math.random() * 2) + 2; 
                         let startBx = platformMidX - (numBricks * 55) / 2;
@@ -1525,6 +1743,7 @@
                             let randVal = Math.random();
                             if (Math.random() < getBombChance(gameState.stage)) randItem = 'bomb';
                             else if (Math.random() < 0.05) randItem = 'camera';
+                            else if (Math.random() < 0.03) randItem = 'takeL';
                             else if (randVal < 0.05) randItem = 'golden';
                             else if (randVal < 0.12) randItem = 'blue';
                             else if (randVal < 0.18) randItem = 'fake';
@@ -1604,6 +1823,7 @@
                             brick.isHit = true;
                             brick.bumpOffset = -15; 
                             playSynthSound('block_hit');
+                            if (!gameState.isDemo) vib(VIB_BLOCK);
                             spawnItemFromBrick(brick);
                         }
                     } 
@@ -1904,8 +2124,12 @@
                     const e = enemies[j];
                     if (checkCollision(b, e)) {
                         spawnExplosion(e.x + e.width / 2, e.y + e.height / 2, '#22d3ee', 12);
-                        enemies.splice(j, 1);
-                        gameState.score += 250;
+                        if (e.type === 'mosquito' && --e.hp > 0) {
+                            gameState.score += 20;
+                        } else {
+                            enemies.splice(j, 1);
+                            gameState.score += 250;
+                        }
                         updateScoreDisplay();
                         destroyed = true;
                         break;
@@ -1986,6 +2210,32 @@
                         continue;
                     }
                 }
+                else if (e.type === 'mosquito') {
+                    e.t += 0.05;
+                    const mcx = e.x + e.width / 2;
+                    const mcy = e.y + e.height / 2;
+                    const pcx = player.x + player.width / 2;
+                    const pcy = player.y + player.height / 2;
+                    const mdx = pcx - mcx;
+                    const mdy = pcy - mcy;
+                    const mdist = Math.hypot(mdx, mdy) || 1;
+                    const chaseSpeed = Math.min(4, 2.2 + gameState.stage * 0.03);
+                    if (mdist < 700) {
+                        e.x += (mdx / mdist) * chaseSpeed + Math.cos(e.t * 2.3) * 1.2;
+                        e.y += (mdy / mdist) * chaseSpeed + Math.sin(e.t * 3) * 1.8;
+                    } else {
+                        const tx = e.hx + Math.sin(e.t) * 140;
+                        const ty = e.hy + Math.cos(e.t * 1.3) * 60;
+                        const hx = tx - e.x;
+                        const hy = ty - e.y;
+                        const hd = Math.hypot(hx, hy) || 1;
+                        const hs = Math.min(3, hd);
+                        e.x += (hx / hd) * hs;
+                        e.y += (hy / hd) * hs;
+                    }
+                    e.x = Math.max(0, Math.min(gameState.levelWidth - e.width, e.x));
+                    e.y = Math.max(0, Math.min(canvas.height - e.height - 20, e.y));
+                }
 
                 if (checkCollision(player, e)) {
                     if (e.type === 'normal') {
@@ -2014,7 +2264,7 @@
                             gameState.score += 200;
                             updateScoreDisplay();
                         } else if (player.invincibleCooldown === 0) {
-                            player.deductLife(1, false, false);
+                            player.deductLife(e.type === 'mosquito' ? 2 : 1, false, false);
                         }
                     }
                 }
@@ -2045,11 +2295,19 @@
                             progress: 0
                         };
                     } 
+                    else if (item.type === 'takeL') {
+                        spawnExplosion(item.x + 22, item.y + 22, '#a855f7', 24);
+                        if (!gameState.isDemo) {
+                            gameState.lives += 5;
+                            document.getElementById('lives-display').innerText = gameState.lives;
+                            playTakeL();
+                        }
+                    }
                     else if (item.type === 'camera') {
                         if (!gameState.isDemo) {
                             startRecording(false);
                             cameraAudio.currentTime = 0;
-                            cameraAudio.play().catch(e => {});
+                            if (soundEnabled) cameraAudio.play().catch(e => {});
                             gameState.score += 100;
                         }
                     }
@@ -2075,7 +2333,7 @@
                         tryPhoneFlash();
                         lightningFlashFrames = 40;
                         if (navigator.vibrate) {
-                            navigator.vibrate([200, 50, 100, 50, 300, 100, 150, 50, 500]);
+                            vib(VIB_LIGHTNING);
                         }
                         gameState.isActive = false;
                         stopBGM();
@@ -2225,6 +2483,14 @@
                     ctx.arc(e.x - gameState.cameraX + 15, e.y + 15, 15, 0, Math.PI * 2);
                     ctx.fill();
                 }
+                else if (e.type === 'mosquito') {
+                    ctx.translate(e.x - gameState.cameraX + e.width / 2, e.y + e.height / 2);
+                    ctx.rotate(Math.sin(e.t * 4) * 0.12);
+                    ctx.font = '130px serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🦟', 0, 0);
+                }
                 else {
                     ctx.fillStyle = '#ef4444';
                     ctx.beginPath();
@@ -2280,6 +2546,22 @@
                     ctx.textBaseline = 'middle';
                     ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
                 } 
+                else if (item.type === 'takeL') {
+                    const lx = item.x - gameState.cameraX;
+                    const ly = item.y + hover;
+                    ctx.fillStyle = '#a855f7';
+                    ctx.shadowBlur = 18;
+                    ctx.shadowColor = '#c084fc';
+                    ctx.beginPath();
+                    ctx.roundRect(lx, ly, 45, 45, 10);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 24px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('L', lx + 22, ly + 24);
+                }
                 else if (item.type === 'camera') {
                     const cx = item.x - gameState.cameraX;
                     const cy = item.y + hover;
@@ -2438,7 +2720,7 @@
             boss = null;
             document.getElementById('boss-hp-container').classList.add('hidden');
             playSynthSound('clear');
-            playDrumBeat();
+            if (soundEnabled) playDrumBeat();
 
             goal = { x: 1400, y: 350, width: 70, height: 200 };
         }
@@ -2809,7 +3091,7 @@
             if (timerInterval) clearInterval(timerInterval);
 
             gameoverAudio.currentTime = 0;
-            gameoverAudio.play().catch(e => {});
+            if (soundEnabled) gameoverAudio.play().catch(e => {});
 
             gameState.stage = Math.max(1, gameState.stage - 1);
             
@@ -2846,7 +3128,7 @@
             if (timerInterval) clearInterval(timerInterval);
             
             playSynthSound('clear');
-            playDrumBeat();
+            if (soundEnabled) playDrumBeat();
 
             if (gameState.stage >= 50) {
                 triggerEnding();
@@ -2879,7 +3161,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            if (promptOpen) return;
+            if (promptOpen || settingsOpen) return;
             handleUserAction();
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
@@ -2928,10 +3210,10 @@
             document.getElementById('start-screen').classList.remove('hidden');
 
             helloAudio.currentTime = 0;
-            helloAudio.play().catch(e => {});
+            if (soundEnabled) helloAudio.play().catch(e => {});
             
             if (navigator.vibrate) {
-                navigator.vibrate(250);
+                vib(VIB_START);
             }
 
             playTitleMusic();
@@ -2988,7 +3270,7 @@
                     } else {
                         startBGM();
                     }
-                } else if (!gameState.isActive && !gameState.isDemo && !promptOpen) {
+                } else if (!gameState.isActive && !gameState.isDemo && !promptOpen && !settingsOpen) {
                     playTitleMusic();
                 }
             }
@@ -3116,6 +3398,8 @@
         recDotBtn.addEventListener('click', toggleRecording);
 
         let promptOpen = false;
+        let settingsOpen = false;
+        let settingsRestore = null;
         let promptRestore = null;
         let previewAudio = null;
 
@@ -3131,7 +3415,24 @@
             { label: '물', data: () => BGM_BY_WORLD[2] },
             { label: '눈', data: () => BGM_BY_WORLD[3] },
             { label: '하늘', data: () => BGM_BY_WORLD[4] },
-            { label: '엔딩', data: () => BGM_ENDING }
+            { label: '엔딩', data: () => BGM_ENDING },
+            { label: '타이틀', title: true },
+            { label: '크레딧', file: 'cradits_bgm.mp3' },
+            { label: 'six seven', file: 'six seven!.mp3' },
+            { label: 'six seven 60초 남음', file: 'six seven!(60s left both 50s).mp3' },
+            { label: 'six seven 30초 남음', file: 'six seven!(30s left).mp3' },
+            { label: 'six seven 15초 남음', file: 'six seven!(15s left).mp3' },
+            { label: 'six seven 10초 남음', file: 'six seven!(10s left).mp3' },
+            { label: 'six seven 5초 남음', file: 'six seven!(5s left).mp3' },
+            { label: 'six seven 3초 남음', file: 'six seven!(3s left).mp3' }
+        ];
+
+        const RP_VIB_LIST = [
+            { label: 'six seven (67)', pattern: VIB_SIX_SEVEN },
+            { label: '블록 타격', pattern: VIB_BLOCK },
+            { label: '번개', pattern: VIB_LIGHTNING },
+            { label: '피격', pattern: VIB_HIT },
+            { label: '시작', pattern: VIB_START }
         ];
 
         const RP_SFX_LIST = [
@@ -3148,7 +3449,9 @@
             { label: '번개', play: () => playLightningSynth() },
             { label: '죽는 소리', play: () => rpPlayAudio(deathAudio) },
             { label: '게임오버', play: () => rpPlayAudio(gameoverAudio) },
-            { label: '카메라', play: () => rpPlayAudio(cameraAudio) }
+            { label: '카메라', play: () => rpPlayAudio(cameraAudio) },
+            { label: 'l을가져가', play: () => rpPlayAudio(takeLAudio) },
+            { label: '모기', play: () => playMosquitoSample() }
         ];
 
         function rpPlayAudio(audio) {
@@ -3173,7 +3476,9 @@
         }
 
         function stopPreview() {
+            if (navigator.vibrate) navigator.vibrate(0);
             if (toneSeqMode === 'preview') stopToneSequence();
+            stopTitleMusic();
             if (previewAudio) {
                 try { previewAudio.pause(); } catch (e) {}
                 previewAudio = null;
@@ -3181,16 +3486,14 @@
             rpList.querySelectorAll('.rp-item.playing').forEach(el => el.classList.remove('playing'));
         }
 
-        function openPrompt() {
-            if (promptOpen) return;
+        function pauseForOverlay() {
             if (gameState.isDemo) stopAutoDemo();
-            promptOpen = true;
             initAudio();
             routeAudioElements();
 
             const endingVisible = !document.getElementById('ending-screen').classList.contains('hidden');
             const titleVisible = !document.getElementById('start-screen').classList.contains('hidden');
-            promptRestore = {
+            const restoreInfo = {
                 active: gameState.isActive,
                 ending: endingVisible,
                 title: titleVisible && !gameState.isActive
@@ -3210,25 +3513,11 @@
             stopEndingMusic();
             sixSevenAudio.pause();
             stopSixSevenVibration();
-
-            if (!rpLog.children.length) {
-                rpAdd('bot', '명령어를 입력해 보세요!\n\nstage숫자 : 원하는 스테이지로 이동 (예: stage15)\nbgm : 배경음악 듣기\nsoundefect : 효과음 듣기\n그 외 : 웹사이트 주소는 바로 열고, 검색어는 구글로 검색해요.');
-            }
-            rpShowView('chat');
-            rpOverlay.hidden = false;
-            setTimeout(() => rpInput.focus(), 50);
+            return restoreInfo;
         }
 
-        function closePrompt(restore = true) {
-            if (!promptOpen) return;
-            promptOpen = false;
-            stopPreview();
-            rpFrame.src = 'about:blank';
-            rpOverlay.hidden = true;
-            const r = promptRestore;
-            promptRestore = null;
-            if (!restore || !r) return;
-
+        function resumeFromOverlay(r) {
+            if (!r) return;
             if (r.active) {
                 gameState.isActive = true;
                 if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare) {
@@ -3243,6 +3532,27 @@
                 playTitleMusic();
                 resetDemoTimer();
             }
+        }
+
+        function openPrompt() {
+            if (promptOpen || settingsOpen) return;
+            promptOpen = true;
+            promptRestore = pauseForOverlay();
+            rpShowView('chat');
+            rpOverlay.hidden = false;
+            setTimeout(() => rpInput.focus(), 50);
+        }
+
+        function closePrompt(restore = true) {
+            if (!promptOpen) return;
+            promptOpen = false;
+            stopPreview();
+            rpFrame.src = 'about:blank';
+            rpOverlay.hidden = true;
+            const r = promptRestore;
+            promptRestore = null;
+            if (!restore) return;
+            resumeFromOverlay(r);
         }
 
         function jumpToStage(n) {
@@ -3275,8 +3585,17 @@
         function rpOpenBgmList() {
             rpOpenList('BGM', RP_BGM_LIST, (entry, btn) => {
                 stopPreview();
-                const data = entry.data();
-                playToneSequence('preview', data.tracks, data.drum || 0, () => true);
+                initAudio();
+                if (entry.title) {
+                    playTitleMusic();
+                } else if (entry.file) {
+                    previewAudio = new Audio(entry.file);
+                    previewAudio.loop = true;
+                    previewAudio.play().catch(() => {});
+                } else {
+                    const data = entry.data();
+                    playToneSequence('preview', data.tracks, data.drum || 0, () => true);
+                }
                 btn.classList.add('playing');
             });
         }
@@ -3287,6 +3606,19 @@
                 entry.play();
                 btn.classList.add('playing');
                 setTimeout(() => btn.classList.remove('playing'), 300);
+            });
+        }
+
+        function rpOpenVibList() {
+            const title = navigator.vibrate ? 'VIBRATION' : 'VIBRATION (진동 미지원 기기)';
+            rpOpenList(title, RP_VIB_LIST, (entry, btn) => {
+                if (navigator.vibrate) {
+                    navigator.vibrate(0);
+                    navigator.vibrate(entry.pattern);
+                }
+                btn.classList.add('playing');
+                const total = entry.pattern.reduce((a, b) => a + b, 0);
+                setTimeout(() => btn.classList.remove('playing'), total);
             });
         }
 
@@ -3339,6 +3671,11 @@
                 return;
             }
 
+            if (lower === 'vibration' || lower === 'vib') {
+                rpAdd('bot', '진동 목록을 열어요.');
+                rpOpenVibList();
+                return;
+            }
             if (lower === 'cradits' || lower === 'credits') {
                 openCredits();
                 return;
@@ -3410,6 +3747,182 @@
         }, true);
 
         document.getElementById('rice-prompt-btn').addEventListener('click', openPrompt);
+
+        const stDrum = document.getElementById('st-drum');
+        const stVol = document.getElementById('st-vol');
+        const stPct = document.getElementById('st-pct');
+        const stVolRow = document.getElementById('st-vol-row');
+        const stVib = document.getElementById('st-vib');
+        const stSnd = document.getElementById('st-snd');
+        const stOverlay = document.getElementById('st-overlay');
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('riceJumpSettings', JSON.stringify({
+                    drum: drumMode,
+                    vol: Math.round(drumVolume * 100),
+                    vib: vibrationEnabled,
+                    snd: soundEnabled
+                }));
+            } catch (e) {}
+        }
+
+        function syncSettingsUI() {
+            stDrum.value = drumMode;
+            stVol.value = Math.round(drumVolume * 100);
+            stPct.textContent = stVol.value + '%';
+            stVolRow.hidden = (drumMode !== 'bang');
+            stVib.checked = vibrationEnabled;
+            stSnd.checked = soundEnabled;
+        }
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem('riceJumpSettings');
+                if (raw) {
+                    const d = JSON.parse(raw);
+                    if (d.drum === 'bang' || d.drum === 'retro') drumMode = d.drum;
+                    if (typeof d.vol === 'number') drumVolume = Math.min(1, Math.max(0, d.vol / 100));
+                    if (typeof d.vib === 'boolean') vibrationEnabled = d.vib;
+                    if (typeof d.snd === 'boolean') soundEnabled = d.snd;
+                }
+            } catch (e) {}
+            syncSettingsUI();
+        }
+
+        function openSettings() {
+            if (settingsOpen || promptOpen) return;
+            settingsOpen = true;
+            settingsRestore = pauseForOverlay();
+            syncSettingsUI();
+            stOverlay.hidden = false;
+        }
+
+        function closeSettings() {
+            if (!settingsOpen) return;
+            settingsOpen = false;
+            stOverlay.hidden = true;
+            const r = settingsRestore;
+            settingsRestore = null;
+            resumeFromOverlay(r);
+        }
+
+        stDrum.addEventListener('change', () => {
+            drumMode = stDrum.value;
+            stVolRow.hidden = (drumMode !== 'bang');
+            saveSettings();
+        });
+        stVol.addEventListener('input', () => {
+            drumVolume = stVol.value / 100;
+            stPct.textContent = stVol.value + '%';
+            if (drumGain && audioCtx) drumGain.gain.setValueAtTime(drumVolume, audioCtx.currentTime);
+            saveSettings();
+        });
+        stVol.addEventListener('change', () => playDrumBeat());
+        stVib.addEventListener('change', () => {
+            vibrationEnabled = stVib.checked;
+            if (!vibrationEnabled) vib(0);
+            saveSettings();
+        });
+        stSnd.addEventListener('change', () => {
+            soundEnabled = stSnd.checked;
+            saveSettings();
+        });
+        document.getElementById('settings-btn').addEventListener('click', openSettings);
+        document.getElementById('st-close').addEventListener('click', closeSettings);
+        stOverlay.addEventListener('click', (e) => {
+            if (e.target === stOverlay) closeSettings();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (settingsOpen && e.key === 'Escape') closeSettings();
+        });
+        loadSettings();
+
+        let mosqOsc = null;
+        let mosqGain = null;
+        const MOSQ_HEAR = 800;
+        const MOSQ_FREQ_MIN = 650;
+        const MOSQ_FREQ_MAX = 750;
+
+        function updateMosquitoSound() {
+            if (!audioCtx || !masterGain) return;
+            let level = 0;
+            if (gameState.isActive && soundEnabled && !promptOpen && !settingsOpen) {
+                const pcx = player.x + player.width / 2;
+                const pcy = player.y + player.height / 2;
+                for (const e of enemies) {
+                    if (e.type !== 'mosquito') continue;
+                    const d = Math.hypot(e.x + e.width / 2 - pcx, e.y + e.height / 2 - pcy);
+                    const l = 1 - d / MOSQ_HEAR;
+                    if (l > level) level = l;
+                }
+            }
+            if (level <= 0 && !mosqOsc) return;
+            if (!mosqOsc) {
+                mosqOsc = audioCtx.createOscillator();
+                mosqGain = audioCtx.createGain();
+                mosqOsc.type = 'sawtooth';
+                mosqGain.gain.value = 0;
+                mosqOsc.connect(mosqGain);
+                mosqGain.connect(masterGain);
+                mosqOsc.start();
+            }
+            const now = audioCtx.currentTime;
+            mosqOsc.frequency.setValueAtTime(MOSQ_FREQ_MIN + Math.random() * (MOSQ_FREQ_MAX - MOSQ_FREQ_MIN), now);
+            const target = level > 0 ? level * (0.01 + Math.random() * 0.05) : 0;
+            mosqGain.gain.setTargetAtTime(target, now, 0.01);
+        }
+
+        function playMosquitoSample() {
+            if (!audioCtx || !soundEnabled) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            const t0 = audioCtx.currentTime;
+            for (let i = 0; i < 20; i++) {
+                osc.frequency.setValueAtTime(MOSQ_FREQ_MIN + Math.random() * (MOSQ_FREQ_MAX - MOSQ_FREQ_MIN), t0 + i * 0.05);
+                gain.gain.setValueAtTime(0.01 + Math.random() * 0.05, t0 + i * 0.05);
+            }
+            gain.gain.setValueAtTime(0, t0 + 1);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(t0);
+            osc.stop(t0 + 1.02);
+        }
+
+        setInterval(updateMosquitoSound, 50);
+
+        let takeLToken = 0;
+
+        function resumeGameMusic() {
+            if (!gameState.isActive || gameState.isDemo || promptOpen || settingsOpen) return;
+            if (gameState.isWaterGun || gameState.isGolden || gameState.isNightmare) {
+                if (sixSevenAudio.paused) {
+                    sixSevenAudio.play().catch(() => {});
+                    startSixSevenVibration();
+                }
+            } else if (toneSeqMode !== 'bgm') {
+                startBGM();
+            }
+        }
+
+        function playTakeL() {
+            if (!soundEnabled) return;
+            const token = ++takeLToken;
+            const resume = () => {
+                if (token !== takeLToken) return;
+                takeLAudio.onended = null;
+                resumeGameMusic();
+            };
+            stopBGM();
+            if (!sixSevenAudio.paused) {
+                sixSevenAudio.pause();
+                stopSixSevenVibration();
+            }
+            takeLAudio.onended = resume;
+            takeLAudio.currentTime = 0;
+            takeLAudio.play().catch(resume);
+        }
         document.getElementById('rp-close').addEventListener('click', () => closePrompt(true));
         rpOverlay.addEventListener('click', (e) => {
             if (e.target === rpOverlay) closePrompt(true);
