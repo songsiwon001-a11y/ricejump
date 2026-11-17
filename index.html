@@ -822,6 +822,17 @@
                 <span>진동</span>
                 <label class="st-switch"><input id="st-vib" type="checkbox" checked><span class="st-track"></span></label>
             </div>
+            <div id="st-vib-level-row" class="st-row">
+                <span>진동 강도</span>
+                <select id="st-vib-level" class="st-select">
+                    <option value="auto">자동</option>
+                    <option value="weak">약함</option>
+                    <option value="mid">중간</option>
+                    <option value="strong">강함</option>
+                    <option value="max">최강</option>
+                </select>
+            </div>
+            <div id="st-vib-warn" class="st-vib-warn" hidden>진동 강도는 보급형 폰(겔럭시 a12, a17 등)에서만 정상적으로 동작합니다. 최신형 폰(겔럭시 s26 ultra, IPhone 16 pro 등)을 사용 중이시라면 진동 강도는 최강으로 두세요.</div>
             <div class="st-row">
                 <span>사운드</span>
                 <label class="st-switch"><input id="st-snd" type="checkbox" checked><span class="st-track"></span></label>
@@ -4660,4 +4671,192 @@
         });
     </script>
 
+
+    <style>
+        .st-vib-warn {
+            font-size: 9px;
+            line-height: 1.6;
+            color: #facc15;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 0 4px 8px;
+            word-break: keep-all;
+        }
+        .st-vib-warn[hidden] { display: none; }
+    </style>
+    <script>
+    (function () {
+        var mediaPlaying = new Set();
+
+        function applySoundState() {
+            var on = soundEnabled;
+            if (masterGain && audioCtx) {
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setValueAtTime(on ? 1 : 0, audioCtx.currentTime);
+            }
+            mediaPlaying.forEach(function (el) { el.muted = !on; });
+        }
+
+        var originalPlay = HTMLMediaElement.prototype.play;
+        HTMLMediaElement.prototype.play = function () {
+            this.muted = !soundEnabled;
+            mediaPlaying.add(this);
+            var el = this;
+            var release = function () { mediaPlaying.delete(el); };
+            el.addEventListener('ended', release, { once: true });
+            el.addEventListener('pause', release, { once: true });
+            return originalPlay.apply(this, arguments);
+        };
+
+        var originalInitAudio = window.initAudio;
+        if (typeof originalInitAudio === 'function') {
+            window.initAudio = function () {
+                var result = originalInitAudio.apply(this, arguments);
+                applySoundState();
+                return result;
+            };
+        }
+
+        var soundSwitch = document.getElementById('st-snd');
+        if (soundSwitch) soundSwitch.addEventListener('change', applySoundState);
+        applySoundState();
+
+        if (!navigator.vibrate) return;
+
+        var nativeVibrate = navigator.vibrate.bind(navigator);
+        var STORE_KEY = 'riceJumpVibLevel';
+        var LEVELS = {
+            auto:   null,
+            weak:   { on: 1, off: 3 },
+            mid:    { on: 2, off: 2 },
+            strong: { on: 3, off: 1 },
+            max:    null
+        };
+        var level = 'max';
+        try {
+            var saved = localStorage.getItem(STORE_KEY);
+            if (saved && Object.prototype.hasOwnProperty.call(LEVELS, saved)) level = saved;
+        } catch (e) {}
+
+        var timer = null;
+        function cancelTimer() {
+            if (timer) { clearTimeout(timer); timer = null; }
+        }
+
+        function Builder() {
+            this.segs = [];
+        }
+        Builder.prototype.push = function (isOn, ms) {
+            if (ms <= 0) return;
+            var last = this.segs[this.segs.length - 1];
+            if (last && last.on === isOn) last.ms += ms;
+            else this.segs.push({ on: isOn, ms: ms });
+        };
+        Builder.prototype.pulse = function (ms, cfg) {
+            if (!cfg) { this.push(true, ms); return; }
+            var t = 0;
+            while (t < ms) {
+                var p = Math.min(cfg.on, ms - t);
+                this.push(true, p);
+                t += p;
+                if (t < ms) {
+                    var r = Math.min(cfg.off, ms - t);
+                    this.push(false, r);
+                    t += r;
+                }
+            }
+        };
+        Builder.prototype.result = function () {
+            var segs = this.segs.slice();
+            while (segs.length && !segs[0].on) segs.shift();
+            return segs.map(function (s) { return s.ms; });
+        };
+
+        function convert(pattern, cfg) {
+            var list = Array.isArray(pattern) ? pattern : [pattern];
+            var b = new Builder();
+            for (var i = 0; i < list.length; i++) {
+                var d = Number(list[i]) || 0;
+                if (i % 2 === 1) b.push(false, d);
+                else b.pulse(d, cfg);
+            }
+            return b.result();
+        }
+
+        function steps(order) {
+            var b = new Builder();
+            order.forEach(function (name) {
+                b.pulse(100, LEVELS[name]);
+            });
+            return b.result();
+        }
+
+        var CHUNK = 98;
+        function play(arr) {
+            cancelTimer();
+            if (!arr.length) return nativeVibrate(0);
+            var ok = nativeVibrate(arr.slice(0, CHUNK));
+            next(arr, 0);
+            return ok;
+        }
+        function next(arr, idx) {
+            var chunk = arr.slice(idx, idx + CHUNK);
+            if (idx + CHUNK >= arr.length) { timer = null; return; }
+            var total = 0;
+            for (var i = 0; i < chunk.length; i++) total += chunk[i];
+            timer = setTimeout(function () {
+                nativeVibrate(arr.slice(idx + CHUNK, idx + CHUNK * 2));
+                next(arr, idx + CHUNK);
+            }, Math.max(0, total - 4));
+        }
+
+        navigator.vibrate = function (pattern) {
+            cancelTimer();
+            if (level === 'auto') {
+                if (pattern === VIB_HIT) return play(steps(['max', 'strong', 'mid', 'weak']));
+                return nativeVibrate(pattern);
+            }
+            var cfg = LEVELS[level];
+            if (!cfg) return nativeVibrate(pattern);
+            return play(convert(pattern, cfg));
+        };
+
+        var originalStageClear = window.triggerStageClear;
+        if (typeof originalStageClear === 'function') {
+            window.triggerStageClear = function () {
+                var result = originalStageClear.apply(this, arguments);
+                if (level === 'auto' && vibrationEnabled) {
+                    play(steps(['weak', 'mid', 'strong', 'max']));
+                }
+                return result;
+            };
+        }
+
+        var sel = document.getElementById('st-vib-level');
+        var row = document.getElementById('st-vib-level-row');
+        var warn = document.getElementById('st-vib-warn');
+        var vibSwitch = document.getElementById('st-vib');
+        if (!sel || !row || !warn) return;
+
+        function refreshVibrationUI() {
+            row.hidden = !vibrationEnabled;
+            warn.hidden = !vibrationEnabled || level === 'max';
+        }
+
+        sel.value = level;
+        refreshVibrationUI();
+        sel.addEventListener('change', function () {
+            level = sel.value;
+            try { localStorage.setItem(STORE_KEY, level); } catch (e) {}
+            cancelTimer();
+            nativeVibrate(0);
+            refreshVibrationUI();
+        });
+        if (vibSwitch) vibSwitch.addEventListener('change', refreshVibrationUI);
+        var openButton = document.getElementById('settings-btn');
+        if (openButton) openButton.addEventListener('click', refreshVibrationUI);
+    })();
+    </script>
 </body></html>
