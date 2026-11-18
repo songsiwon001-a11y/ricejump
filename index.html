@@ -5082,6 +5082,24 @@
         }
         #fr-yes { background: #34d399; color: #000; }
         #fr-no { background: #374151; color: #fff; }
+        #fr-go {
+            position: absolute;
+            left: 50%;
+            top: 62%;
+            transform: translateX(-50%);
+            padding: 16px 28px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 800;
+            color: #000;
+            background: #34d399;
+            border: 3px solid #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            z-index: 3;
+        }
+        #fr-go[hidden] { display: none; }
+        #fr-panel-text { white-space: pre-line; }
         #fr-tools {
             position: absolute;
             top: 56px;
@@ -5194,6 +5212,8 @@
     var STAGES = 50;
     var WORLD_W = STAGE_W * STAGES;
     var START_FLAT = 260;
+    var RULES_MS = 7000;
+    var RULES_TEXT = '서바이벌 규칙\n50스테이지까지 앞으로 가세요. 10스테이지마다 안전지대예요.\n생명 3개로 서로 뺏고 뺏기며 살아남으세요.\n67은 물총, L은 돌진을 줘요.\n10분 안에 가장 오래 살아남은 사람이 이겨요.';
     var COLORS = ['#10b981', '#f97316', '#3b82f6', '#ec4899', '#eab308', '#a855f7'];
     var SPAWN_X = [60, 130, 200, 270, 340, 410];
     var FONT = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
@@ -5313,6 +5333,8 @@
     var recDest = null;
     var recTimer = null;
     var recentChats = [];
+    var rulesTimer = null;
+    var bgmWorld = -1;
 
     function now() { return Date.now(); }
 
@@ -5492,6 +5514,9 @@
             addBullet(m.b);
         } else if (m.t === 'bx') {
             removeBullet(m.id);
+        } else if (m.t === 'rules') {
+            mode = 'rules';
+            showPanel(RULES_TEXT);
         } else if (m.t === 'chat') {
             onChat(m);
         } else if (m.t === 'grant') {
@@ -5513,6 +5538,7 @@
     function clearPw(p) {
         if (!p || !p.pw) return;
         if (p.pw.k === 'g') stopGunFx();
+        if (p.pid === myPid) bgmWorld = -1;
         p.pw = null;
     }
 
@@ -5526,6 +5552,7 @@
         clearPw(me);
         if (kind === 'g') {
             me.pw = { k: 'g', until: now() + 10000 };
+            stopBGM();
             try { playSynthSound('six_seven'); } catch (e) {}
             try {
                 sixSevenAudio.currentTime = 0;
@@ -5756,12 +5783,12 @@
             if (t > waitDeadline) timeoutWait();
             return;
         }
-        if (mode === 'lobby' && isHost && t >= lobbyEnd) launch();
         if (mode !== 'playing') return;
         var me = players[myPid];
         if (!me) return;
         stepLocal(me, t);
         camX = Math.max(0, Math.min(WORLD_W - W, me.x - W * 0.4));
+        syncBgm();
         stepOthers();
         stepBullets();
         if (isHost) stepWorld();
@@ -5805,6 +5832,8 @@
     }
 
     function startPlay(duration) {
+        clearTimeout(rulesTimer);
+        panel.hidden = true;
         try { stopTitleMusic(); } catch (e) {}
         started = true;
         mode = 'playing';
@@ -5823,6 +5852,8 @@
         mode = 'over';
         controlsEl.hidden = true;
         stopGunFx();
+        stopBGM();
+        bgmWorld = -1;
         var text;
         if (winner === myPid) text = '🏆 승리! 끝까지 살아남았어요!';
         else if (winner === -2) text = '무승부예요. 아무도 이기지 못했어요.';
@@ -5885,6 +5916,9 @@
         closeChat();
         teardownVoice();
         stopRec();
+        clearTimeout(rulesTimer);
+        bgmWorld = -1;
+        stopBGM();
         if (startScreen) startScreen.classList.remove('hidden');
         try { playTitleMusic(); } catch (e) {}
         if (typeof resetDemoTimer === 'function') resetDemoTimer();
@@ -5975,7 +6009,10 @@
         if (mode === 'lobby') {
             delete players[pid];
             bcast({ t: 'lobby', pl: rosterWire() });
-            if (!Object.keys(clientConns).length) mode = 'waiting';
+            if (!Object.keys(clientConns).length) {
+                mode = 'waiting';
+                waitDeadline = now() + WAIT_LIMIT_MS;
+            }
             return;
         }
         players[pid].left = true;
@@ -6076,10 +6113,18 @@
         ctx.restore();
     }
 
+    function localTheme() {
+        var me = players[myPid];
+        var idx = me ? Math.max(0, Math.min(THEMES.length - 1, Math.floor((stageOf(me.x) - 1) / 10))) : 0;
+        return THEMES[idx] || THEMES[0];
+    }
+
     function drawBackdrop() {
+        var th = localTheme();
         var g = ctx.createLinearGradient(0, 0, 0, H);
-        g.addColorStop(0, '#0b1020');
-        g.addColorStop(1, '#1e293b');
+        g.addColorStop(0, th.sky1);
+        g.addColorStop(0.5, th.sky2);
+        g.addColorStop(1, th.sky3);
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, H);
     }
@@ -6114,7 +6159,10 @@
     function drawLobby() {
         drawBackdrop();
         drawGround();
-        drawText(mode === 'joining' ? '친구에게 연결하는 중...' : '친구가 왔어요! 곧 시작해요', W / 2, 200, 40, '#fde047');
+        var head = '방장이 시작하기를 기다리고 있어요';
+        if (mode === 'joining') head = '친구에게 연결하는 중...';
+        else if (isHost) head = '친구가 왔어요! 준비되면 시작하세요';
+        drawText(head, W / 2, 200, 40, '#fde047');
         var pids = Object.keys(players).map(Number);
         pids.forEach(function (pid, i) {
             var p = players[pid];
@@ -6124,12 +6172,11 @@
         });
     }
 
-    function drawBlock(b) {
+    function drawBlock(b, th) {
         var sx = b.x - camX;
-        var safe = b.s % 5 === 0;
-        ctx.fillStyle = safe ? '#14532d' : '#334155';
+        ctx.fillStyle = th.block2;
         ctx.fillRect(sx, b.y, b.w, b.h);
-        ctx.fillStyle = safe ? '#22c55e' : '#94a3b8';
+        ctx.fillStyle = th.trim;
         ctx.fillRect(sx, b.y, b.w, 6);
     }
 
@@ -6206,9 +6253,10 @@
         var t = now();
         var me = players[myPid];
         drawBackdrop();
+        var th = localTheme();
         blocks.forEach(function (b) {
             if (b.x + b.w < camX || b.x > camX + W) return;
-            drawBlock(b);
+            drawBlock(b, th);
         });
         drawStageMarks();
         items.forEach(drawItem);
@@ -6244,11 +6292,12 @@
     }
 
     function draw() {
+        refreshGo();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
         if (mode === 'waiting' || (mode === 'gone' && !started)) drawWaiting();
-        else if (mode === 'joining' || mode === 'lobby') drawLobby();
+        else if (mode === 'joining' || mode === 'lobby' || mode === 'rules') drawLobby();
         else drawArena();
     }
 
@@ -6447,6 +6496,31 @@
             var ids = Object.keys(pendingInvites);
             if (ids.length) showInvite(ids[ids.length - 1]);
         }
+    }
+
+    function syncBgm() {
+        if (typeof BGM_BY_WORLD === 'undefined' || !audioCtx) return;
+        var me = players[myPid];
+        if (!me || mode !== 'playing') return;
+        if (me.pw && me.pw.k === 'g') return;
+        var wi = Math.max(0, Math.min(THEMES.length - 1, Math.floor((stageOf(me.x) - 1) / 10)));
+        if (wi === bgmWorld) return;
+        bgmWorld = wi;
+        var data = BGM_BY_WORLD[wi];
+        playToneSequence('bgm', data.tracks, data.drum, function () { return mode === 'playing'; }, function () { return 1; });
+    }
+
+    function beginRules() {
+        if (!isHost || mode !== 'lobby') return;
+        mode = 'rules';
+        bcast({ t: 'rules' });
+        showPanel(RULES_TEXT);
+        rulesTimer = setTimeout(launch, RULES_MS);
+    }
+
+    function refreshGo() {
+        var b = document.getElementById('fr-go');
+        if (b) b.hidden = !(isHost && mode === 'lobby');
     }
 
     function pickKind() {
@@ -6817,6 +6891,7 @@
         overlay.innerHTML =
             '<canvas id="fr-canvas" width="1280" height="720"></canvas>' +
             '<button id="fr-exit" type="button" aria-label="닫기">✕</button>' +
+            '<button id="fr-go" type="button" hidden>이 친구들과 시작</button>' +
             '<div id="fr-tools"><button id="fr-chat-btn" type="button" aria-label="채팅">✏</button><button id="fr-mic-btn" type="button" aria-label="마이크">🎤</button></div>' +
             '<div id="fr-chat" hidden><div class="fr-chat-head"><span>채팅</span><button id="fr-chat-close" type="button" aria-label="닫기">✕</button></div><div id="fr-chat-log"></div><div class="fr-chat-row"><input id="fr-chat-input" type="text" maxlength="120" placeholder="메시지를 입력하세요" autocomplete="off"><button id="fr-chat-send" type="button" aria-label="보내기">✈</button></div></div>' +
             '<div id="fr-panel" hidden><button id="fr-panel-close" type="button" aria-label="닫기">✕</button><p id="fr-panel-text"></p></div>' +
@@ -6846,6 +6921,7 @@
         startScreen = document.getElementById('start-screen');
 
         document.getElementById('fr-exit').addEventListener('click', closeAll);
+        document.getElementById('fr-go').addEventListener('click', beginRules);
         document.getElementById('fr-chat-btn').addEventListener('click', function () {
             if (chatOpen) closeChat();
             else openChat();
