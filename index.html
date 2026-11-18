@@ -650,6 +650,9 @@
                 <button id="start-btn" class="retro-btn px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer">
                     모험 시작!
                 </button>
+                <button id="friend-btn" class="retro-btn px-8 py-4 text-white font-extrabold rounded-lg border-2 border-white text-sm md:text-base cursor-pointer" type="button">
+                    친구 추가
+                </button>
                 <p id="demo-desc" class="text-[9px] text-gray-500 mt-2 animate-pulse">15초간 대기하면 오토 데모가 시작됩니다.</p>
             </div>
         </div>
@@ -804,6 +807,15 @@
         <div class="st-modal">
             <button id="st-close" class="rp-close" type="button" aria-label="닫기">✕</button>
             <h2 class="st-title">설정</h2>
+            <h3 class="st-section">일반</h3>
+            <div class="st-row">
+                <span>플레이 방식</span>
+                <select id="st-play-mode" class="st-select">
+                    <option value="solo">혼자서 플레이</option>
+                    <option value="friends">친구들과 플레이</option>
+                </select>
+            </div>
+            <h3 class="st-section">소리 및 진동</h3>
             <div class="st-row">
                 <span>드럼 비트</span>
                 <select id="st-drum" class="st-select">
@@ -822,6 +834,10 @@
                 <span>진동</span>
                 <label class="st-switch"><input id="st-vib" type="checkbox" checked><span class="st-track"></span></label>
             </div>
+            <div class="st-row">
+                <span>사운드</span>
+                <label class="st-switch"><input id="st-snd" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
             <div id="st-vib-level-row" class="st-row">
                 <span>진동 강도</span>
                 <select id="st-vib-level" class="st-select">
@@ -833,9 +849,18 @@
                 </select>
             </div>
             <div id="st-vib-warn" class="st-vib-warn" hidden>진동 강도는 보급형 폰(겔럭시 a12, a17 등)에서만 정상적으로 동작합니다. 최신형 폰(겔럭시 s26 ultra, IPhone 16 pro 등)을 사용 중이시라면 진동 강도는 최강으로 두세요.</div>
+            <h3 class="st-section">서바이벌</h3>
             <div class="st-row">
-                <span>사운드</span>
-                <label class="st-switch"><input id="st-snd" type="checkbox" checked><span class="st-track"></span></label>
+                <span>경기 자동 녹화</span>
+                <label class="st-switch"><input id="st-autorec" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+            <div class="st-row">
+                <span>친구 메시지 읽어주기</span>
+                <label class="st-switch"><input id="st-tts" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+            <div class="st-row">
+                <input id="st-nick" class="st-nick-input" type="text" maxlength="12" placeholder="별명을 입력하세요" autocomplete="off">
+                <button id="st-nick-save" class="st-nick-save" type="button">저장</button>
             </div>
         </div>
     </div>
@@ -4787,8 +4812,8 @@
 
         function steps(order) {
             var b = new Builder();
-            order.forEach(function (name) {
-                b.pulse(100, LEVELS[name]);
+            order.forEach(function (step) {
+                b.pulse(step[1], LEVELS[step[0]]);
             });
             return b.result();
         }
@@ -4812,10 +4837,25 @@
             }, Math.max(0, total - 4));
         }
 
+        var AUTO_HIT = steps([['max', 100], ['strong', 100], ['mid', 100], ['weak', 100]]);
+        var AUTO_JUMP = steps([['weak', 100], ['mid', 100], ['strong', 100], ['max', 100]]);
+        var AUTO_BLOCK = steps([['weak', 100], ['strong', 100]]);
+        var AUTO_CLEAR = steps([['weak', 100], ['mid', 100], ['strong', 100], ['max', 100]]);
+        var AUTO_TAKE_L = steps([['max', 200], ['strong', 200], ['mid', 100], ['weak', 100], ['mid', 400]]);
+        var AUTO_PREVIEW = steps([['weak', 500], ['mid', 500], ['strong', 500], ['max', 500]]);
+
+        var autoPatterns = new Map();
+        autoPatterns.set(VIB_HIT, AUTO_HIT);
+        autoPatterns.set(VIB_BLOCK, AUTO_BLOCK);
+        [AUTO_HIT, AUTO_JUMP, AUTO_BLOCK, AUTO_CLEAR, AUTO_TAKE_L].forEach(function (p) {
+            autoPatterns.set(p, p);
+        });
+
         navigator.vibrate = function (pattern) {
             cancelTimer();
             if (level === 'auto') {
-                if (pattern === VIB_HIT) return play(steps(['max', 'strong', 'mid', 'weak']));
+                var special = autoPatterns.get(pattern);
+                if (special) return play(special);
                 return nativeVibrate(pattern);
             }
             var cfg = LEVELS[level];
@@ -4823,15 +4863,61 @@
             return play(convert(pattern, cfg));
         };
 
+        function inRound() {
+            return gameState.isActive && !gameState.isDemo && !promptOpen;
+        }
+
+        var originalSynth = window.playSynthSound;
+        if (typeof originalSynth === 'function') {
+            window.playSynthSound = function (type) {
+                var result = originalSynth.apply(this, arguments);
+                if (type === 'jump' && level === 'auto' && vibrationEnabled && inRound() && sixSevenAudio.paused) {
+                    play(AUTO_JUMP);
+                }
+                return result;
+            };
+        }
+
         var originalStageClear = window.triggerStageClear;
         if (typeof originalStageClear === 'function') {
             window.triggerStageClear = function () {
                 var result = originalStageClear.apply(this, arguments);
-                if (level === 'auto' && vibrationEnabled) {
-                    play(steps(['weak', 'mid', 'strong', 'max']));
-                }
+                if (level === 'auto' && vibrationEnabled) play(AUTO_CLEAR);
                 return result;
             };
+        }
+
+        var originalTakeL = window.playTakeL;
+        if (typeof originalTakeL === 'function') {
+            window.playTakeL = function () {
+                var result = originalTakeL.apply(this, arguments);
+                if (level === 'auto' && vibrationEnabled) play(AUTO_TAKE_L);
+                return result;
+            };
+        }
+
+        var baseVibList = RP_VIB_LIST.slice();
+        function refreshVibList() {
+            var list = baseVibList;
+            if (level === 'auto') {
+                list = [
+                    baseVibList[0],
+                    { label: '블록 타격 (자동)', pattern: AUTO_BLOCK },
+                    baseVibList[2],
+                    { label: '피격 (자동)', pattern: AUTO_HIT },
+                    baseVibList[4],
+                    { label: '점프 (자동)', pattern: AUTO_JUMP },
+                    { label: '스테이지 클리어 (자동)', pattern: AUTO_CLEAR },
+                    { label: 'l을가져가 (자동)', pattern: AUTO_TAKE_L }
+                ];
+            }
+            RP_VIB_LIST.splice.apply(RP_VIB_LIST, [0, RP_VIB_LIST.length].concat(list));
+        }
+
+        function previewLevel() {
+            if (level === 'auto') { play(AUTO_PREVIEW); return; }
+            var cfg = LEVELS[level];
+            play(cfg ? convert([1000], cfg) : [1000]);
         }
 
         var sel = document.getElementById('st-vib-level');
@@ -4846,17 +4932,2059 @@
         }
 
         sel.value = level;
+        refreshVibList();
         refreshVibrationUI();
         sel.addEventListener('change', function () {
             level = sel.value;
             try { localStorage.setItem(STORE_KEY, level); } catch (e) {}
-            cancelTimer();
-            nativeVibrate(0);
+            refreshVibList();
             refreshVibrationUI();
+            if (vibrationEnabled) previewLevel();
+            else nativeVibrate(0);
         });
         if (vibSwitch) vibSwitch.addEventListener('change', refreshVibrationUI);
         var openButton = document.getElementById('settings-btn');
         if (openButton) openButton.addEventListener('click', refreshVibrationUI);
     })();
     </script>
+
+    <style>
+        #friend-btn { background: #0891b2; }
+        #friend-btn:hover { background: #06b6d4; }
+        .st-nick-input {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-family: inherit;
+            font-size: 10px;
+            color: #fff;
+            background: #020617;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+        }
+        .st-nick-input:focus { border-color: #22d3ee; }
+        .st-nick-save {
+            font-family: inherit;
+            font-size: 10px;
+            color: #000;
+            background: #34d399;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #fr-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
+        }
+        #fr-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        #fr-exit, #fr-panel-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #475569;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #fr-panel {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: min(86vw, 460px);
+            padding: 36px 24px 28px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.96);
+            border: 3px solid #fde047;
+            border-radius: 14px;
+        }
+        #fr-panel-close { top: 8px; right: 8px; }
+        #fr-panel-text {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #fff;
+            word-break: keep-all;
+        }
+        #fr-controls {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 14px;
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        .fr-pad { display: flex; gap: 10px; pointer-events: auto; }
+        .fr-pad button {
+            min-width: 64px;
+            height: 64px;
+            padding: 0 14px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #fff;
+            background: rgba(31, 41, 55, 0.75);
+            border: 2px solid #9ca3af;
+            border-radius: 14px;
+            touch-action: none;
+        }
+        .fr-pad button:active { background: rgba(75, 85, 99, 0.9); }
+        #fr-invite {
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .fr-card {
+            width: min(86vw, 380px);
+            padding: 26px 22px 22px;
+            text-align: center;
+            background: #0f172a;
+            border: 3px solid #fde047;
+            border-radius: 14px;
+            color: #fff;
+        }
+        .fr-nick { font-size: 13px; color: #fde047; margin-bottom: 14px; word-break: break-all; }
+        .fr-card p { margin: 0 0 20px; font-size: 12px; line-height: 1.8; word-break: keep-all; }
+        .fr-actions { display: flex; gap: 12px; justify-content: center; }
+        .fr-actions button {
+            min-width: 100px;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 12px;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #fr-yes { background: #34d399; color: #000; }
+        #fr-no { background: #374151; color: #fff; }
+        #fr-tools {
+            position: absolute;
+            top: 56px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        #fr-tools button {
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #475569;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #fr-tools button.on { background: #047857; border-color: #34d399; }
+        #fr-chat {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: min(92vw, 520px);
+            height: min(60vh, 460px);
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 23, 42, 0.97);
+            border: 3px solid #22d3ee;
+            border-radius: 14px;
+            padding: 10px;
+            z-index: 2;
+        }
+        #fr-chat[hidden] { display: none; }
+        .fr-chat-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            font-size: 13px;
+            padding: 0 4px 8px;
+        }
+        .fr-chat-head button {
+            width: 32px;
+            height: 32px;
+            color: #fff;
+            background: #1f2937;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #fr-chat-log {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            background: #020617;
+            border: 2px solid #1f2937;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            color: #fff;
+            line-height: 1.6;
+        }
+        .fr-msg { margin-bottom: 6px; word-break: break-all; }
+        .fr-msg b { color: #fde047; }
+        .fr-msg.mine b { color: #67e8f9; }
+        .fr-sys { color: #94a3b8; font-size: 11px; margin-bottom: 6px; }
+        .fr-chat-row { display: flex; gap: 8px; margin-top: 8px; }
+        #fr-chat-input {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-family: inherit;
+            font-size: 12px;
+            color: #fff;
+            background: #020617;
+            border: 2px solid #374151;
+            border-radius: 10px;
+            padding: 10px;
+            outline: none;
+        }
+        #fr-chat-input:focus { border-color: #22d3ee; }
+        #fr-chat-send {
+            width: 52px;
+            font-size: 18px;
+            color: #000;
+            background: #34d399;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script>
+(function () {
+    if (typeof gameState === 'undefined') return;
+
+    var HUB_ID = 'rice-jump-lobby-hub-7c1e';
+    var NICK_KEY = 'riceJumpNickname';
+    var MAX_PLAYERS = 6;
+    var WAIT_LIMIT_MS = 15 * 60 * 1000;
+    var LOBBY_MS = 2000;
+    var FREEZE_MS = 1200;
+    var MATCH_MS = 10 * 60 * 1000;
+    var W = 1280;
+    var H = 720;
+    var PW = 50;
+    var PH = 60;
+    var BASE_Y = 640;
+    var STEP = 50;
+    var STAGE_W = 1100;
+    var STAGES = 50;
+    var WORLD_W = STAGE_W * STAGES;
+    var START_FLAT = 260;
+    var COLORS = ['#10b981', '#f97316', '#3b82f6', '#ec4899', '#eab308', '#a855f7'];
+    var SPAWN_X = [60, 130, 200, 270, 340, 410];
+    var FONT = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+
+    var blocks = [];
+
+    function rng(seed) {
+        var s = seed >>> 0;
+        return function () {
+            s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+            return s / 4294967296;
+        };
+    }
+
+    function addBlock(x, top, w, n) {
+        blocks.push({ x: x, y: top, w: w, h: H - top, s: n });
+    }
+
+    function buildStage(n) {
+        var r = rng(n * 7919 + 13);
+        var x0 = (n - 1) * STAGE_W;
+        var end = x0 + STAGE_W;
+        var x = x0;
+        addBlock(x, BASE_Y, START_FLAT, n);
+        x += START_FLAT;
+        while (x < end) {
+            var remain = end - x;
+            var sw = 60;
+            var k = 1 + Math.floor(r() * 3);
+            var pw = 100 + Math.floor(r() * 120);
+            var need = 2 * k * sw + pw;
+            if (r() < 0.5 || remain < need + 200) {
+                var fw = Math.min(remain, 120 + Math.floor(r() * 200));
+                if (remain - fw < 120) fw = remain;
+                addBlock(x, BASE_Y, fw, n);
+                x += fw;
+            } else {
+                var i;
+                for (i = 1; i <= k; i++) {
+                    addBlock(x, BASE_Y - i * STEP, sw, n);
+                    x += sw;
+                }
+                addBlock(x, BASE_Y - k * STEP, pw, n);
+                x += pw;
+                for (i = k - 1; i >= 0; i--) {
+                    addBlock(x, BASE_Y - i * STEP, sw, n);
+                    x += sw;
+                }
+            }
+        }
+    }
+
+    for (var sn = 1; sn <= STAGES; sn++) buildStage(sn);
+
+    function stageOf(x) {
+        return Math.min(STAGES, Math.max(1, Math.floor((x + PW / 2) / STAGE_W) + 1));
+    }
+
+    function inSafe(p) {
+        return stageOf(p.x) % 5 === 0;
+    }
+
+    function groundAt(x) {
+        var top = H;
+        for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i];
+            if (x >= b.x && x < b.x + b.w && b.y < top) top = b.y;
+        }
+        return top === H ? BASE_Y : top;
+    }
+
+    var overlay, canvas, ctx, panel, panelText, controlsEl, inviteBox, inviteNick, startScreen;
+    var active = false;
+    var started = false;
+    var mode = 'idle';
+    var isHost = false;
+    var gamePeer = null;
+    var hostConn = null;
+    var clientConns = {};
+    var hostId = null;
+    var nextPid = 1;
+    var myPid = 0;
+    var players = {};
+    var bullets = [];
+    var items = [];
+    var nextBulletId = 0;
+    var nextItemId = 0;
+    var lobbyEnd = 0;
+    var waitDeadline = 0;
+    var goUntil = 0;
+    var matchEnd = 0;
+    var camX = 0;
+    var rafId = 0;
+    var lastTs = 0;
+    var acc = 0;
+    var frame = 0;
+    var inviteTimer = null;
+    var joinTimer = null;
+    var actLatch = false;
+    var pendingPick = {};
+    var waitRice = { x: 100, y: 580, vx: 4, vy: 0, f: 1, t: 0 };
+    var inp = { l: false, r: false, j: false, a: false };
+    var pendingInvites = {};
+    var dismissed = {};
+    var shownInvite = null;
+    var chatOpen = false;
+    var micOn = false;
+    var micTrack = null;
+    var silentTrk = null;
+    var voiceCalls = {};
+    var remoteAudios = {};
+    var SERVER_MSG = '어라? 서버가 아작났는데요? 서버 고치면 될테니 잠시 기다려주세요.';
+    var TTS_KEY = 'riceJumpTTS';
+    var AUTOREC_KEY = 'riceJumpAutoRec';
+    var recorder = null;
+    var recChunks = [];
+    var recDest = null;
+    var recTimer = null;
+    var recentChats = [];
+
+    function now() { return Date.now(); }
+
+    function getNick() {
+        try { return (localStorage.getItem(NICK_KEY) || '').trim().slice(0, 12); } catch (e) { return ''; }
+    }
+
+    function displayNick() { return getNick() || '이름 없는 쌀'; }
+
+    function cleanNick(n) {
+        return String(n || '').replace(/[\r\n]/g, ' ').trim().slice(0, 12) || '이름 없는 쌀';
+    }
+
+    function send(conn, msg) {
+        try { if (conn && conn.open) conn.send(msg); } catch (e) {}
+    }
+
+    function bcast(msg, exceptPid) {
+        Object.keys(clientConns).forEach(function (k) {
+            if (Number(k) !== exceptPid) send(clientConns[k], msg);
+        });
+    }
+
+    function toHost(msg) {
+        if (isHost) hostHandle(msg, myPid);
+        else send(hostConn, msg);
+    }
+
+    function overlap(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function makePlayer(pid, nick) {
+        var x = SPAWN_X[pid % SPAWN_X.length];
+        return {
+            pid: pid, nick: nick, color: COLORS[pid % COLORS.length],
+            x: x, y: BASE_Y - PH, tx: x, ty: BASE_Y - PH, vx: 0, vy: 0, f: 1,
+            hp: 3, inv: 0, dash: 0, grounded: false, pw: null, pwk: '', gunT: 0,
+            left: false, pr: null
+        };
+    }
+
+    function rosterWire() {
+        return Object.keys(players).map(function (k) {
+            var p = players[k];
+            return { i: p.pid, n: p.nick, c: p.color, pr: p.pr };
+        });
+    }
+
+    function stateOf(p) {
+        return {
+            x: Math.round(p.x), y: Math.round(p.y), f: p.f, h: p.hp, d: p.dash,
+            v: p.inv > 0 ? 1 : 0, k: p.pw ? p.pw.k : ''
+        };
+    }
+
+    function allStates() {
+        return Object.keys(players).map(function (k) {
+            var p = players[k];
+            var s = stateOf(p);
+            s.i = p.pid;
+            return s;
+        });
+    }
+
+    function worldWire() {
+        return { i: items };
+    }
+
+    function applyWorld(w) {
+        items = w.i;
+        Object.keys(pendingPick).forEach(function (id) {
+            if (!items.some(function (it) { return String(it.id) === id; })) delete pendingPick[id];
+        });
+    }
+
+    function addBullet(b) {
+        bullets.push({ id: b.id, x: b.x, y: b.y, vx: b.vx, owner: b.owner });
+    }
+
+    function removeBullet(id) {
+        for (var i = bullets.length - 1; i >= 0; i--) {
+            if (bullets[i].id === id) bullets.splice(i, 1);
+        }
+    }
+
+    function spawnItem() {
+        var lo = WORLD_W;
+        var hi = 0;
+        Object.keys(players).forEach(function (k) {
+            var p = players[k];
+            if (p.left || p.hp <= 0) return;
+            lo = Math.min(lo, p.x);
+            hi = Math.max(hi, p.x);
+        });
+        if (lo > hi) { lo = 0; hi = 0; }
+        var x = lo + Math.random() * (hi - lo + 900);
+        x = Math.max(120, Math.min(WORLD_W - 120, x));
+        var gy = groundAt(x);
+        items.push({ id: nextItemId++, x: Math.round(x), y: gy - 45, k: pickKind() });
+    }
+
+    function hostPick(id, pid) {
+        var idx = -1;
+        for (var i = 0; i < items.length; i++) if (items[i].id === id) idx = i;
+        if (idx < 0) return;
+        var kind = items[idx].k;
+        items.splice(idx, 1);
+        if (pid === myPid) applyGrant(kind);
+        else send(clientConns[pid], { t: 'grant', k: kind });
+    }
+
+    function hostHandle(m, from) {
+        var p = players[from];
+        if (!p) return;
+        if (m.t === 'state') {
+            if (from !== myPid) {
+                var s = m.s;
+                p.tx = s.x; p.ty = s.y; p.f = s.f; p.hp = s.h; p.dash = s.d; p.inv = s.v; p.pwk = s.k;
+            }
+        } else if (m.t === 'shot') {
+            if (from !== myPid) addBullet(m.b);
+            bcast(m, from);
+        } else if (m.t === 'bx') {
+            removeBullet(m.id);
+            bcast(m, from);
+        } else if (m.t === 'chat') {
+            var msg = { t: 'chat', pid: from, n: p.nick, x: String(m.text || '').slice(0, 120) };
+            bcast(msg);
+            onChat(msg);
+        } else if (m.t === 'pick') {
+            hostPick(m.id, from);
+        } else if (m.t === 'hit') {
+            if (m.by === myPid) applySteal();
+            else send(clientConns[m.by], { t: 'steal' });
+        }
+    }
+
+    function clientHandle(m) {
+        if (m.t === 'welcome') {
+            myPid = m.pid;
+            clearTimeout(joinTimer);
+            mode = 'lobby';
+        } else if (m.t === 'lobby') {
+            players = {};
+            m.pl.forEach(function (r) {
+                var p = makePlayer(r.i, r.n);
+                p.color = r.c;
+                p.pr = r.pr;
+                players[r.i] = p;
+            });
+        } else if (m.t === 'full') {
+            showPanel('방이 가득 찼어요.');
+            mode = 'gone';
+        } else if (m.t === 'start') {
+            players = {};
+            m.pl.forEach(function (r) {
+                var p = makePlayer(r.i, r.n);
+                p.color = r.c;
+                p.x = r.x; p.tx = r.x;
+                p.pr = r.pr;
+                players[r.i] = p;
+            });
+            applyWorld(m.w);
+            bullets = [];
+            startPlay(m.d);
+        } else if (m.t === 'p') {
+            m.s.forEach(function (s) {
+                if (s.i === myPid) return;
+                var o = players[s.i];
+                if (!o) return;
+                o.tx = s.x; o.ty = s.y; o.f = s.f; o.hp = s.h; o.dash = s.d; o.inv = s.v; o.pwk = s.k;
+            });
+        } else if (m.t === 'w') {
+            applyWorld(m);
+        } else if (m.t === 'shot') {
+            addBullet(m.b);
+        } else if (m.t === 'bx') {
+            removeBullet(m.id);
+        } else if (m.t === 'chat') {
+            onChat(m);
+        } else if (m.t === 'grant') {
+            applyGrant(m.k);
+        } else if (m.t === 'steal') {
+            applySteal();
+        } else if (m.t === 'left') {
+            if (players[m.pid]) { players[m.pid].left = true; players[m.pid].hp = 0; }
+        } else if (m.t === 'over') {
+            showResult(m.w);
+        }
+    }
+
+    function stopGunFx() {
+        try { sixSevenAudio.pause(); } catch (e) {}
+        try { stopSixSevenVibration(); } catch (e) {}
+    }
+
+    function clearPw(p) {
+        if (!p || !p.pw) return;
+        if (p.pw.k === 'g') stopGunFx();
+        p.pw = null;
+    }
+
+    function applyGrant(kind) {
+        if (kind === 'c') {
+            if (!recorder) startRec(180000);
+            return;
+        }
+        var me = players[myPid];
+        if (!me || me.hp <= 0) return;
+        clearPw(me);
+        if (kind === 'g') {
+            me.pw = { k: 'g', until: now() + 10000 };
+            try { playSynthSound('six_seven'); } catch (e) {}
+            try {
+                sixSevenAudio.currentTime = 0;
+                sixSevenAudio.play().catch(function () {});
+                startSixSevenVibration();
+            } catch (e) {}
+        } else {
+            me.pw = { k: 'l', until: now() + 15000, charges: 3 };
+            try { playTakeL(); } catch (e) {}
+        }
+    }
+
+    function applySteal() {
+        var me = players[myPid];
+        if (!me || me.hp <= 0) return;
+        me.hp = Math.min(9, me.hp + 1);
+        try { playSynthSound('item_get'); } catch (e) {}
+    }
+
+    function damage(p, n, by) {
+        if (p.inv > 0 || p.hp <= 0 || inSafe(p)) return;
+        p.hp -= n;
+        p.inv = 75;
+        p.vy = -9;
+        try { vib(VIB_HIT); } catch (e) {}
+        try { playSynthSound('hit'); } catch (e) {}
+        if (by !== null && by !== undefined) toHost({ t: 'hit', by: by });
+        if (p.hp <= 0) {
+            p.hp = 0;
+            clearPw(p);
+        }
+    }
+
+    function fire(p) {
+        var b = {
+            id: myPid + '-' + (nextBulletId++),
+            x: p.x + (p.f > 0 ? PW + 6 : -6),
+            y: p.y + 32,
+            vx: p.f * 16,
+            owner: myPid
+        };
+        addBullet(b);
+        toHost({ t: 'shot', b: b });
+        p.gunT = 18;
+        try { playSynthSound('shoot'); } catch (e) {}
+    }
+
+    function dashStart(p) {
+        if (p.pw && p.pw.k === 'l' && p.pw.charges > 0 && p.dash === 0) {
+            p.pw.charges--;
+            p.dash = 18;
+            try { playSynthSound('shoot'); } catch (e) {}
+        }
+    }
+
+    function stepLocal(p, t) {
+        var canAct = p.hp > 0 && t >= goUntil;
+        var dir = (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
+        if (p.pw && (t > p.pw.until || (p.pw.k === 'l' && p.pw.charges <= 0 && p.dash === 0))) clearPw(p);
+        if (canAct) {
+            if (p.dash > 0) {
+                p.dash--;
+                p.vx = p.f * 20;
+            } else {
+                p.vx = dir * 7;
+                if (dir) p.f = dir;
+            }
+            if (inp.j && p.grounded && p.dash === 0) {
+                p.vy = -18;
+                p.grounded = false;
+                try { playSynthSound('jump'); } catch (e) {}
+            }
+            if (inp.a) {
+                if (p.pw && p.pw.k === 'g') {
+                    if (p.gunT <= 0) fire(p);
+                } else if (!actLatch) {
+                    dashStart(p);
+                }
+            }
+        } else {
+            p.vx = 0;
+            p.dash = 0;
+        }
+        actLatch = inp.a;
+        if (p.gunT > 0) p.gunT--;
+        if (p.inv > 0) p.inv--;
+
+        var i, b;
+        p.x += p.vx;
+        for (i = 0; i < blocks.length; i++) {
+            b = blocks[i];
+            if (p.x < b.x + b.w && p.x + PW > b.x && p.y < b.y + b.h && p.y + PH > b.y) {
+                if (p.vx > 0) p.x = b.x - PW;
+                else if (p.vx < 0) p.x = b.x + b.w;
+                p.vx = 0;
+                p.dash = 0;
+            }
+        }
+
+        var prevY = p.y;
+        var prevBottom = p.y + PH;
+        p.vy += 0.8;
+        if (p.vy > 22) p.vy = 22;
+        p.y += p.vy;
+        p.grounded = false;
+        for (i = 0; i < blocks.length; i++) {
+            b = blocks[i];
+            if (p.x < b.x + b.w && p.x + PW > b.x) {
+                if (p.vy >= 0 && prevBottom <= b.y + 2 && p.y + PH >= b.y && p.y < b.y + b.h) {
+                    p.y = b.y - PH;
+                    p.vy = 0;
+                    p.grounded = true;
+                } else if (p.vy < 0 && prevY >= b.y + b.h && p.y < b.y + b.h) {
+                    p.y = b.y + b.h;
+                    p.vy = 0;
+                }
+            }
+        }
+
+        if (p.x < 0) p.x = 0;
+        if (p.x > WORLD_W - PW) p.x = WORLD_W - PW;
+        if (p.y > H + 200) {
+            p.y = groundAt(p.x) - PH;
+            p.vy = 0;
+        }
+    }
+
+    function stepOthers() {
+        Object.keys(players).forEach(function (k) {
+            var o = players[k];
+            if (o.pid === myPid) return;
+            o.x += (o.tx - o.x) * 0.4;
+            o.y += (o.ty - o.y) * 0.4;
+        });
+    }
+
+    function blockedAt(x, y) {
+        for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return true;
+        }
+        return false;
+    }
+
+    function stepBullets() {
+        for (var i = bullets.length - 1; i >= 0; i--) {
+            var b = bullets[i];
+            b.x += b.vx;
+            if (b.x < -40 || b.x > WORLD_W + 40 || blockedAt(b.x, b.y)) bullets.splice(i, 1);
+        }
+    }
+
+    function stepWorld() {
+        if (frame % 420 === 0 && items.length < 4) spawnItem();
+        if (frame % 30 === 0) checkEnd();
+    }
+
+    function checkEnd() {
+        if (!started || mode !== 'playing') return;
+        var alive = [];
+        Object.keys(players).forEach(function (k) {
+            var p = players[k];
+            if (p.hp > 0 && !p.left) alive.push(p);
+        });
+        if (alive.length <= 1) {
+            endMatch(alive.length ? alive[0].pid : -1);
+            return;
+        }
+        if (now() >= matchEnd) {
+            var best = -1;
+            var top = -1;
+            var tie = false;
+            alive.forEach(function (p) {
+                if (p.hp > best) { best = p.hp; top = p.pid; tie = false; }
+                else if (p.hp === best) tie = true;
+            });
+            endMatch(tie ? -2 : top);
+        }
+    }
+
+    function endMatch(w) {
+        bcast({ t: 'over', w: w });
+        showResult(w);
+    }
+
+    function checkHits(me, t) {
+        if (me.hp <= 0) return;
+        var r = { x: me.x, y: me.y, w: PW, h: PH };
+        Object.keys(players).forEach(function (k) {
+            var o = players[k];
+            if (o.pid === myPid || o.hp <= 0 || o.left) return;
+            if (o.dash > 0 && overlap(r, { x: o.x, y: o.y, w: PW, h: PH })) damage(me, 1, o.pid);
+        });
+        for (var i = bullets.length - 1; i >= 0; i--) {
+            var b = bullets[i];
+            if (b.owner !== myPid && overlap(r, { x: b.x - 8, y: b.y - 5, w: 16, h: 10 })) {
+                bullets.splice(i, 1);
+                toHost({ t: 'bx', id: b.id });
+                damage(me, 1, b.owner);
+            }
+        }
+        if (t >= goUntil) {
+            items.forEach(function (it) {
+                if (!pendingPick[it.id] && overlap(r, { x: it.x, y: it.y, w: 45, h: 45 })) {
+                    pendingPick[it.id] = true;
+                    toHost({ t: 'pick', id: it.id });
+                }
+            });
+        }
+    }
+
+    function stepWaiting() {
+        var r = waitRice;
+        r.t++;
+        r.x += r.vx;
+        if (r.x > 1130) { r.x = 1130; r.vx = -4; r.f = -1; }
+        if (r.x < 100) { r.x = 100; r.vx = 4; r.f = 1; }
+        r.vy += 0.8;
+        r.y += r.vy;
+        if (r.y >= 580) { r.y = 580; r.vy = 0; if (r.t % 50 === 0) r.vy = -16; }
+    }
+
+    function step() {
+        frame++;
+        var t = now();
+        if (mode === 'waiting') {
+            stepWaiting();
+            if (t > waitDeadline) timeoutWait();
+            return;
+        }
+        if (mode === 'lobby' && isHost && t >= lobbyEnd) launch();
+        if (mode !== 'playing') return;
+        var me = players[myPid];
+        if (!me) return;
+        stepLocal(me, t);
+        camX = Math.max(0, Math.min(WORLD_W - W, me.x - W * 0.4));
+        stepOthers();
+        stepBullets();
+        if (isHost) stepWorld();
+        checkHits(me, t);
+        if (!isHost && frame % 3 === 0) toHost({ t: 'state', s: stateOf(me) });
+        if (isHost) {
+            if (frame % 4 === 0) bcast({ t: 'p', s: allStates() });
+            if (frame % 6 === 0) bcast({ t: 'w', i: items });
+        }
+    }
+
+    function launch() {
+        clearInterval(inviteTimer);
+        inviteTimer = null;
+        sendCancel();
+        var pids = Object.keys(players).map(Number);
+        pids.forEach(function (pid, i) {
+            var p = players[pid];
+            p.x = SPAWN_X[i % SPAWN_X.length];
+            p.y = BASE_Y - PH;
+            p.tx = p.x;
+            p.ty = p.y;
+            p.hp = 3;
+            p.inv = 0;
+            p.dash = 0;
+            p.pw = null;
+            p.vx = 0;
+            p.vy = 0;
+        });
+        items = [];
+        spawnItem();
+        spawnItem();
+        bullets = [];
+        bcast({
+            t: 'start',
+            pl: pids.map(function (pid) { return { i: pid, n: players[pid].nick, c: players[pid].color, x: players[pid].x, pr: players[pid].pr }; }),
+            w: worldWire(),
+            d: MATCH_MS
+        });
+        startPlay(MATCH_MS);
+    }
+
+    function startPlay(duration) {
+        try { stopTitleMusic(); } catch (e) {}
+        started = true;
+        mode = 'playing';
+        goUntil = now() + FREEZE_MS;
+        matchEnd = now() + duration;
+        frame = 0;
+        pendingPick = {};
+        controlsEl.hidden = false;
+        connectVoice();
+        if (getAutoRec()) startRec(duration);
+    }
+
+    function showResult(winner) {
+        if (mode === 'over') return;
+        stopRec();
+        mode = 'over';
+        controlsEl.hidden = true;
+        stopGunFx();
+        var text;
+        if (winner === myPid) text = '🏆 승리! 끝까지 살아남았어요!';
+        else if (winner === -2) text = '무승부예요. 아무도 이기지 못했어요.';
+        else if (winner >= 0 && players[winner]) text = players[winner].nick + '님이 끝까지 살아남았어요!';
+        else text = '아무도 살아남지 못했어요.';
+        showPanel(text);
+        try {
+            if (winner === myPid) playSynthSound('clear');
+            else if (soundEnabled) { gameoverAudio.currentTime = 0; gameoverAudio.play().catch(function () {}); }
+        } catch (e) {}
+    }
+
+    function timeoutWait() {
+        mode = 'gone';
+        clearInterval(inviteTimer);
+        inviteTimer = null;
+        sendCancel();
+        try { stopTitleMusic(); } catch (e) {}
+        try {
+            if (soundEnabled) { gameoverAudio.currentTime = 0; gameoverAudio.play().catch(function () {}); }
+        } catch (e) {}
+        showPanel('아... 친구를 모아 봤지만 친구가 오질 않네요ㅠㅠ');
+        cleanupNet();
+    }
+
+    function showPanel(text) {
+        panelText.textContent = text;
+        panel.hidden = false;
+    }
+
+    function cleanupNet() {
+        Object.keys(clientConns).forEach(function (k) { try { clientConns[k].close(); } catch (e) {} });
+        clientConns = {};
+        if (hostConn) { try { hostConn.close(); } catch (e) {} hostConn = null; }
+        if (gamePeer) { try { gamePeer.destroy(); } catch (e) {} gamePeer = null; }
+    }
+
+    function closeAll() {
+        cancelAnimationFrame(rafId);
+        clearInterval(inviteTimer);
+        inviteTimer = null;
+        clearTimeout(joinTimer);
+        if (hostId) sendCancel();
+        stopGunFx();
+        cleanupNet();
+        hostId = null;
+        overlay.hidden = true;
+        controlsEl.hidden = true;
+        panel.hidden = true;
+        active = false;
+        started = false;
+        mode = 'idle';
+        isHost = false;
+        players = {};
+        bullets = [];
+        items = [];
+        pendingPick = {};
+        camX = 0;
+        inp.l = inp.r = inp.j = inp.a = false;
+        closeChat();
+        teardownVoice();
+        stopRec();
+        if (startScreen) startScreen.classList.remove('hidden');
+        try { playTitleMusic(); } catch (e) {}
+        if (typeof resetDemoTimer === 'function') resetDemoTimer();
+    }
+
+    function openOverlay() {
+        if (gameState.isDemo && typeof stopAutoDemo === 'function') stopAutoDemo();
+        if (demoTimeout) { clearTimeout(demoTimeout); demoTimeout = null; }
+        active = true;
+        started = false;
+        overlay.hidden = false;
+        panel.hidden = true;
+        controlsEl.hidden = true;
+        players = {};
+        bullets = [];
+        items = [];
+        pendingPick = {};
+        camX = 0;
+        frame = 0;
+        try { initAudio(); } catch (e) {}
+        lastTs = 0;
+        acc = 0;
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(loop);
+    }
+
+    function startHost() {
+        if (active) return;
+        openOverlay();
+        isHost = true;
+        myPid = 0;
+        nextPid = 1;
+        mode = 'waiting';
+        players[0] = makePlayer(0, displayNick());
+        waitDeadline = now() + WAIT_LIMIT_MS;
+        waitRice = { x: 100, y: 580, vx: 4, vy: 0, f: 1, t: 0 };
+        try { playTitleMusic(); } catch (e) {}
+        if (typeof Peer === 'undefined') {
+            mode = 'gone';
+            showPanel(SERVER_MSG);
+            return;
+        }
+        gamePeer = new Peer();
+        bindVoice(gamePeer);
+        gamePeer.on('open', function (id) {
+            hostId = id;
+            if (players[0]) players[0].pr = id;
+            sendInvite();
+            inviteTimer = setInterval(sendInvite, 10000);
+        });
+        gamePeer.on('connection', onHostConn);
+        gamePeer.on('error', function () {
+            if (mode === 'waiting' && !hostId) {
+                mode = 'gone';
+                showPanel(SERVER_MSG);
+            }
+        });
+    }
+
+    function onHostConn(conn) {
+        conn.on('open', function () {
+            var meta = conn.metadata || {};
+            if (meta.kind !== 'game') return;
+            if ((mode !== 'waiting' && mode !== 'lobby') || Object.keys(players).length >= MAX_PLAYERS) {
+                send(conn, { t: 'full' });
+                setTimeout(function () { try { conn.close(); } catch (e) {} }, 500);
+                return;
+            }
+            var pid = nextPid++;
+            players[pid] = makePlayer(pid, cleanNick(meta.nick));
+            players[pid].pr = conn.peer;
+            clientConns[pid] = conn;
+            conn.on('data', function (m) { hostHandle(m, pid); });
+            conn.on('close', function () { onClientGone(pid); });
+            send(conn, { t: 'welcome', pid: pid });
+            bcast({ t: 'lobby', pl: rosterWire() });
+            if (mode === 'waiting') {
+                mode = 'lobby';
+                lobbyEnd = now() + LOBBY_MS;
+                try { playSynthSound('item_get'); } catch (e) {}
+            }
+        });
+    }
+
+    function onClientGone(pid) {
+        delete clientConns[pid];
+        if (!players[pid]) return;
+        if (mode === 'lobby') {
+            delete players[pid];
+            bcast({ t: 'lobby', pl: rosterWire() });
+            if (!Object.keys(clientConns).length) mode = 'waiting';
+            return;
+        }
+        players[pid].left = true;
+        players[pid].hp = 0;
+        bcast({ t: 'left', pid: pid });
+        if (mode === 'playing') checkEnd();
+    }
+
+    function joinGame(gid) {
+        if (active || typeof Peer === 'undefined') return;
+        openOverlay();
+        isHost = false;
+        mode = 'joining';
+        var fail = function () {
+            if (mode === 'joining') {
+                mode = 'gone';
+                showPanel('친구에게 연결하지 못했어요.');
+            }
+        };
+        joinTimer = setTimeout(fail, 12000);
+        gamePeer = new Peer();
+        bindVoice(gamePeer);
+        gamePeer.on('open', function () {
+            hostConn = gamePeer.connect(gid, { serialization: 'json', reliable: true, metadata: { kind: 'game', nick: displayNick() } });
+            hostConn.on('data', clientHandle);
+            hostConn.on('close', onHostLost);
+            hostConn.on('error', fail);
+        });
+        gamePeer.on('error', function (err) {
+            if (err && /network|server|socket/.test(err.type || '')) serverDown();
+            else fail();
+        });
+    }
+
+    function onHostLost() {
+        if (mode === 'over' || mode === 'gone' || !active) return;
+        mode = 'gone';
+        controlsEl.hidden = true;
+        stopGunFx();
+        stopRec();
+        showPanel('친구가 나갔어요. 게임이 끝났어요.');
+    }
+
+    function loop(ts) {
+        rafId = requestAnimationFrame(loop);
+        if (!active) return;
+        if (!lastTs) lastTs = ts;
+        acc += Math.min(100, ts - lastTs);
+        lastTs = ts;
+        while (acc >= 16.67) {
+            step();
+            acc -= 16.67;
+        }
+        draw();
+    }
+
+    function rr(x, y, w, h, r) {
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+        else ctx.rect(x, y, w, h);
+    }
+
+    function drawRice(x, y, f, color, o) {
+        ctx.save();
+        if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
+        if (o.glow) { ctx.shadowBlur = 16; ctx.shadowColor = o.glow; }
+        if (o.dash) {
+            ctx.globalAlpha = 0.25;
+            ctx.fillStyle = color;
+            rr(x - f * 30, y, PW, PH, 10);
+            ctx.fill();
+            rr(x - f * 55, y, PW, PH, 10);
+            ctx.fill();
+            ctx.globalAlpha = o.alpha !== undefined ? o.alpha : 1;
+        }
+        ctx.fillStyle = color;
+        rr(x, y, PW, PH, 10);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        rr(x + (f > 0 ? 12 : 4), y + 10, PW - 16, 18, 5);
+        ctx.fill();
+        ctx.fillStyle = '#1e293b';
+        var ex = f > 0 ? x + 26 : x + 12;
+        ctx.fillRect(ex, y + 15, 5, 8);
+        ctx.fillRect(ex + 10, y + 15, 5, 8);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillRect(f > 0 ? x - 6 : x + PW, y + 18, 6, 26);
+        if (o.gun) {
+            ctx.fillStyle = '#06b6d4';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            var gx = f > 0 ? x + 35 : x - 20;
+            ctx.fillRect(gx, y + 26, 35, 12);
+            ctx.strokeRect(gx, y + 26, 35, 12);
+            ctx.fillStyle = '#67e8f9';
+            ctx.fillRect(gx + (f > 0 ? 5 : 15), y + 20, 15, 8);
+        }
+        ctx.restore();
+    }
+
+    function drawBackdrop() {
+        var g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, '#0b1020');
+        g.addColorStop(1, '#1e293b');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawGround() {
+        ctx.fillStyle = '#14532d';
+        ctx.fillRect(0, BASE_Y, W, H - BASE_Y);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(0, BASE_Y, W, 6);
+    }
+
+    function drawText(text, x, y, size, color, align) {
+        ctx.font = 'bold ' + size + 'px ' + FONT;
+        ctx.textAlign = align || 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = color || '#ffffff';
+        ctx.fillText(text, x, y);
+    }
+
+    function drawWaiting() {
+        drawBackdrop();
+        drawGround();
+        var me = players[0];
+        drawRice(waitRice.x, waitRice.y, waitRice.f, me ? me.color : COLORS[0], {});
+        if (mode === 'waiting') {
+            ctx.globalAlpha = 0.65 + 0.35 * Math.sin(frame / 14);
+            drawText('친구를 모으고 있어요.', W / 2, 250, 44, '#fde047');
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    function drawLobby() {
+        drawBackdrop();
+        drawGround();
+        drawText(mode === 'joining' ? '친구에게 연결하는 중...' : '친구가 왔어요! 곧 시작해요', W / 2, 200, 40, '#fde047');
+        var pids = Object.keys(players).map(Number);
+        pids.forEach(function (pid, i) {
+            var p = players[pid];
+            var x = W / 2 - (pids.length * 110) / 2 + i * 110 + 30;
+            drawRice(x, 540, 1, p.color, {});
+            drawText(p.nick.slice(0, 8), x + PW / 2, 520, 18, '#ffffff');
+        });
+    }
+
+    function drawBlock(b) {
+        var sx = b.x - camX;
+        var safe = b.s % 5 === 0;
+        ctx.fillStyle = safe ? '#14532d' : '#334155';
+        ctx.fillRect(sx, b.y, b.w, b.h);
+        ctx.fillStyle = safe ? '#22c55e' : '#94a3b8';
+        ctx.fillRect(sx, b.y, b.w, 6);
+    }
+
+    function drawStageMarks() {
+        for (var n = 1; n <= STAGES; n++) {
+            var sx = (n - 1) * STAGE_W - camX;
+            if (sx < -120 || sx > W) continue;
+            ctx.fillStyle = 'rgba(148,163,184,0.5)';
+            ctx.fillRect(sx, 110, 2, 500);
+            drawText('STAGE ' + n, sx + 6, 124, 14, n % 5 === 0 ? '#86efac' : '#cbd5e1', 'left');
+        }
+        var ex = WORLD_W - camX;
+        if (ex < W + 120) {
+            ctx.fillStyle = '#f87171';
+            ctx.fillRect(ex - 4, 110, 4, 500);
+            drawText('END', ex - 10, 124, 14, '#fca5a5', 'right');
+        }
+    }
+
+    function drawItem(it) {
+        if (it.k === 'c') { drawCamItem(it); return; }
+        var hover = Math.sin((frame + it.id * 7) / 10) * 4;
+        var ix = it.x - camX;
+        ctx.save();
+        if (it.k === 'g') {
+            ctx.fillStyle = '#06b6d4';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#06b6d4';
+            ctx.beginPath();
+            ctx.arc(ix + 22, it.y + 22 + hover, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            drawText('67', ix + 22, it.y + 22 + hover, 14, '#ffffff');
+        } else {
+            ctx.fillStyle = '#a855f7';
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = '#c084fc';
+            rr(ix, it.y + hover, 45, 45, 10);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            drawText('L', ix + 22, it.y + 24 + hover, 26, '#ffffff');
+        }
+        ctx.restore();
+    }
+
+    function drawHud(me, t) {
+        var pids = Object.keys(players).map(Number);
+        pids.forEach(function (pid, i) {
+            var p = players[pid];
+            var y = 34 + i * 34;
+            ctx.globalAlpha = p.hp > 0 && !p.left ? 1 : 0.4;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(20, y - 12, 24, 24);
+            var label = nameOf(p.pid, p.nick).slice(0, 8) + '  ' + stageOf(p.x) + '스테이지  ♥ ' + p.hp;
+            drawText(label, 54, y, 20, pid === myPid ? '#fde047' : '#ffffff', 'left');
+        });
+        ctx.globalAlpha = 1;
+        var left = Math.max(0, Math.ceil((matchEnd - t) / 1000));
+        var mm = String(Math.floor(left / 60)).padStart(2, '0');
+        var ss = String(left % 60).padStart(2, '0');
+        drawText('남은 시간 ' + mm + ':' + ss, W - 64, 34, 22, '#fde047', 'right');
+        if (me && me.pw) {
+            var label2 = me.pw.k === 'g'
+                ? '67 ' + Math.max(0, (me.pw.until - t) / 1000).toFixed(1) + '초'
+                : 'L 돌진 ×' + me.pw.charges;
+            drawText(label2, W / 2, H - 30, 26, me.pw.k === 'g' ? '#67e8f9' : '#d8b4fe');
+        }
+        if (me && inSafe(me)) drawText('안전지대', W / 2, 70, 20, '#86efac');
+        if (t < goUntil) drawText('시작!', W / 2, 150, 64, '#fde047');
+        if (me && me.hp <= 0 && mode === 'playing') drawText('탈락! 끝까지 구경해요', W / 2, 100, 32, '#fca5a5');
+    }
+
+    function drawArena() {
+        var t = now();
+        var me = players[myPid];
+        drawBackdrop();
+        blocks.forEach(function (b) {
+            if (b.x + b.w < camX || b.x > camX + W) return;
+            drawBlock(b);
+        });
+        drawStageMarks();
+        items.forEach(drawItem);
+        bullets.forEach(function (b) {
+            ctx.save();
+            ctx.fillStyle = '#67e8f9';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#06b6d4';
+            ctx.beginPath();
+            ctx.arc(b.x - camX, b.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+        Object.keys(players).forEach(function (k) {
+            var p = players[k];
+            if (p.left) return;
+            var isMe = p.pid === myPid;
+            var k2 = isMe ? (p.pw ? p.pw.k : '') : p.pwk;
+            var blink = p.inv > 0 && Math.floor(frame / 4) % 2 === 0;
+            var o = {
+                alpha: p.hp <= 0 ? 0.25 : (blink ? 0.35 : 1),
+                glow: k2 === 'g' ? '#06b6d4' : (k2 === 'l' ? '#c084fc' : null),
+                gun: k2 === 'g',
+                dash: p.dash > 0
+            };
+            var sx = p.x - camX;
+            drawRice(sx, p.y, p.f, p.color, o);
+            if (p.hp > 0) drawText(nameOf(p.pid, p.nick).slice(0, 8), sx + PW / 2, p.y - 14, 16, isMe ? '#fde047' : '#ffffff');
+        });
+        drawHud(me, t);
+        drawChatOverlay();
+        drawRecIndicator();
+    }
+
+    function draw() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        if (mode === 'waiting' || (mode === 'gone' && !started)) drawWaiting();
+        else if (mode === 'joining' || mode === 'lobby') drawLobby();
+        else drawArena();
+    }
+
+    var pres = { gen: 0, peer: null, conn: null, isHub: false, conns: [], invites: {}, retry: null, expiry: null };
+
+    function cleanupPresence() {
+        if (pres.expiry) { clearInterval(pres.expiry); pres.expiry = null; }
+        pres.conns.forEach(function (c) { try { c.close(); } catch (e) {} });
+        pres.conns = [];
+        pres.conn = null;
+        pres.isHub = false;
+        pres.invites = {};
+        if (pres.peer) { try { pres.peer.destroy(); } catch (e) {} pres.peer = null; }
+    }
+
+    function retryPresence() {
+        if (pres.retry) return;
+        pres.retry = setTimeout(function () {
+            pres.retry = null;
+            startPresence();
+        }, 1500 + Math.random() * 3500);
+    }
+
+    function hubBroadcast(msg, except) {
+        pres.conns.forEach(function (c) { if (c !== except) send(c, msg); });
+    }
+
+    function hubData(conn, m) {
+        if (!m) return;
+        if (m.t === 'invite' && m.gid) {
+            pres.invites[m.gid] = { nick: m.nick, t: now() };
+            hubBroadcast({ t: 'invite', gid: m.gid, nick: m.nick }, conn);
+            onInvite(m.gid, m.nick);
+        } else if (m.t === 'cancel' && m.gid) {
+            delete pres.invites[m.gid];
+            hubBroadcast({ t: 'cancel', gid: m.gid }, conn);
+            onCancel(m.gid);
+        }
+    }
+
+    function hubExpire() {
+        Object.keys(pres.invites).forEach(function (gid) {
+            if (now() - pres.invites[gid].t > 30000) {
+                delete pres.invites[gid];
+                hubBroadcast({ t: 'cancel', gid: gid }, null);
+                onCancel(gid);
+            }
+        });
+    }
+
+    function becomeHub(p, gen) {
+        pres.isHub = true;
+        p.on('connection', function (conn) {
+            conn.on('open', function () {
+                if (gen !== pres.gen) return;
+                pres.conns.push(conn);
+                Object.keys(pres.invites).forEach(function (gid) {
+                    send(conn, { t: 'invite', gid: gid, nick: pres.invites[gid].nick });
+                });
+            });
+            conn.on('data', function (m) { hubData(conn, m); });
+            var drop = function () {
+                var i = pres.conns.indexOf(conn);
+                if (i >= 0) pres.conns.splice(i, 1);
+            };
+            conn.on('close', drop);
+            conn.on('error', drop);
+        });
+        p.on('disconnected', function () { try { p.reconnect(); } catch (e) {} });
+        pres.expiry = setInterval(hubExpire, 5000);
+        if (hostId) sendInvite();
+    }
+
+    function joinHub(gen) {
+        if (pres.peer) { try { pres.peer.destroy(); } catch (e) {} pres.peer = null; }
+        var c;
+        try { c = new Peer(); } catch (e) { retryPresence(); return; }
+        pres.peer = c;
+        c.on('open', function () {
+            if (gen !== pres.gen) return;
+            var conn = c.connect(HUB_ID, { serialization: 'json', reliable: true, metadata: { kind: 'presence' } });
+            pres.conn = conn;
+            conn.on('open', function () { if (hostId) sendInvite(); });
+            conn.on('data', function (m) {
+                if (!m) return;
+                if (m.t === 'invite') onInvite(m.gid, m.nick);
+                else if (m.t === 'cancel') onCancel(m.gid);
+            });
+            conn.on('close', function () { if (gen === pres.gen) retryPresence(); });
+            conn.on('error', function () { if (gen === pres.gen) retryPresence(); });
+        });
+        c.on('error', function () { if (gen === pres.gen) retryPresence(); });
+        c.on('disconnected', function () { try { c.reconnect(); } catch (e) {} });
+    }
+
+    function startPresence() {
+        if (typeof Peer === 'undefined') return;
+        cleanupPresence();
+        var gen = ++pres.gen;
+        var p;
+        try { p = new Peer(HUB_ID); } catch (e) { retryPresence(); return; }
+        pres.peer = p;
+        p.on('open', function () { if (gen === pres.gen) becomeHub(p, gen); });
+        p.on('error', function (err) {
+            if (gen !== pres.gen) return;
+            if (err && err.type === 'unavailable-id') joinHub(gen);
+            else retryPresence();
+        });
+    }
+
+    function sendInvite() {
+        if (!hostId || (mode !== 'waiting' && mode !== 'lobby')) return;
+        var m = { t: 'invite', gid: hostId, nick: displayNick() };
+        if (pres.isHub) hubData(null, m);
+        else send(pres.conn, m);
+    }
+
+    function sendCancel() {
+        if (!hostId) return;
+        var m = { t: 'cancel', gid: hostId };
+        if (pres.isHub) hubData(null, m);
+        else send(pres.conn, m);
+    }
+
+    function onInvite(gid, nick) {
+        if (!gid || gid === hostId || dismissed[gid]) return;
+        pendingInvites[gid] = { nick: cleanNick(nick), t: now() };
+    }
+
+    function onCancel(gid) {
+        delete pendingInvites[gid];
+        if (shownInvite === gid) hideInvite();
+    }
+
+    function isIdle() {
+        return getPlayMode() === 'friends' && !active && !document.hidden && (!gameState.isActive || gameState.isDemo) &&
+            !promptOpen && !settingsOpen;
+    }
+
+    var PLAY_KEY = 'riceJumpPlayMode';
+
+    function getPlayMode() {
+        try { return localStorage.getItem(PLAY_KEY) === 'friends' ? 'friends' : 'solo'; } catch (e) { return 'solo'; }
+    }
+
+    function applyPlayMode() {
+        var btn = document.getElementById('friend-btn');
+        if (btn) btn.style.display = getPlayMode() === 'friends' ? '' : 'none';
+    }
+
+    function bindPlayMode() {
+        var sel = document.getElementById('st-play-mode');
+        if (sel) {
+            sel.value = getPlayMode();
+            sel.addEventListener('change', function () {
+                try { localStorage.setItem(PLAY_KEY, sel.value); } catch (e) {}
+                applyPlayMode();
+                if (!shownInvite || getPlayMode() !== 'friends') hideInvite();
+            });
+        }
+        var unlock = document.getElementById('audio-unlock-btn');
+        if (unlock) {
+            unlock.addEventListener('click', function () {
+                if (getPlayMode() !== 'friends' || active) return;
+                setTimeout(function () {
+                    var ss = document.getElementById('start-screen');
+                    if (ss) ss.classList.add('hidden');
+                    startHost();
+                }, 0);
+            });
+        }
+        applyPlayMode();
+    }
+
+    function showInvite(gid) {
+        shownInvite = gid;
+        inviteNick.textContent = '🍚 ' + pendingInvites[gid].nick + '님이 초대했어요';
+        inviteBox.hidden = false;
+    }
+
+    function hideInvite() {
+        shownInvite = null;
+        inviteBox.hidden = true;
+    }
+
+    function inviteTick() {
+        var t = now();
+        Object.keys(pendingInvites).forEach(function (gid) {
+            if (t - pendingInvites[gid].t > 35000) onCancel(gid);
+        });
+        Object.keys(dismissed).forEach(function (gid) {
+            if (t - dismissed[gid] > 120000) delete dismissed[gid];
+        });
+        if (shownInvite && !isIdle()) hideInvite();
+        if (!shownInvite && isIdle()) {
+            var ids = Object.keys(pendingInvites);
+            if (ids.length) showInvite(ids[ids.length - 1]);
+        }
+    }
+
+    function pickKind() {
+        var q = Math.random();
+        if (q < 0.45) return 'g';
+        if (q < 0.85) return 'l';
+        return 'c';
+    }
+
+    function nameOf(pid, nick) {
+        if (recorder) return pid === myPid ? '나' : '친구';
+        return nick || '쌀';
+    }
+
+    function getAutoRec() {
+        try { return localStorage.getItem(AUTOREC_KEY) !== 'off'; } catch (e) { return true; }
+    }
+
+    function bindAutoRec() {
+        var sw = document.getElementById('st-autorec');
+        if (!sw) return;
+        sw.checked = getAutoRec();
+        sw.addEventListener('change', function () {
+            try { localStorage.setItem(AUTOREC_KEY, sw.checked ? 'on' : 'off'); } catch (e) {}
+        });
+    }
+
+    function stamp() {
+        return new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    }
+
+    function pickMime() {
+        var list = ['video/webm;codecs=vp8,opus', 'video/webm'];
+        for (var i = 0; i < list.length; i++) {
+            if (MediaRecorder.isTypeSupported(list[i])) return list[i];
+        }
+        return '';
+    }
+
+    function startRec(ms) {
+        if (recorder || !window.MediaRecorder || !canvas || !canvas.captureStream) return;
+        var tracks;
+        var rec;
+        try {
+            tracks = canvas.captureStream(30).getVideoTracks();
+            if (audioCtx && masterGain) {
+                if (!recDest) recDest = audioCtx.createMediaStreamDestination();
+                try { masterGain.connect(recDest); } catch (e) {}
+                tracks = tracks.concat(recDest.stream.getAudioTracks());
+            }
+            var mime = pickMime();
+            rec = mime
+                ? new MediaRecorder(new MediaStream(tracks), { mimeType: mime })
+                : new MediaRecorder(new MediaStream(tracks));
+        } catch (e) {
+            return;
+        }
+        recChunks = [];
+        rec.ondataavailable = function (e) {
+            if (e.data && e.data.size) recChunks.push(e.data);
+        };
+        rec.onstop = saveRec;
+        recorder = rec;
+        rec.start(1000);
+        if (ms) recTimer = setTimeout(stopRec, ms);
+    }
+
+    function stopRec() {
+        if (recTimer) { clearTimeout(recTimer); recTimer = null; }
+        if (!recorder) return;
+        var r = recorder;
+        recorder = null;
+        try { if (r.state !== 'inactive') r.stop(); } catch (e) {}
+        try { if (recDest && masterGain) masterGain.disconnect(recDest); } catch (e) {}
+    }
+
+    function saveRec() {
+        var blob = new Blob(recChunks, { type: 'video/webm' });
+        recChunks = [];
+        if (!blob.size) return;
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'rice_jump_survival-' + stamp() + '.webm';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    }
+
+    function drawRecIndicator() {
+        if (!recorder) return;
+        ctx.save();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(W / 2 - 40, 26, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        drawText('REC', W / 2 - 26, 26, 18, '#fca5a5', 'left');
+    }
+
+    function drawChatOverlay() {
+        var t = now();
+        recentChats = recentChats.filter(function (c) { return t - c.t < 4000; });
+        recentChats.slice(-3).forEach(function (c, i) {
+            var text = nameOf(c.pid, c.n) + ': ' + c.x;
+            var y = H / 2 - 60 + i * 48;
+            ctx.font = 'bold 30px ' + FONT;
+            var tw = ctx.measureText(text).width;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(W / 2 - tw / 2 - 16, y - 24, tw + 32, 42);
+            ctx.restore();
+            drawText(text, W / 2, y - 3, 30, '#ffffff');
+        });
+    }
+
+    function drawCamItem(it) {
+        var hover = Math.sin((frame + it.id * 7) / 10) * 4;
+        var ix = it.x - camX;
+        ctx.save();
+        ctx.fillStyle = '#e5e7eb';
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(ix + 22, it.y + 22 + hover, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        drawText('CAM', ix + 22, it.y + 22 + hover, 12, '#111827');
+        ctx.restore();
+    }
+
+    function isChatTyping(e) {
+        return chatOpen && e.target && e.target.id === 'fr-chat-input';
+    }
+
+    function serverDown() {
+        stopRec();
+        mode = 'gone';
+        controlsEl.hidden = true;
+        closeChat();
+        stopGunFx();
+        showPanel(SERVER_MSG);
+    }
+
+    function openChat() {
+        if (!active) return;
+        chatOpen = true;
+        document.getElementById('fr-chat').hidden = false;
+        var el = document.getElementById('fr-chat-input');
+        if (el) el.focus();
+    }
+
+    function closeChat() {
+        chatOpen = false;
+        var box = document.getElementById('fr-chat');
+        if (box) box.hidden = true;
+        var el = document.getElementById('fr-chat-input');
+        if (el) el.blur();
+    }
+
+    function sendChat() {
+        var el = document.getElementById('fr-chat-input');
+        if (!el) return;
+        var v = el.value.trim();
+        if (!v) return;
+        el.value = '';
+        toHost({ t: 'chat', text: v });
+    }
+
+    function ttsOn() {
+        try { return localStorage.getItem(TTS_KEY) !== 'off'; } catch (e) { return true; }
+    }
+
+    function speakText(t) {
+        if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+        var u = new SpeechSynthesisUtterance(t);
+        u.lang = 'ko-KR';
+        speechSynthesis.speak(u);
+    }
+
+    function bindTts() {
+        var sw = document.getElementById('st-tts');
+        if (!sw) return;
+        sw.checked = ttsOn();
+        sw.addEventListener('change', function () {
+            try { localStorage.setItem(TTS_KEY, sw.checked ? 'on' : 'off'); } catch (e) {}
+            if (!sw.checked && window.speechSynthesis) speechSynthesis.cancel();
+        });
+    }
+
+    function appendLog(node) {
+        var log = document.getElementById('fr-chat-log');
+        if (!log) return;
+        log.appendChild(node);
+        while (log.childNodes.length > 200) log.removeChild(log.firstChild);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function sysMsg(text) {
+        var d = document.createElement('div');
+        d.className = 'fr-sys';
+        d.textContent = text;
+        appendLog(d);
+    }
+
+    function onChat(m) {
+        var mine = m.pid === myPid;
+        recentChats.push({ pid: m.pid, n: m.n, x: m.x, t: now() });
+        if (recentChats.length > 20) recentChats.shift();
+        var row = document.createElement('div');
+        row.className = 'fr-msg ' + (mine ? 'mine' : 'friend');
+        var who = document.createElement('b');
+        who.textContent = m.n || '쌀';
+        var body = document.createElement('span');
+        body.textContent = ' ' + (m.x || '');
+        row.appendChild(who);
+        row.appendChild(body);
+        appendLog(row);
+        if (!mine && ttsOn()) speakText((m.n || '') + ': ' + (m.x || ''));
+    }
+
+    function getSilentTrack() {
+        if (!silentTrk) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            var ac = new AC();
+            var dst = ac.createMediaStreamDestination();
+            silentTrk = dst.stream.getAudioTracks()[0];
+        }
+        return silentTrk;
+    }
+
+    function silentStream() {
+        return new MediaStream([getSilentTrack()]);
+    }
+
+    function playRemote(peerId, stream) {
+        var a = remoteAudios[peerId];
+        if (!a) {
+            a = document.createElement('audio');
+            a.autoplay = true;
+            document.body.appendChild(a);
+            remoteAudios[peerId] = a;
+        }
+        a.srcObject = stream;
+        var pr = a.play();
+        if (pr && pr.catch) pr.catch(function () {});
+    }
+
+    function dropCall(peerId) {
+        delete voiceCalls[peerId];
+        var a = remoteAudios[peerId];
+        if (a) {
+            try { a.remove(); } catch (e) {}
+            delete remoteAudios[peerId];
+        }
+    }
+
+    function applyMic() {
+        Object.keys(voiceCalls).forEach(function (k) {
+            var c = voiceCalls[k];
+            var pc = c && c.peerConnection;
+            if (!pc || !pc.getSenders) return;
+            var sender = pc.getSenders().filter(function (s) { return s.track && s.track.kind === 'audio'; })[0];
+            if (!sender) return;
+            var t = micOn && micTrack ? micTrack : getSilentTrack();
+            sender.replaceTrack(t).catch(function () {});
+        });
+    }
+
+    function attachCall(c) {
+        voiceCalls[c.peer] = c;
+        c.on('stream', function (rs) { playRemote(c.peer, rs); });
+        c.on('close', function () { dropCall(c.peer); });
+        c.on('error', function () { dropCall(c.peer); });
+        applyMic();
+    }
+
+    function bindVoice(p) {
+        p.on('call', function (c) {
+            try { c.answer(silentStream()); } catch (e) {}
+            attachCall(c);
+        });
+    }
+
+    function connectVoice() {
+        if (!gamePeer) return;
+        Object.keys(players).forEach(function (k) {
+            var p = players[k];
+            if (p.pid <= myPid || !p.pr || p.left) return;
+            if (voiceCalls[p.pr]) return;
+            var c;
+            try { c = gamePeer.call(p.pr, silentStream()); } catch (e) { return; }
+            if (c) attachCall(c);
+        });
+    }
+
+    function updateMicBtn() {
+        var b = document.getElementById('fr-mic-btn');
+        if (!b) return;
+        b.classList.toggle('on', micOn);
+        b.setAttribute('aria-pressed', micOn ? 'true' : 'false');
+    }
+
+    function setMic(on) {
+        if (!on && micTrack) {
+            try { micTrack.stop(); } catch (e) {}
+            micTrack = null;
+        }
+        micOn = on;
+        applyMic();
+        updateMicBtn();
+    }
+
+    function toggleMic() {
+        if (!active) return;
+        if (micOn) { setMic(false); return; }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            sysMsg('이 브라우저에서는 마이크를 쓸 수 없어요.');
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+            if (!active) {
+                stream.getTracks().forEach(function (t) { t.stop(); });
+                return;
+            }
+            micTrack = stream.getAudioTracks()[0];
+            setMic(true);
+        }).catch(function () {
+            sysMsg('마이크를 켤 수 없어요. 브라우저에서 마이크 권한을 허용해 주세요.');
+        });
+    }
+
+    function teardownVoice() {
+        Object.keys(voiceCalls).forEach(function (k) {
+            try { voiceCalls[k].close(); } catch (e) {}
+        });
+        voiceCalls = {};
+        Object.keys(remoteAudios).forEach(function (k) {
+            try { remoteAudios[k].remove(); } catch (e) {}
+        });
+        remoteAudios = {};
+        setMic(false);
+        var log = document.getElementById('fr-chat-log');
+        if (log) log.innerHTML = '';
+    }
+
+    function bindHold(id, key) {
+        var el = document.getElementById(id);
+        var on = function (e) {
+            e.preventDefault();
+            inp[key] = true;
+            try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        };
+        var off = function (e) {
+            e.preventDefault();
+            inp[key] = false;
+        };
+        el.addEventListener('pointerdown', on);
+        el.addEventListener('pointerup', off);
+        el.addEventListener('pointercancel', off);
+        el.addEventListener('lostpointercapture', off);
+    }
+
+    function buildUi() {
+        overlay = document.createElement('div');
+        overlay.id = 'fr-overlay';
+        overlay.hidden = true;
+        overlay.innerHTML =
+            '<canvas id="fr-canvas" width="1280" height="720"></canvas>' +
+            '<button id="fr-exit" type="button" aria-label="닫기">✕</button>' +
+            '<div id="fr-tools"><button id="fr-chat-btn" type="button" aria-label="채팅">✏</button><button id="fr-mic-btn" type="button" aria-label="마이크">🎤</button></div>' +
+            '<div id="fr-chat" hidden><div class="fr-chat-head"><span>채팅</span><button id="fr-chat-close" type="button" aria-label="닫기">✕</button></div><div id="fr-chat-log"></div><div class="fr-chat-row"><input id="fr-chat-input" type="text" maxlength="120" placeholder="메시지를 입력하세요" autocomplete="off"><button id="fr-chat-send" type="button" aria-label="보내기">✈</button></div></div>' +
+            '<div id="fr-panel" hidden><button id="fr-panel-close" type="button" aria-label="닫기">✕</button><p id="fr-panel-text"></p></div>' +
+            '<div id="fr-controls" hidden>' +
+            '<div class="fr-pad"><button id="fr-left" type="button">◀</button><button id="fr-right" type="button">▶</button></div>' +
+            '<div class="fr-pad"><button id="fr-act" type="button">공격</button><button id="fr-jump" type="button">점프</button></div>' +
+            '</div>';
+        document.body.appendChild(overlay);
+
+        inviteBox = document.createElement('div');
+        inviteBox.id = 'fr-invite';
+        inviteBox.hidden = true;
+        inviteBox.innerHTML =
+            '<div class="fr-card">' +
+            '<div id="fr-invite-nick" class="fr-nick"></div>' +
+            '<p>친구가 당신을 기다리고 있어요. 같이 플레이하시겠어요?</p>' +
+            '<div class="fr-actions"><button id="fr-yes" type="button">예</button><button id="fr-no" type="button">아니오</button></div>' +
+            '</div>';
+        document.body.appendChild(inviteBox);
+
+        canvas = document.getElementById('fr-canvas');
+        ctx = canvas.getContext('2d');
+        panel = document.getElementById('fr-panel');
+        panelText = document.getElementById('fr-panel-text');
+        controlsEl = document.getElementById('fr-controls');
+        inviteNick = document.getElementById('fr-invite-nick');
+        startScreen = document.getElementById('start-screen');
+
+        document.getElementById('fr-exit').addEventListener('click', closeAll);
+        document.getElementById('fr-chat-btn').addEventListener('click', function () {
+            if (chatOpen) closeChat();
+            else openChat();
+        });
+        document.getElementById('fr-chat-close').addEventListener('click', closeChat);
+        document.getElementById('fr-mic-btn').addEventListener('click', toggleMic);
+        document.getElementById('fr-chat-send').addEventListener('click', sendChat);
+        document.getElementById('fr-chat-input').addEventListener('keydown', function (e) {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+            else if (e.key === 'Escape') { closeChat(); }
+        });
+        document.getElementById('fr-panel-close').addEventListener('click', closeAll);
+        bindHold('fr-left', 'l');
+        bindHold('fr-right', 'r');
+        bindHold('fr-jump', 'j');
+        bindHold('fr-act', 'a');
+
+        document.getElementById('fr-yes').addEventListener('click', function () {
+            var gid = shownInvite;
+            hideInvite();
+            if (gid) {
+                delete pendingInvites[gid];
+                dismissed[gid] = now();
+                joinGame(gid);
+            }
+        });
+        document.getElementById('fr-no').addEventListener('click', function () {
+            var gid = shownInvite;
+            hideInvite();
+            if (gid) {
+                delete pendingInvites[gid];
+                dismissed[gid] = now();
+            }
+        });
+
+        var friendBtn = document.getElementById('friend-btn');
+        if (friendBtn) friendBtn.addEventListener('click', startHost);
+    }
+
+    function bindSettings() {
+        var input = document.getElementById('st-nick');
+        var save = document.getElementById('st-nick-save');
+        if (!input || !save) return;
+        input.value = getNick();
+        var commit = function () {
+            var v = input.value.trim().slice(0, 12);
+            input.value = v;
+            try {
+                if (v) localStorage.setItem(NICK_KEY, v);
+                else localStorage.removeItem(NICK_KEY);
+            } catch (e) {}
+            save.textContent = '저장됨';
+            setTimeout(function () { save.textContent = '저장'; }, 1200);
+        };
+        save.addEventListener('click', commit);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') commit();
+        });
+    }
+
+    var KEYMAP = {
+        ArrowLeft: 'l', a: 'l', A: 'l',
+        ArrowRight: 'r', d: 'r', D: 'r',
+        ArrowUp: 'j', w: 'j', W: 'j', ' ': 'j',
+        z: 'a', Z: 'a', x: 'a', X: 'a', Shift: 'a'
+    };
+
+    window.addEventListener('keydown', function (e) {
+        if (!active) return;
+        if (isChatTyping(e)) return;
+        if (e.key === 'Escape' && chatOpen) {
+            closeChat();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
+        if (!e.repeat && !chatOpen && (e.key === 'c' || e.key === 'C')) {
+            openChat();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
+        if (!e.repeat && (e.key === 'm' || e.key === 'M')) {
+            toggleMic();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
+        var k = KEYMAP[e.key];
+        if (k) {
+            inp[k] = true;
+            e.preventDefault();
+        }
+        e.stopImmediatePropagation();
+    }, true);
+
+    window.addEventListener('keyup', function (e) {
+        if (!active) return;
+        if (isChatTyping(e)) return;
+        var k = KEYMAP[e.key];
+        if (k) {
+            inp[k] = false;
+            e.preventDefault();
+        }
+        e.stopImmediatePropagation();
+    }, true);
+
+    var originalResetDemo = window.resetDemoTimer;
+    if (typeof originalResetDemo === 'function') {
+        window.resetDemoTimer = function () {
+            if (active) return;
+            return originalResetDemo.apply(this, arguments);
+        };
+    }
+
+    window.addEventListener('pagehide', function () {
+        try { sendCancel(); } catch (e) {}
+        try { if (pres.peer) pres.peer.destroy(); } catch (e) {}
+        try { if (gamePeer) gamePeer.destroy(); } catch (e) {}
+    });
+
+    buildUi();
+    bindSettings();
+    bindPlayMode();
+    bindTts();
+    bindAutoRec();
+    startPresence();
+    setInterval(inviteTick, 1000);
+})();
+    </script>
+
+    <style>
+        .st-section {
+            margin: 18px 4px 4px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #fde047;
+            letter-spacing: 0.04em;
+        }
+    </style>
 </body></html>
