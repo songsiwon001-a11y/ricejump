@@ -917,6 +917,15 @@
         sixSevenAudio.loop = true;
 
         const deathAudio = new Audio('라이스점프 죽는소리.mp3');
+        const monsterDieAudio = new Audio('몬스터 죽는 소리.mp3');
+        const bossDieAudio = new Audio('보스 죽는 소리.mp3');
+        function playDieAudio(a) {
+            try {
+                a.currentTime = 0;
+                const p = a.play();
+                if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+        }
         const gameoverAudio = new Audio('에휴우우우우우우우~~!.mp3');
 
         const DRUM_POOL_SIZE = 8;
@@ -2367,6 +2376,7 @@
                             gameState.score += 20;
                         } else {
                             enemies.splice(j, 1);
+                            playDieAudio(monsterDieAudio);
                             gameState.score += 250;
                         }
                         updateScoreDisplay();
@@ -2483,6 +2493,7 @@
                             player.vy = -13; 
                             spawnExplosion(e.x + e.width / 2, e.y + e.height / 2, '#ef4444', 15);
                             enemies.splice(i, 1);
+                            playDieAudio(monsterDieAudio);
                             gameState.score += 150;
                             updateScoreDisplay();
                             playSynthSound('item_get'); 
@@ -2490,6 +2501,7 @@
                             if (gameState.isGolden) {
                                 spawnExplosion(e.x, e.y, '#fbbf24', 12);
                                 enemies.splice(i, 1);
+                                playDieAudio(monsterDieAudio);
                                 gameState.score += 200;
                                 updateScoreDisplay();
                             } else if (player.invincibleCooldown === 0) {
@@ -2500,6 +2512,7 @@
                         if (gameState.isGolden) {
                             spawnExplosion(e.x, e.y, '#fbbf24', 12);
                             enemies.splice(i, 1);
+                            playDieAudio(monsterDieAudio);
                             gameState.score += 200;
                             updateScoreDisplay();
                         } else if (player.invincibleCooldown === 0) {
@@ -2955,6 +2968,7 @@
         }
 
         function triggerBossDefeat() {
+            playDieAudio(bossDieAudio);
             spawnExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, '#fbbf24', 60);
             boss = null;
             document.getElementById('boss-hp-container').classList.add('hidden');
@@ -5405,7 +5419,7 @@
     }
 
     function applyWorld(w) {
-        items = w.i;
+        items = w.i.filter(function (it) { return !pendingPick[it.id]; });
         Object.keys(pendingPick).forEach(function (id) {
             if (!items.some(function (it) { return String(it.id) === id; })) delete pendingPick[id];
         });
@@ -5443,6 +5457,7 @@
         if (idx < 0) return;
         var kind = items[idx].k;
         items.splice(idx, 1);
+        bcast({ t: 'gone', id: id });
         if (pid === myPid) applyGrant(kind);
         else send(clientConns[pid], { t: 'grant', k: kind });
     }
@@ -5514,6 +5529,8 @@
             addBullet(m.b);
         } else if (m.t === 'bx') {
             removeBullet(m.id);
+        } else if (m.t === 'gone') {
+            items = items.filter(function (it) { return it.id !== m.id; });
         } else if (m.t === 'rules') {
             mode = 'rules';
             showPanel(RULES_TEXT);
@@ -5758,6 +5775,7 @@
             items.forEach(function (it) {
                 if (!pendingPick[it.id] && overlap(r, { x: it.x, y: it.y, w: 45, h: 45 })) {
                     pendingPick[it.id] = true;
+                    items = items.filter(function (x) { return x.id !== it.id; });
                     toHost({ t: 'pick', id: it.id });
                 }
             });
@@ -6433,7 +6451,7 @@
     }
 
     function isIdle() {
-        return getPlayMode() === 'friends' && !active && !document.hidden && (!gameState.isActive || gameState.isDemo) &&
+        return !active && !document.hidden && (!gameState.isActive || gameState.isDemo) &&
             !promptOpen && !settingsOpen;
     }
 
@@ -6441,6 +6459,13 @@
 
     function getPlayMode() {
         try { return localStorage.getItem(PLAY_KEY) === 'friends' ? 'friends' : 'solo'; } catch (e) { return 'solo'; }
+    }
+
+    function setPlayMode(v) {
+        try { localStorage.setItem(PLAY_KEY, v); } catch (e) {}
+        var sel = document.getElementById('st-play-mode');
+        if (sel) sel.value = v;
+        applyPlayMode();
     }
 
     function applyPlayMode() {
@@ -6455,7 +6480,6 @@
             sel.addEventListener('change', function () {
                 try { localStorage.setItem(PLAY_KEY, sel.value); } catch (e) {}
                 applyPlayMode();
-                if (!shownInvite || getPlayMode() !== 'friends') hideInvite();
             });
         }
         var unlock = document.getElementById('audio-unlock-btn');
@@ -6946,6 +6970,7 @@
             if (gid) {
                 delete pendingInvites[gid];
                 dismissed[gid] = now();
+                setPlayMode('friends');
                 joinGame(gid);
             }
         });
