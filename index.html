@@ -5347,6 +5347,7 @@
     var recDest = null;
     var recTimer = null;
     var recentChats = [];
+    var recMime = 'video/webm';
     var rulesTimer = null;
     var bgmWorld = -1;
 
@@ -6577,7 +6578,12 @@
     }
 
     function pickMime() {
-        var list = ['video/webm;codecs=vp8,opus', 'video/webm'];
+        var list = [
+            'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+            'video/mp4',
+            'video/webm;codecs=vp8,opus',
+            'video/webm'
+        ];
         for (var i = 0; i < list.length; i++) {
             if (MediaRecorder.isTypeSupported(list[i])) return list[i];
         }
@@ -6596,6 +6602,7 @@
                 tracks = tracks.concat(recDest.stream.getAudioTracks());
             }
             var mime = pickMime();
+            recMime = mime || 'video/webm';
             rec = mime
                 ? new MediaRecorder(new MediaStream(tracks), { mimeType: mime })
                 : new MediaRecorder(new MediaStream(tracks));
@@ -6622,12 +6629,13 @@
     }
 
     function saveRec() {
-        var blob = new Blob(recChunks, { type: 'video/webm' });
+        var isMp4 = recMime.indexOf('mp4') !== -1;
+        var blob = new Blob(recChunks, { type: isMp4 ? 'video/mp4' : 'video/webm' });
         recChunks = [];
         if (!blob.size) return;
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'rice_jump_survival-' + stamp() + '.webm';
+        a.download = 'rice_jump_survival-' + stamp() + (isMp4 ? '.mp4' : '.webm');
         document.body.appendChild(a);
         a.click();
         a.remove();
