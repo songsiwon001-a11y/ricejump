@@ -3733,7 +3733,15 @@
             { label: '게임오버', play: () => rpPlayAudio(gameoverAudio) },
             { label: '카메라', play: () => rpPlayAudio(cameraAudio) },
             { label: 'l을가져가', play: () => rpPlayAudio(takeLAudio) },
-            { label: '모기', play: () => playMosquitoSample() }
+            { label: '모기', play: () => playMosquitoSample() },
+            { label: '몬스터 죽는 소리', play: () => rpPlayAudio(monsterDieAudio) },
+            { label: '보스 죽는 소리', play: () => rpPlayAudio(bossDieAudio) },
+            { label: 'six seven 60초 남음', play: () => rpPlayAudio(new Audio('six seven!(60s left both 50s).mp3')) },
+            { label: 'six seven 30초 남음', play: () => rpPlayAudio(new Audio('six seven!(30s left).mp3')) },
+            { label: 'six seven 15초 남음', play: () => rpPlayAudio(new Audio('six seven!(15s left).mp3')) },
+            { label: 'six seven 10초 남음', play: () => rpPlayAudio(new Audio('six seven!(10s left).mp3')) },
+            { label: 'six seven 5초 남음', play: () => rpPlayAudio(new Audio('six seven!(5s left).mp3')) },
+            { label: 'six seven 3초 남음', play: () => rpPlayAudio(new Audio('six seven!(3s left).mp3')) }
         ];
 
         function rpPlayAudio(audio) {
