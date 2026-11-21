@@ -946,6 +946,10 @@
         }
 
         function playDrumBeat() {
+            if (soundEngine === 'sf2026super' && sfBuffers.noise && audioCtx) {
+                sfDrum();
+                return;
+            }
             try {
                 const drum = drumPool[nextDrumIdx];
                 drum.currentTime = 0;
@@ -1076,7 +1080,8 @@
             piano:  { file: 'piano.wav',          base: 130.81 },
             square: { file: 'square_wave.wav',    base: 5 },
             saw:    { file: 'sawtooth_wave.wav',  base: 50 },
-            srjs:   { file: 'srjs_synth.wav',     base: 20 }
+            srjs:   { file: 'srjs_synth.wav',     base: 20 },
+            noise:  { file: 'whitenoise.wav',     base: 340 }
         };
         const SF_KIND = {
             sine:     { key: 'srjs',   base: SF_FILES.srjs.base },
@@ -1170,13 +1175,18 @@
             sfMusicNote('sawtooth', bass[Math.floor(step / 2) % bass.length], t, 0.4, 0.015);
             sfMusicNote('sine', sine[step % sine.length], t, 0.2, 0.03);
             sfMusicNote('square', square[step % square.length], t, 0.2, 0.012);
-            if (step % 4 === 2) sfPlayKey('srjs', SF_FILES.srjs.base, [[1400, 0], [900, 0.08]], t, 0.08, 0.012);
+            if (step % 4 === 2) sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.08, 0.012);
         }
 
         function sfLightning() {
             const t = audioCtx.currentTime + 0.01;
             sfPlayKey('saw', SF_FILES.saw.base, [[45, 0], [25, 2.0]], t, 2.4, 0.6);
             sfPlayKey('srjs', SF_FILES.srjs.base, [[1200, 0], [60, 0.6]], t, 0.7, 0.6);
+            sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.9, 0.5);
+        }
+
+        function sfDrum() {
+            return sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], audioCtx.currentTime + 0.005, 0.25, 0.5);
         }
 
         function sfRecordFeedback() {
@@ -1232,13 +1242,13 @@
             if (!audioCtx) { try { initAudio(); } catch (e) {} }
             if (!audioCtx) return;
             sfLoading = true;
-            const keys = Object.keys(SF_FILES);
-            Promise.all(keys.map(k =>
-                fetch(SF_FILES[k].file)
-                    .then(r => { if (!r.ok) throw new Error('missing'); return r.arrayBuffer(); })
-                    .then(b => audioCtx.decodeAudioData(b))
-                    .then(buf => { sfBuffers[k] = buf; })
-            )).then(() => {
+            const loadOne = k => fetch(SF_FILES[k].file)
+                .then(r => { if (!r.ok) throw new Error('missing'); return r.arrayBuffer(); })
+                .then(b => audioCtx.decodeAudioData(b))
+                .then(buf => { sfBuffers[k] = buf; });
+            const required = Object.keys(SF_FILES).filter(k => k !== 'noise');
+            loadOne('noise').catch(() => {});
+            Promise.all(required.map(loadOne)).then(() => {
                 sfReady = true;
                 sfLoading = false;
             }).catch(() => {
