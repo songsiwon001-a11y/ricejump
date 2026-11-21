@@ -1101,6 +1101,7 @@
             square: { file: 'square_wave.wav',    base: 5 },
             saw:    { file: 'sawtooth_wave.wav',  base: 50 },
             srjs:   { file: 'srjs_synth.wav',     base: 20 },
+            short:  { file: 'short_noise.wav',    base: 523.25 },
             noise:  { file: 'whitenoise.wav',     base: 340 }
         };
         const SF_KIND = {
@@ -1115,6 +1116,10 @@
         const MUSIC_KEY = { sine: 'bell', triangle: 'piano', square: 'square', sawtooth: 'saw' };
 
         function sfMusicNote(type, freq, t, dur, vol) {
+            if (type === 'short') {
+                shortNote(freq, t, dur, 1, sfSeqSources);
+                return;
+            }
             const key = MUSIC_KEY[type];
             if (!key) return;
             sfPlayKey(key, SF_FILES[key].base, [[freq, 0]], t, dur, 1, sfSeqSources);
@@ -1209,11 +1214,38 @@
             if (step % 4 === 2) sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.08, 0.012);
         }
 
+        function shortNote(freq, t, dur, vol, group) {
+            if (sfBuffers.short) {
+                return sfPlayKey('short', SF_FILES.short.base, [[freq, 0]], t, dur, vol, group);
+            }
+            if (!audioCtx || !masterGain) return null;
+            const g = audioCtx.createGain();
+            g.connect(masterGain);
+            const o = audioCtx.createOscillator();
+            o.type = 'sawtooth';
+            o.frequency.setValueAtTime(freq, t);
+            o.connect(g);
+            g.gain.setValueAtTime(vol, t);
+            g.gain.linearRampToValueAtTime(0.001, t + dur);
+            o.start(t);
+            o.stop(t + dur + 0.02);
+            if (group) {
+                group.add(o);
+                o.onended = function () { group.delete(o); };
+            }
+            return o;
+        }
+
         function sfLightning() {
             const t = audioCtx.currentTime + 0.01;
             sfPlayKey('saw', SF_FILES.saw.base, [[45, 0], [25, 2.0]], t, 2.4, 0.6);
             sfPlayKey('srjs', SF_FILES.srjs.base, [[1200, 0], [60, 0.6]], t, 0.7, 0.6);
             sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.9, 0.5);
+            let tt = t;
+            SHORT_A.forEach(function (n) {
+                if (n.note) shortNote(noteToFreq(n.note), tt, n.dur * 0.9, 1);
+                tt += n.dur;
+            });
         }
 
         function sfDrum(t, rate) {
@@ -1281,8 +1313,9 @@
                 .then(r => { if (!r.ok) throw new Error('missing'); return r.arrayBuffer(); })
                 .then(b => audioCtx.decodeAudioData(b))
                 .then(buf => { sfBuffers[k] = buf; });
-            const required = Object.keys(SF_FILES).filter(k => k !== 'noise');
+            const required = Object.keys(SF_FILES).filter(k => k !== 'noise' && k !== 'short');
             loadOne('noise').catch(() => {});
+            loadOne('short').catch(() => {});
             Promise.all(required.map(loadOne)).then(() => {
                 sfReady = true;
                 sfLoading = false;
@@ -1742,6 +1775,9 @@
         }
         function R(tok, n) { return Array(n).fill(tok).join(' '); }
 
+        const SHORT_A = S('c6:0.1 c5:0.1 c6:0.1 c5:0.1 g5:0.1 c5:0.1 g5:0.1 c5:0.1 a#5:0.1 c5:0.1 a#5:0.1 c5:0.1 f5:0.1 c5:0.1 f5:0.1');
+        const SHORT_B = S('c3:0.1 c2:0.1 c2:0.1 c3:0.1 c3:0.1 c2:0.1 c2:0.1 c3:0.1 a#2:0.1 c2:0.1 c2:0.1 a#2:0.1 a#2:0.1 c2:0.1 c2:0.1 a#2:0.1');
+
         const STAGE_CLEAR_PIANO = [
             { vol: -12, notes: S('-:0.1 c4:0.1 d4:0.1 c4:0.1 d4:0.1 e4:0.2 c4:0.1 d4:0.1 c4:0.1 d4:0.1 c4:0.1 d4:0.1 e4:0.2 c4:0.05 c#4:0.05 d4:0.2 d5:0.2 d5:0.2 d5:0.1 a#4:0.1 a4:0.1 g4:0.1 f4:0.2 f4:0.3 a4:0.2 a#4:0.1 a4:0.1 b4:0.1 d5:0.1 c5:0.1 b4:0.1 a4:0.1 g4:0.1 f#4:0.1 g4:0.1 g#4:0.1 a4:0.1 g4:0.1 f4:0.1 e4:0.1 d4:0.1 c#4:0.1 d4:0.1 e4:0.1 g4:0.1 f4:0.1 e4:0.1 d4:0.1 c4:0.8') },
             { vol: -14, notes: S('-:0.1 g3:0.1 a3:0.1 g3:0.1 a3:0.1 c4:0.2 g3:0.1 a3:0.1 g3:0.1 a3:0.1 g3:0.1 a3:0.1 c4:0.3 a3:0.4 a3:0.4 f3:0.4 f3:0.3 f4:0.2 e4:0.1 f4:0.1 g4:0.1 b4:0.1 a#4:0.1 a4:0.1 f4:0.1 e4:0.1 c5:0.1 e4:0.1 c4:0.1 f4:0.1 e4:0.1 d4:0.1 c4:0.1 b3:0.1 a#3:0.1 b3:0.1 a#3:0.1 b3:0.1 g3:0.1 a3:0.1 b3:0.1 c4:0.1') },
@@ -1758,12 +1794,14 @@
         function playStageClearMusic() {
             if (!audioCtx) return;
             const tracks = stageClearTracks();
-            const len = Math.max(...tracks.map(tr => tr.notes.reduce((a, n) => a + n.dur, 0)));
+            const lens = tracks.map(tr => tr.notes.reduce((a, n) => a + n.dur, 0));
+            const loop = Math.max(...lens);
+            const tail = lens[lens.length - 1];
             playToneSequence('clear', tracks, 0, () => true, () => 1);
             clearTimeout(clearTimer);
             clearTimer = setTimeout(() => {
                 if (toneSeqMode === 'clear') stopToneSequence();
-            }, (len + 0.5) * 1000);
+            }, (loop + tail + 0.3) * 1000);
         }
 
         const BGM_BY_WORLD = [
@@ -1801,7 +1839,8 @@
             {
                 drum: 0,
                 tracks: [
-                    { type: 'sine', vol: -20, notes: S('g5:0.15 c5:0.15 g5:0.15 d#5:0.15 g5:0.15 d#5:0.15 c5:0.15 g5:0.15') }
+                    { type: 'short', vol: -6, notes: SHORT_A },
+                    { type: 'short', vol: -8, notes: SHORT_B }
                 ]
             }
         ];
@@ -1857,6 +1896,7 @@
                 }
                 loadSfSamples();
             }
+            tracks = tracks.map(function (t) { return t.type === 'short' ? { type: 'sawtooth', vol: t.vol, notes: t.notes } : t; });
             if (typeof Tone === 'undefined' || !audioCtx) return;
             stopToneSequence();
             const T = toneTransport();
@@ -3597,6 +3637,7 @@
         };
 
         const UI_TEXT = {
+  "축하": {"en": "Congrats", "zh": "祝贺", "ja": "おめでとう", "th": "ยินดีด้วย", "ru": "Поздравляем", "pt": "Parabéns", "fr": "Félicitations", "es": "¡Felicidades!", "de": "Glückwunsch"},
          "15초간 대기하면 오토 데모가 시작됩니다.": {
           "en": "Wait 15 seconds and the auto demo starts.",
           "zh": "等待15秒后自动演示开始。",
@@ -6084,14 +6125,6 @@
         RP_BGM_LIST.push({ label: '타이틀', title: true });
         RP_BGM_LIST.push({ label: '크레딧', file: 'cradits_bgm.mp3' });
         RP_BGM_LIST.push({ label: '클리어', data: () => ({ drum: 0, tracks: stageClearTracks() }) });
-        RP_BGM_LIST.push({ heading: 'six seven' });
-        RP_BGM_LIST.push({ label: 'six seven', file: 'six seven!.mp3' });
-        RP_BGM_LIST.push({ label: 'six seven 60초 남음', file: 'six seven!(60s left both 50s).mp3' });
-        RP_BGM_LIST.push({ label: 'six seven 30초 남음', file: 'six seven!(30s left).mp3' });
-        RP_BGM_LIST.push({ label: 'six seven 15초 남음', file: 'six seven!(15s left).mp3' });
-        RP_BGM_LIST.push({ label: 'six seven 10초 남음', file: 'six seven!(10s left).mp3' });
-        RP_BGM_LIST.push({ label: 'six seven 5초 남음', file: 'six seven!(5s left).mp3' });
-        RP_BGM_LIST.push({ label: 'six seven 3초 남음', file: 'six seven!(3s left).mp3' });
 
         const RP_VIB_LIST = [
             { label: 'six seven (67)', pattern: VIB_SIX_SEVEN },
@@ -6118,6 +6151,7 @@
             { label: 'l을가져가', play: () => rpPlayAudio(takeLAudio) },
             { label: '모기', play: () => playMosquitoSample() },
             { label: '몬스터 죽는 소리', play: () => rpPlayAudio(monsterDieAudio) },
+            { label: '축하', play: () => rpPlayAudio(congratAudio) },
             { label: '보스 죽는 소리', play: () => rpPlayAudio(bossDieAudio) },
             { label: 'six seven 60초 남음', play: () => rpPlayAudio(new Audio('six seven!(60s left both 50s).mp3')) },
             { label: 'six seven 30초 남음', play: () => rpPlayAudio(new Audio('six seven!(30s left).mp3')) },
