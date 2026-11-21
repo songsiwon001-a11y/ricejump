@@ -1239,21 +1239,12 @@
         function sfLightning() {
             const t = audioCtx.currentTime + 0.01;
             sfPlayKey('saw', SF_FILES.saw.base, [[45, 0], [25, 2.0]], t, 2.4, 0.6);
-            sfPlayKey('srjs', SF_FILES.srjs.base, [[1200, 0], [60, 0.6]], t, 0.7, 0.6);
-            sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.9, 0.5);
-            let tt = t;
-            SHORT_A.forEach(function (n) {
-                if (n.note) shortNote(noteToFreq(n.note), tt, n.dur * 0.9, 1);
-                tt += n.dur;
-            });
-        }
-
-        function sfDrum(t, rate) {
-            if (t === undefined) {
-                const r = getWorldIdx(gameState.stage) === 1 ? 8 : 1;
-                return sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base * r, 0]], audioCtx.currentTime + 0.005, 0.25, 1, null);
+            if (sfBuffers.short) {
+                sfPlayKey('short', SF_FILES.short.base, [[1200, 0], [60, 0.6]], t, 0.7, 0.6);
+            } else {
+                sfPlayKey('srjs', SF_FILES.srjs.base, [[1200, 0], [60, 0.6]], t, 0.7, 0.6);
             }
-            return sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base * (rate || 1), 0]], t, 0.06, 1, sfSeqSources);
+            sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.9, 0.5);
         }
 
         function sfRecordFeedback() {
