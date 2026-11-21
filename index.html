@@ -946,9 +946,12 @@
         }
 
         function playDrumBeat() {
-            if (soundEngine === 'sf2026super' && sfBuffers.noise && audioCtx) {
-                sfDrum();
-                return;
+            if (soundEngine === 'sf2026super') {
+                if (sfBuffers.noise && audioCtx) {
+                    sfDrum();
+                    return;
+                }
+                loadSfSamples();
             }
             try {
                 const drum = drumPool[nextDrumIdx];
@@ -1137,7 +1140,8 @@
                     const when = nowR + Math.max(0, (abs - q.songPos) / f);
                     if (q.shouldPlay() && when - lane.last >= 0.012) {
                         lane.last = when;
-                        sfMusicNote(lane.type, ev.f, when, ev.d / f * 0.92, lane.vol);
+                        if (lane.drum) sfDrum(when);
+                        else sfMusicNote(lane.type, ev.f, when, ev.d / f * 0.92, lane.vol);
                     }
                     lane.ptr++;
                     if (lane.ptr >= lane.ev.length) {
@@ -1148,7 +1152,7 @@
             });
         }
 
-        function playSfSequence(mode, tracks, shouldPlay, getSpeed) {
+        function playSfSequence(mode, tracks, drumSec, shouldPlay, getSpeed) {
             stopToneSequence();
             stopSfSequence();
             const loopSec = Math.max(...tracks.map(t => t.notes.reduce((a, n) => a + n.dur, 0)));
@@ -1161,6 +1165,11 @@
                 });
                 return { type: tr.type, vol: Math.pow(10, tr.vol / 20), ev, ptr: 0, rep: 0, last: -1 };
             });
+            if (drumSec > 0) {
+                const dev = [];
+                for (let t = 0; t < loopSec - 1e-6; t += drumSec) dev.push({ t: t, d: 0.06, f: 0 });
+                lanes.push({ drum: true, ev: dev, ptr: 0, rep: 0, last: -1, vol: 1, type: 'noise' });
+            }
             toneSeqMode = mode;
             sfSeq = {
                 lanes, loopSec, shouldPlay, getSpeed,
@@ -1186,8 +1195,8 @@
             sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t, 0.9, 0.5);
         }
 
-        function sfDrum() {
-            return sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], audioCtx.currentTime + 0.005, 0.25, 0.5);
+        function sfDrum(t) {
+            return sfPlayKey('noise', SF_FILES.noise.base, [[SF_FILES.noise.base, 0]], t === undefined ? audioCtx.currentTime + 0.005 : t, t === undefined ? 0.25 : 0.06, 1, t === undefined ? null : sfSeqSources);
         }
 
         function sfRecordFeedback() {
@@ -1753,6 +1762,14 @@
             ]
         };
 
+        const BOSS_BGM = {
+            drum: 0,
+            tracks: [
+                { type: 'sawtooth', vol: -24, notes: S('a4:0.07 c5:0.07 e5:0.07 a5:0.07 c6:0.07 a5:0.07 e5:0.07 c5:0.07 a4:0.07 c5:0.07 e5:0.07 a5:0.07 c6:0.07 a5:0.07 e5:0.07 c5:0.07 a4:0.07 c5:0.07 e5:0.07 a5:0.07 c6:0.07 a5:0.07 e5:0.07 c5:0.07 a4:0.07 c5:0.07 e5:0.07 a5:0.07 c6:0.07 a5:0.07 e5:0.07 c5:0.07 a4:0.07 c5:0.07 e5:0.07 a5:0.07 c6:0.07 a5:0.07 e5:0.07 c5:0.07 a4:0.07 c5:0.07 e5:0.07 a5:0.07 c6:0.07 a5:0.07 e5:0.07 c5:0.07 b4:0.07 c5:0.07 b4:0.07 c5:0.07 b4:0.07 c5:0.07 b4:0.07 c5:0.07 e5:0.035 f5:0.035 e5:0.035 f5:0.035 e5:0.035 f5:0.035 e5:0.035 f5:0.035 e5:0.035 g#5:0.035 g#5:0.035 e5:0.035 g#5:0.035 e5:0.035 a5:0.035 b5:0.035') },
+                { type: 'square',   vol: -30, notes: S('a2:1.12 g2:1.12 f2:1.12 e2:1.12') }
+            ]
+        };
+
         const TONE_PPQ = 960;
         const TONE_BASE_BPM = 120;
         const SEC_TO_TICKS = TONE_PPQ * TONE_BASE_BPM / 60;
@@ -1784,7 +1801,7 @@
         function playToneSequence(mode, tracks, drumSec, shouldPlay, getSpeed) {
             if (soundEngine === 'sf2026super') {
                 if (sfReady && audioCtx) {
-                    playSfSequence(mode, tracks, shouldPlay, getSpeed);
+                    playSfSequence(mode, tracks, drumSec, shouldPlay, getSpeed);
                     return;
                 }
                 loadSfSamples();
@@ -1854,16 +1871,11 @@
                 }
                 let lastDrumTime = -1;
                 const drumPart = new Tone.Part((time) => {
-                    return;
-                    if (time - lastDrumTime < 0.04) return;
-                    lastDrumTime = time;
-                    const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
-                    if (drumMode === 'retro') {
-                        try { retroDrum.triggerAttackRelease(0.06, time); } catch (e) {}
-                        return;
-                    }
-                    setTimeout(playDrumBeat, delay);
-                }, drumEvents);
+                if (!shouldPlay()) return;
+                if (time - lastDrumTime < 0.04) return;
+                lastDrumTime = time;
+                try { retroDrum.triggerAttackRelease(0.06, time); } catch (e) {}
+            }, drumEvents);
                 drumPart.loop = true;
                 drumPart.loopEnd = loopTicks;
                 drumPart.start(0);
@@ -1876,7 +1888,7 @@
         function startBGM() {
             if (!audioCtx) return;
             stopBGM();
-            const data = BGM_BY_WORLD[getWorldIdx(gameState.stage)];
+            const data = gameState.stage % 5 === 0 ? BOSS_BGM : BGM_BY_WORLD[getWorldIdx(gameState.stage)];
             playToneSequence(
                 'bgm',
                 data.tracks,
@@ -3987,6 +3999,11 @@
             RP_TIME_STEPS.forEach(step => {
                 RP_BGM_LIST.push({ label: name + ' ' + step.label, data: () => BGM_BY_WORLD[idx], speed: step.factor });
             });
+        });
+        RP_BGM_LIST.push({ heading: '보스전' });
+        RP_BGM_LIST.push({ label: '보스전', data: () => BOSS_BGM });
+        RP_TIME_STEPS.forEach(step => {
+            RP_BGM_LIST.push({ label: '보스전 ' + step.label, data: () => BOSS_BGM, speed: step.factor });
         });
         RP_BGM_LIST.push({ heading: '엔딩 · 타이틀 · 크레딧' });
         RP_BGM_LIST.push({ label: '엔딩', data: () => BGM_ENDING });
