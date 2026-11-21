@@ -577,7 +577,7 @@
             <h1 class="text-xl md:text-2xl text-yellow-400 retro-text tracking-widest animate-pulse">RICE JUMP!</h1>
             <div class="flex items-center gap-2 mt-1">
                 <span id="stage-badge" class="text-[10px] text-emerald-400 font-bold">STAGE 1</span>
-                <button id="rec-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600 hover:bg-red-500 cursor-pointer transition-all duration-300"></button>
+                <button id="rec-dot" aria-label="화면 녹화" title="화면 녹화" class="w-2.5 h-2.5 rounded-full bg-gray-600 hover:bg-red-500 cursor-pointer transition-all duration-300"></button>
                 <button id="custom-exit-btn" class="rp-small-btn" type="button" hidden>에디터로</button>
             </div>
         </div>
@@ -843,6 +843,13 @@
             </div>
             <div id="st-vib-warn" class="st-vib-warn" hidden>진동 강도는 보급형 폰(겔럭시 a12, a17 등)에서만 정상적으로 동작합니다. 최신형 폰(겔럭시 s26 ultra, IPhone 16 pro 등)을 사용 중이시라면 진동 강도는 최강으로 두세요.</div>
             <h3 class="st-section">서바이벌</h3>
+            <div class="st-row">
+                <span>기본 마이크 모드</span>
+                <select id="st-mic-mode" class="st-select">
+                    <option value="normal">일반 마이크</option>
+                    <option value="announce">안내방송</option>
+                </select>
+            </div>
             <div class="st-row">
                 <span>경기 자동 녹화</span>
                 <label class="st-switch"><input id="st-autorec" type="checkbox" checked><span class="st-track"></span></label>
@@ -5413,6 +5420,79 @@
         }
         #fr-yes { background: #34d399; color: #000; }
         #fr-no { background: #374151; color: #fff; }
+        #fr-err, #fr-toast, #fr-ask { font-family: inherit; }
+        #fr-err[hidden], #fr-toast[hidden], #fr-ask[hidden] { display: none; }
+        #fr-err {
+            position: fixed;
+            inset: 0;
+            z-index: 9800;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 24px;
+            text-align: center;
+            color: #fff;
+            background: rgba(2, 6, 23, 0.94);
+        }
+        .fr-err-img { width: min(200px, 50vw); height: auto; }
+        #fr-err h2 { margin: 0; font-size: clamp(20px, 5vw, 32px); word-break: keep-all; }
+        #fr-err p { margin: 0; max-width: 520px; font-size: 14px; line-height: 1.7; word-break: keep-all; }
+        #fr-err-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #475569;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #fr-toast {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 92vw;
+            padding: 10px 14px;
+            color: #fff;
+            background: #0f172a;
+            border: 2px solid #f87171;
+            border-radius: 12px;
+        }
+        .fr-toast-img { width: 44px; height: auto; }
+        #fr-toast-big { display: block; font-size: 14px; }
+        #fr-toast-small { display: block; font-size: 12px; line-height: 1.5; word-break: keep-all; }
+        #fr-ask {
+            position: fixed;
+            inset: 0;
+            z-index: 9600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        #fr-ask p { margin: 0 0 20px; font-size: 13px; line-height: 1.8; color: #fff; word-break: keep-all; }
+        #fr-ask-cancel { background: #374151; color: #fff; }
+        #fr-ask-invite { background: #34d399; color: #000; }
+        #fr-ann { position: fixed; inset: 0; z-index: 9600; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.6); }
+        #fr-ann[hidden] { display: none; }
+        #fr-ann .fr-card { width: min(92vw, 420px); }
+        .fr-ann-label { display: block; margin-bottom: 12px; font-size: 13px; color: #fde047; }
+        #fr-ann-input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; color: #fff; background: #020617; border: 2px solid #374151; border-radius: 10px; padding: 12px; outline: none; margin-bottom: 14px; }
+        #fr-ann-input:focus { border-color: #22d3ee; }
+        #fr-ann-send { background: #34d399; color: #000; }
+        #fr-ann-cancel { background: #374151; color: #fff; }
+        #fr-ann .fr-actions button { min-width: 100px; padding: 12px 16px; font-family: inherit; font-size: 12px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; }
+        #fr-ask .fr-actions button { min-width: 100px; padding: 12px 16px; font-family: inherit; font-size: 12px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; }
         #fr-go {
             position: absolute;
             left: 50%;
@@ -5528,7 +5608,7 @@
 
     var HUB_ID = 'rice-jump-lobby-hub-7c1e';
     var NICK_KEY = 'riceJumpNickname';
-    var MAX_PLAYERS = 6;
+    var MAX_PLAYERS = 10;
     var WAIT_LIMIT_MS = 15 * 60 * 1000;
     var LOBBY_MS = 2000;
     var FREEZE_MS = 1200;
@@ -5656,7 +5736,19 @@
     var silentTrk = null;
     var voiceCalls = {};
     var remoteAudios = {};
-    var SERVER_MSG = '어라? 서버가 아작났는데요? 서버 고치면 될테니 잠시 기다려주세요.';
+    var SERVER_BIG = '어라? 서버가 아작났는데요?';
+    var SERVER_SMALL = '서버 고치면 될테니 잠시 기다려주세요.';
+    var NET_BIG = '인터넷 연결이 끊겼어요';
+    var NET_SMALL = '화면이나 인터넷 연결을 확인하고 다시 시도해 주세요.';
+    var FULL_BIG = '서바이벌 인원이 꽉 찼습니다';
+    var FULL_SMALL = '안정적으로 서바이벌을 돌리기 위해 10명 이상이 서바이벌에 참가할 수 없습니다. 이번 경기가 끝날 때까지 모험을 혼자 하다가 다음 경기에서 참여하세요.';
+    var GONE_BIG = '친구를 찾을 수 없습니다';
+    var pendingJoins = [];
+    var toastTimer = null;
+    var annOn = false;
+    var annOpen = false;
+    var annBox, annInput;
+    var errBox, errBig, errSmall, toastBox, toastBig, toastSmall, askBox, askText;
     var TTS_KEY = 'riceJumpTTS';
     var AUTOREC_KEY = 'riceJumpAutoRec';
     var recorder = null;
@@ -5798,6 +5890,10 @@
         } else if (m.t === 'bx') {
             removeBullet(m.id);
             bcast(m, from);
+        } else if (m.t === 'ann') {
+            var am = { t: 'ann', k: m.k, text: String(m.text || '').slice(0, 120) };
+            bcast(am);
+            handleAnnounce(am);
         } else if (m.t === 'chat') {
             var msg = { t: 'chat', pid: from, n: p.nick, x: String(m.text || '').slice(0, 120) };
             bcast(msg);
@@ -5824,7 +5920,7 @@
                 players[r.i] = p;
             });
         } else if (m.t === 'full') {
-            showPanel('방이 가득 찼어요.');
+            showError(FULL_BIG, FULL_SMALL);
             mode = 'gone';
         } else if (m.t === 'start') {
             players = {};
@@ -5858,6 +5954,8 @@
         } else if (m.t === 'rules') {
             mode = 'rules';
             showPanel(RULES_TEXT);
+        } else if (m.t === 'ann') {
+            handleAnnounce(m);
         } else if (m.t === 'chat') {
             onChat(m);
         } else if (m.t === 'grant') {
@@ -5866,6 +5964,11 @@
             applySteal();
         } else if (m.t === 'left') {
             if (players[m.pid]) { players[m.pid].left = true; players[m.pid].hp = 0; }
+            if (mode !== 'over' && mode !== 'gone') {
+                var leaver = m.n || '친구';
+                if (allOthersLeft()) friendGone(leaver);
+                else showToast(GONE_BIG, leaver + '님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.');
+            }
         } else if (m.t === 'over') {
             showResult(m.w);
         }
@@ -6091,6 +6194,7 @@
     function endMatch(w) {
         bcast({ t: 'over', w: w });
         showResult(w);
+        if (pendingJoins.length) setTimeout(showAsk, 2500);
     }
 
     function checkHits(me, t) {
@@ -6272,6 +6376,10 @@
         closeChat();
         teardownVoice();
         stopRec();
+        hideError();
+        hideToast();
+        annOn = false;
+        closeAnn();
         clearTimeout(rulesTimer);
         bgmWorld = -1;
         stopBGM();
@@ -6314,7 +6422,7 @@
         try { playTitleMusic(); } catch (e) {}
         if (typeof Peer === 'undefined') {
             mode = 'gone';
-            showPanel(SERVER_MSG);
+            showError(SERVER_BIG, SERVER_SMALL);
             return;
         }
         gamePeer = new Peer();
@@ -6329,7 +6437,7 @@
         gamePeer.on('error', function () {
             if (mode === 'waiting' && !hostId) {
                 mode = 'gone';
-                showPanel(SERVER_MSG);
+                showError(SERVER_BIG, SERVER_SMALL);
             }
         });
     }
@@ -6339,6 +6447,8 @@
             var meta = conn.metadata || {};
             if (meta.kind !== 'game') return;
             if ((mode !== 'waiting' && mode !== 'lobby') || Object.keys(players).length >= MAX_PLAYERS) {
+                var jn = cleanNick(meta.nick);
+                if (pendingJoins.indexOf(jn) < 0) pendingJoins.push(jn);
                 send(conn, { t: 'full' });
                 setTimeout(function () { try { conn.close(); } catch (e) {} }, 500);
                 return;
@@ -6362,9 +6472,12 @@
     function onClientGone(pid) {
         delete clientConns[pid];
         if (!players[pid]) return;
+        var name = players[pid].nick;
+        var gone = name + '님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.';
         if (mode === 'lobby') {
             delete players[pid];
             bcast({ t: 'lobby', pl: rosterWire() });
+            showToast(GONE_BIG, gone);
             if (!Object.keys(clientConns).length) {
                 mode = 'waiting';
                 waitDeadline = now() + WAIT_LIMIT_MS;
@@ -6373,7 +6486,10 @@
         }
         players[pid].left = true;
         players[pid].hp = 0;
-        bcast({ t: 'left', pid: pid });
+        bcast({ t: 'left', pid: pid, n: name });
+        if (mode === 'over' || mode === 'gone') return;
+        if (allOthersLeft()) { friendGone(name); return; }
+        showToast(GONE_BIG, gone);
         if (mode === 'playing') checkEnd();
     }
 
@@ -6398,7 +6514,8 @@
             hostConn.on('error', fail);
         });
         gamePeer.on('error', function (err) {
-            if (err && /network|server|socket/.test(err.type || '')) serverDown();
+            if (err && /network/.test(err.type || '')) internetDown();
+            else if (err && /server|socket/.test(err.type || '')) serverDown();
             else fail();
         });
     }
@@ -6409,7 +6526,7 @@
         controlsEl.hidden = true;
         stopGunFx();
         stopRec();
-        showPanel('친구가 나갔어요. 게임이 끝났어요.');
+        friendGone(players[0] ? players[0].nick : '친구');
     }
 
     function loop(ts) {
@@ -7034,8 +7151,243 @@
         ctx.restore();
     }
 
+    var ANN_ON = [['C5', 0.5], ['E5', 0.5], ['G5', 0.5], ['C6', 0.5]];
+    var ANN_OFF = [['C6', 0.5], ['G5', 0.5], ['E5', 0.5], ['C5', 0.5]];
+
+    function getMicMode() {
+        try { return localStorage.getItem('riceJumpMicMode') === 'announce' ? 'announce' : 'normal'; } catch (e) { return 'normal'; }
+    }
+
+    function bindMicMode() {
+        var sel = document.getElementById('st-mic-mode');
+        if (!sel) return;
+        sel.value = getMicMode();
+        sel.addEventListener('change', function () {
+            try { localStorage.setItem('riceJumpMicMode', sel.value); } catch (e) {}
+            annOn = false;
+            updateMicBtn();
+        });
+    }
+
+    function annNote(freq, t0, d, step) {
+        if (!audioCtx || !masterGain) return;
+        const g = audioCtx.createGain();
+        g.connect(masterGain);
+        const src = audioCtx.createOscillator();
+        src.type = 'square';
+        src.frequency.setValueAtTime(freq, t0);
+        src.connect(g);
+        g.gain.setValueAtTime(1, t0);
+        for (let k = 1; k * step < d - 1e-9; k++) {
+            g.gain.setValueAtTime(Math.max(0.0001, 1 - 0.01 * k), t0 + k * step);
+        }
+        g.gain.setValueAtTime(0.0001, t0 + d);
+        src.start(t0);
+        src.stop(t0 + d + 0.02);
+    }
+
+    function playAnn(notes, step) {
+        if (!audioCtx) return 0;
+        const t0 = audioCtx.currentTime + 0.02;
+        let t = t0;
+        notes.forEach(function (n) {
+            annNote(noteToFreq(n[0]), t, n[1], step);
+            t += n[1];
+        });
+        return t - t0;
+    }
+
+    function speakAnn(text, done) {
+        if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { done(); return; }
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ko-KR';
+        u.onend = done;
+        u.onerror = done;
+        speechSynthesis.speak(u);
+    }
+
+    function handleAnnounce(m) {
+        if (!audioCtx) return;
+        if (m.k === 'on') {
+            playAnn(ANN_ON, 0.3);
+        } else if (m.k === 'off') {
+            playAnn(ANN_OFF, 0.03);
+        } else if (m.k === 'say') {
+            const len = playAnn(ANN_ON, 0.3);
+            setTimeout(function () {
+                speakAnn(m.text, function () { playAnn(ANN_OFF, 0.03); });
+            }, len * 1000);
+        }
+    }
+
+    function toggleAnnounce() {
+        annOn = !annOn;
+        updateMicBtn();
+        toHost({ t: 'ann', k: annOn ? 'on' : 'off' });
+    }
+
+    function openAnn() {
+        if (!active) return;
+        annOpen = true;
+        annBox.hidden = false;
+        annInput.focus();
+    }
+
+    function closeAnn() {
+        annOpen = false;
+        if (annBox) annBox.hidden = true;
+        if (annInput) annInput.blur();
+    }
+
+    function toggleAnnPanel() {
+        if (annOpen) closeAnn();
+        else openAnn();
+    }
+
+    function sendAnn() {
+        const v = annInput.value.trim();
+        if (!v) return;
+        annInput.value = '';
+        toHost({ t: 'ann', k: 'say', text: v.slice(0, 120) });
+        closeAnn();
+    }
+
+    function buildAnnUi() {
+        annBox = document.createElement('div');
+        annBox.id = 'fr-ann';
+        annBox.hidden = true;
+        annBox.setAttribute('role', 'dialog');
+        annBox.innerHTML =
+            '<div class="fr-card">' +
+            '<label class="fr-ann-label" for="fr-ann-input">방송 내용을 입력하세요</label>' +
+            '<input id="fr-ann-input" type="text" maxlength="120" placeholder="방송 내용을 입력하세요" autocomplete="off">' +
+            '<div class="fr-actions"><button id="fr-ann-cancel" type="button">닫기</button><button id="fr-ann-send" type="button">방송하기</button></div>' +
+            '</div>';
+        document.body.appendChild(annBox);
+        annInput = document.getElementById('fr-ann-input');
+        document.getElementById('fr-ann-btn').addEventListener('click', toggleAnnPanel);
+        document.getElementById('fr-ann-cancel').addEventListener('click', closeAnn);
+        document.getElementById('fr-ann-send').addEventListener('click', sendAnn);
+        annInput.addEventListener('keydown', function (e) {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); sendAnn(); }
+            else if (e.key === 'Escape') { closeAnn(); }
+        });
+    }
+
+    function allOthersLeft() {
+        return Object.keys(players).every(function (k) {
+            return Number(k) === myPid || players[k].left;
+        });
+    }
+
+    function showError(big, small) {
+        hideToast();
+        errBig.textContent = big;
+        errSmall.textContent = small;
+        errBox.hidden = false;
+    }
+
+    function hideError() {
+        if (errBox) errBox.hidden = true;
+    }
+
+    function showToast(big, small) {
+        toastBig.textContent = big;
+        toastSmall.textContent = small;
+        toastBox.hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(hideToast, 4000);
+    }
+
+    function hideToast() {
+        clearTimeout(toastTimer);
+        if (toastBox) toastBox.hidden = true;
+    }
+
+    function friendGone(name) {
+        mode = 'gone';
+        controlsEl.hidden = true;
+        closeChat();
+        stopRec();
+        stopBGM();
+        stopGunFx();
+        showError(GONE_BIG, name + '님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.');
+    }
+
+    function internetDown() {
+        mode = 'gone';
+        controlsEl.hidden = true;
+        closeChat();
+        stopRec();
+        stopGunFx();
+        showError(NET_BIG, NET_SMALL);
+    }
+
+    function showAsk() {
+        if (!pendingJoins.length) return;
+        var n = pendingJoins[0];
+        askText.textContent = n + '님이 당신과 서바이벌을 플레이하고 싶대요. 어서 ' + n + '님을 초대해 주세요!';
+        askBox.hidden = false;
+    }
+
+    function buildErrorUi() {
+        errBox = document.createElement('div');
+        errBox.id = 'fr-err';
+        errBox.hidden = true;
+        errBox.setAttribute('role', 'alertdialog');
+        errBox.setAttribute('aria-labelledby', 'fr-err-big');
+        errBox.setAttribute('aria-describedby', 'fr-err-small');
+        errBox.innerHTML =
+            '<img class="fr-err-img" src="error_cube.png" alt="error cube">' +
+            '<h2 id="fr-err-big"></h2>' +
+            '<p id="fr-err-small"></p>' +
+            '<button id="fr-err-close" type="button" aria-label="닫기">✕</button>';
+        document.body.appendChild(errBox);
+
+        toastBox = document.createElement('div');
+        toastBox.id = 'fr-toast';
+        toastBox.hidden = true;
+        toastBox.setAttribute('role', 'status');
+        toastBox.setAttribute('aria-live', 'polite');
+        toastBox.innerHTML =
+            '<img class="fr-toast-img" src="error_cube.png" alt="error cube">' +
+            '<div class="fr-toast-text"><b id="fr-toast-big"></b><span id="fr-toast-small"></span></div>';
+        document.body.appendChild(toastBox);
+
+        askBox = document.createElement('div');
+        askBox.id = 'fr-ask';
+        askBox.hidden = true;
+        askBox.setAttribute('role', 'dialog');
+        askBox.innerHTML =
+            '<div class="fr-card">' +
+            '<p id="fr-ask-text"></p>' +
+            '<div class="fr-actions"><button id="fr-ask-cancel" type="button">취소</button><button id="fr-ask-invite" type="button">초대</button></div>' +
+            '</div>';
+        document.body.appendChild(askBox);
+
+        errBig = document.getElementById('fr-err-big');
+        errSmall = document.getElementById('fr-err-small');
+        toastBig = document.getElementById('fr-toast-big');
+        toastSmall = document.getElementById('fr-toast-small');
+        askText = document.getElementById('fr-ask-text');
+
+        document.getElementById('fr-err-close').addEventListener('click', closeAll);
+        document.getElementById('fr-ask-cancel').addEventListener('click', function () {
+            pendingJoins.shift();
+            askBox.hidden = true;
+            setTimeout(showAsk, 300);
+        });
+        document.getElementById('fr-ask-invite').addEventListener('click', function () {
+            pendingJoins.shift();
+            askBox.hidden = true;
+            closeAll();
+            startHost();
+        });
+    }
+
     function isChatTyping(e) {
-        return chatOpen && e.target && e.target.id === 'fr-chat-input';
+        return (chatOpen && e.target && e.target.id === 'fr-chat-input') || (annOpen && e.target && e.target.id === 'fr-ann-input');
     }
 
     function serverDown() {
@@ -7044,7 +7396,7 @@
         controlsEl.hidden = true;
         closeChat();
         stopGunFx();
-        showPanel(SERVER_MSG);
+        showError(SERVER_BIG, SERVER_SMALL);
     }
 
     function openChat() {
@@ -7202,8 +7554,9 @@
     function updateMicBtn() {
         var b = document.getElementById('fr-mic-btn');
         if (!b) return;
-        b.classList.toggle('on', micOn);
-        b.setAttribute('aria-pressed', micOn ? 'true' : 'false');
+        var on = getMicMode() === 'announce' ? annOn : micOn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
     }
 
     function setMic(on) {
@@ -7218,6 +7571,10 @@
 
     function toggleMic() {
         if (!active) return;
+        if (getMicMode() === 'announce') {
+            toggleAnnounce();
+            return;
+        }
         if (micOn) { setMic(false); return; }
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             sysMsg('이 브라우저에서는 마이크를 쓸 수 없어요.');
@@ -7274,7 +7631,7 @@
             '<canvas id="fr-canvas" width="1280" height="720"></canvas>' +
             '<button id="fr-exit" type="button" aria-label="닫기">✕</button>' +
             '<button id="fr-go" type="button" hidden>이 친구들과 시작</button>' +
-            '<div id="fr-tools"><button id="fr-chat-btn" type="button" aria-label="채팅">✏</button><button id="fr-mic-btn" type="button" aria-label="마이크">🎤</button></div>' +
+            '<div id="fr-tools"><button id="fr-chat-btn" type="button" aria-label="채팅">✏</button><button id="fr-mic-btn" type="button" aria-label="마이크">🎤</button><button id="fr-ann-btn" type="button" aria-label="안내방송">🎛</button></div>' +
             '<div id="fr-chat" hidden><div class="fr-chat-head"><span>채팅</span><button id="fr-chat-close" type="button" aria-label="닫기">✕</button></div><div id="fr-chat-log"></div><div class="fr-chat-row"><input id="fr-chat-input" type="text" maxlength="120" placeholder="메시지를 입력하세요" autocomplete="off"><button id="fr-chat-send" type="button" aria-label="보내기">✈</button></div></div>' +
             '<div id="fr-panel" hidden><button id="fr-panel-close" type="button" aria-label="닫기">✕</button><p id="fr-panel-text"></p></div>' +
             '<div id="fr-controls" hidden>' +
@@ -7293,6 +7650,8 @@
             '<div class="fr-actions"><button id="fr-yes" type="button">예</button><button id="fr-no" type="button">아니오</button></div>' +
             '</div>';
         document.body.appendChild(inviteBox);
+        buildErrorUi();
+        buildAnnUi();
 
         canvas = document.getElementById('fr-canvas');
         ctx = canvas.getContext('2d');
@@ -7376,6 +7735,18 @@
     window.addEventListener('keydown', function (e) {
         if (!active) return;
         if (isChatTyping(e)) return;
+        if (e.key === 'Escape' && annOpen) {
+            closeAnn();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
+        if (!e.repeat && (e.key === 'n' || e.key === 'N')) {
+            toggleAnnPanel();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
         if (e.key === 'Escape' && chatOpen) {
             closeChat();
             e.preventDefault();
@@ -7432,6 +7803,7 @@
     bindPlayMode();
     bindTts();
     bindAutoRec();
+    bindMicMode();
     startPresence();
     setInterval(inviteTick, 1000);
 })();
