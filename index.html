@@ -1001,7 +1001,17 @@
                 if (typeof Tone !== 'undefined' && Tone.start) { Tone.start().catch(e => {}); }
                 masterGain = audioCtx.createGain();
                 masterGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
-                masterGain.connect(audioCtx.destination);
+                const outBoost = audioCtx.createGain();
+        outBoost.gain.setValueAtTime(4, audioCtx.currentTime);
+        const outLimiter = audioCtx.createDynamicsCompressor();
+        outLimiter.threshold.setValueAtTime(-1, audioCtx.currentTime);
+        outLimiter.knee.setValueAtTime(0, audioCtx.currentTime);
+        outLimiter.ratio.setValueAtTime(20, audioCtx.currentTime);
+        outLimiter.attack.setValueAtTime(0.002, audioCtx.currentTime);
+        outLimiter.release.setValueAtTime(0.1, audioCtx.currentTime);
+        masterGain.connect(outBoost);
+        outBoost.connect(outLimiter);
+        outLimiter.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
@@ -3562,6 +3572,2028 @@
             }
         };
 
+        const UI_TEXT = {
+         "15초간 대기하면 오토 데모가 시작됩니다.": {
+          "en": "Wait 15 seconds and the auto demo starts.",
+          "zh": "等待15秒后自动演示开始。",
+          "ja": "15秒待つと自動デモが始まります。",
+          "th": "รอ 15 วินาที เดโมอัตโนมัติจะเริ่ม",
+          "ru": "Подождите 15 секунд — начнётся авто-демо.",
+          "pt": "Espere 15 segundos e a demo automática começa.",
+          "fr": "Attendez 15 secondes, la démo automatique commence.",
+          "es": "Espera 15 segundos y empieza la demo automática.",
+          "de": "Warte 15 Sekunden, dann startet die Auto-Demo."
+         },
+         "L을 가져가": {
+          "en": "Take L",
+          "zh": "拿走L",
+          "ja": "Lを取る",
+          "th": "เอา L ไป",
+          "ru": "Забери L",
+          "pt": "Pegue o L",
+          "fr": "Prends le L",
+          "es": "Lleva L",
+          "de": "Nimm L"
+         },
+         "[좌우 이동]: ◀ ▶ / A, D | [점프]: Space / ▲ | [물총 발사]: Shift (물총 획득 시 활성화)": {
+          "en": "[Move]: ◀ ▶ / A, D | [Jump]: Space / ▲ | [Water gun]: Shift (after getting the gun)",
+          "zh": "[左右移动]: ◀ ▶ / A, D | [跳跃]: Space / ▲ | [水枪]: Shift（获得水枪后可用）",
+          "ja": "[左右移動]: ◀ ▶ / A, D | [ジャンプ]: Space / ▲ | [水鉄砲]: Shift（水鉄砲取得後）",
+          "th": "[เดิน]: ◀ ▶ / A, D | [กระโดด]: Space / ▲ | [ปืนน้ำ]: Shift (เมื่อได้ปืนน้ำ)",
+          "ru": "[Движение]: ◀ ▶ / A, D | [Прыжок]: Space / ▲ | [Водомёт]: Shift (после получения)",
+          "pt": "[Mover]: ◀ ▶ / A, D | [Pular]: Space / ▲ | [Arma de água]: Shift (ao pegar a arma)",
+          "fr": "[Déplacer]: ◀ ▶ / A, D | [Sauter]: Espace / ▲ | [Pistolet à eau]: Maj (après l'avoir obtenu)",
+          "es": "[Mover]: ◀ ▶ / A, D | [Saltar]: Espacio / ▲ | [Pistola de agua]: Shift (al obtenerla)",
+          "de": "[Bewegen]: ◀ ▶ / A, D | [Springen]: Leertaste / ▲ | [Wasserpistole]: Shift (nach Erhalt)"
+         },
+         "rice jump!에 모든 기능 사용하기": {
+          "en": "Use every feature in rice jump!",
+          "zh": "在 rice jump! 中使用全部功能",
+          "ja": "rice jump!の全機能を使う",
+          "th": "ใช้ทุกฟังก์ชันใน rice jump!",
+          "ru": "Все функции rice jump!",
+          "pt": "Use todos os recursos do rice jump!",
+          "fr": "Utiliser toutes les fonctions de rice jump!",
+          "es": "Usa todas las funciones de rice jump!",
+          "de": "Alle Funktionen in rice jump! nutzen"
+         },
+         "rice prompt를 사용하면 명령어 몇 글자만으로 rice jump의 기능들을 사용할 수 있습니다.": {
+          "en": "With rice prompt, you can use rice jump's features with just a few characters of commands.",
+          "zh": "使用 rice prompt，只需输入几个字符的命令即可使用 rice jump 的功能。",
+          "ja": "rice promptを使えば、数文字のコマンドでrice jumpの機能を使えます。",
+          "th": "ใช้ rice prompt เพียงไม่กี่ตัวอักษรก็ใช้ฟังก์ชันของ rice jump ได้",
+          "ru": "С rice prompt можно использовать функции rice jump, введя всего несколько символов команды.",
+          "pt": "Com o rice prompt, você usa os recursos do rice jump com poucos caracteres de comando.",
+          "fr": "Avec rice prompt, utilisez les fonctions de rice jump avec quelques caractères de commande.",
+          "es": "Con rice prompt puedes usar las funciones de rice jump con unos pocos caracteres de comando.",
+          "de": "Mit rice prompt nutzt du die Funktionen von rice jump mit wenigen Zeichen Befehl."
+         },
+         "← 돌아가기": {
+          "en": "← Back",
+          "zh": "← 返回",
+          "ja": "← 戻る",
+          "th": "← กลับ",
+          "ru": "← Назад",
+          "pt": "← Voltar",
+          "fr": "← Retour",
+          "es": "← Volver",
+          "de": "← Zurück"
+         },
+         "■ 정지": {
+          "en": "■ Stop",
+          "zh": "■ 停止",
+          "ja": "■ 停止",
+          "th": "■ หยุด",
+          "ru": "■ Стоп",
+          "pt": "■ Parar",
+          "fr": "■ Stop",
+          "es": "■ Parar",
+          "de": "■ Stopp"
+         },
+         "▶ 플레이": {
+          "en": "▶ Play",
+          "zh": "▶ 播放",
+          "ja": "▶ 再生",
+          "th": "▶ เล่น",
+          "ru": "▶ Играть",
+          "pt": "▶ Tocar",
+          "fr": "▶ Lecture",
+          "es": "▶ Reproducir",
+          "de": "▶ Abspielen"
+         },
+         "✋ 이동": {
+          "en": "✋ Move",
+          "zh": "✋ 移动",
+          "ja": "✋ 移動",
+          "th": "✋ เดิน",
+          "ru": "✋ Движение",
+          "pt": "✋ Mover",
+          "fr": "✋ Déplacer",
+          "es": "✋ Mover",
+          "de": "✋ Bewegen"
+         },
+         "❓ 블록": {
+          "en": "❓ Block",
+          "zh": "❓ 方块",
+          "ja": "❓ ブロック",
+          "th": "❓ บล็อก",
+          "ru": "❓ Блок",
+          "pt": "❓ Bloco",
+          "fr": "❓ Bloc",
+          "es": "❓ Bloque",
+          "de": "❓ Block"
+         },
+         "강함": {
+          "en": "Strong",
+          "zh": "强",
+          "ja": "強",
+          "th": "แรง",
+          "ru": "Сильно",
+          "pt": "Forte",
+          "fr": "Fort",
+          "es": "Fuerte",
+          "de": "Stark"
+         },
+         "경기 자동 녹화": {
+          "en": "Auto-record matches",
+          "zh": "自动录制比赛",
+          "ja": "試合の自動録画",
+          "th": "บันทึกการแข่งขันอัตโนมัติ",
+          "ru": "Авто-запись матча",
+          "pt": "Gravar partidas automaticamente",
+          "fr": "Enregistrement auto des parties",
+          "es": "Grabar partidas automáticamente",
+          "de": "Partien automatisch aufnehmen"
+         },
+         "그만 보려면 esc 또는 화면 아무 곳을 누르세요": {
+          "en": "To stop watching, press Esc or tap anywhere on the screen",
+          "zh": "要停止观看，请按 Esc 或点击屏幕任意位置",
+          "ja": "見るのをやめるには Esc か画面をタップ",
+          "th": "กด Esc หรือแตะที่หน้าจอเพื่อหยุดดู",
+          "ru": "Чтобы закрыть, нажмите Esc или коснитесь экрана",
+          "pt": "Para parar, pressione Esc ou toque na tela",
+          "fr": "Pour arrêter, appuyez sur Échap ou touchez l'écran",
+          "es": "Para dejar de ver, pulsa Esc o toca la pantalla",
+          "de": "Zum Beenden Esc drücken oder irgendwo tippen"
+         },
+         "기본 마이크 모드": {
+          "en": "Default mic mode",
+          "zh": "默认麦克风模式",
+          "ja": "マイクの初期モード",
+          "th": "โหมดไมค์เริ่มต้น",
+          "ru": "Режим микрофона по умолчанию",
+          "pt": "Modo de microfone padrão",
+          "fr": "Mode micro par défaut",
+          "es": "Modo de micrófono predeterminado",
+          "de": "Standard-Mikrofonmodus"
+         },
+         "나만의 맵 만들기": {
+          "en": "Make your own map",
+          "zh": "制作我的地图",
+          "ja": "自分のマップを作る",
+          "th": "สร้างแผนที่ของฉัน",
+          "ru": "Создать свою карту",
+          "pt": "Criar seu mapa",
+          "fr": "Créer votre carte",
+          "es": "Crear tu mapa",
+          "de": "Eigene Karte erstellen"
+         },
+         "눈밭": {
+          "en": "Snowfield",
+          "zh": "雪地",
+          "ja": "雪原",
+          "th": "ทุ่งหิมะ",
+          "ru": "Снежное поле",
+          "pt": "Campo de neve",
+          "fr": "Champ de neige",
+          "es": "Campo nevado",
+          "de": "Schneefeld"
+         },
+         "다시 도전하기": {
+          "en": "Try again",
+          "zh": "再挑战",
+          "ja": "もう一度挑戦",
+          "th": "ลองอีกครั้ง",
+          "ru": "Попробовать снова",
+          "pt": "Tentar de novo",
+          "fr": "Réessayer",
+          "es": "Intentar de nuevo",
+          "de": "Erneut versuchen"
+         },
+         "다시 해보기": {
+          "en": "Play again",
+          "zh": "再玩一次",
+          "ja": "もう一度プレイ",
+          "th": "เล่นอีกครั้ง",
+          "ru": "Играть снова",
+          "pt": "Jogar de novo",
+          "fr": "Rejouer",
+          "es": "Jugar de nuevo",
+          "de": "Nochmal spielen"
+         },
+         "다음 단계로 진입": {
+          "en": "Go to the next stage",
+          "zh": "进入下一关",
+          "ja": "次のステージへ",
+          "th": "ไปด่านต่อไป",
+          "ru": "Перейти к следующему этапу",
+          "pt": "Ir para a próxima fase",
+          "fr": "Passer à l'étape suivante",
+          "es": "Ir al siguiente nivel",
+          "de": "Zur nächsten Stufe"
+         },
+         "닫기": {
+          "en": "Close",
+          "zh": "关闭",
+          "ja": "閉じる",
+          "th": "ปิด",
+          "ru": "Закрыть",
+          "pt": "Fechar",
+          "fr": "Fermer",
+          "es": "Cerrar",
+          "de": "Schließen"
+         },
+         "당신은 50개의 스테이지를 모두 돌파하고 쌀 세계를 구했습니다!": {
+          "en": "You cleared all 50 stages and saved the rice world!",
+          "zh": "你通关了全部 50 关，拯救了米饭世界！",
+          "ja": "50ステージをすべて突破し、お米の世界を救いました！",
+          "th": "คุณผ่านทั้ง 50 ด่านและช่วยโลกข้าวไว้ได้!",
+          "ru": "Вы прошли все 50 этапов и спасли мир риса!",
+          "pt": "Você superou as 50 fases e salvou o mundo do arroz!",
+          "fr": "Vous avez franchi les 50 étapes et sauvé le monde du riz !",
+          "es": "¡Has superado las 50 fases y salvado el mundo del arroz!",
+          "de": "Du hast alle 50 Stufen geschafft und die Reiswelt gerettet!"
+         },
+         "맵 곳곳에 배치된 미스터리 벽돌(?)을 머리로 들이받아 숨겨진 보상을 찾아내세요.": {
+          "en": "Bonk the mystery bricks (?) hidden around the map to find secret rewards.",
+          "zh": "用头撞击地图各处的神秘砖块（?），找到隐藏的奖励。",
+          "ja": "マップのあちこちにある謎のブロック(?)に頭突きして隠れたごほうびを見つけよう。",
+          "th": "ชนบล็อกลึกลับ (?) ที่ซ่อนอยู่ทั่วแผนที่ด้วยหัวเพื่อหาของรางวัลที่ซ่อนไว้",
+          "ru": "Бейте головой загадочные блоки (?) по всей карте, чтобы найти скрытые награды.",
+          "pt": "Dê cabeçadas nos blocos misteriosos (?) espalhados pelo mapa para achar recompensas escondidas.",
+          "fr": "Cognez la tête contre les blocs mystères (?) disséminés sur la carte pour trouver les récompenses cachées.",
+          "es": "Golpea con la cabeza los bloques misteriosos (?) del mapa para encontrar recompensas ocultas.",
+          "de": "Stoße mit dem Kopf gegen die Rätselblöcke (?) auf der Karte, um versteckte Belohnungen zu finden."
+         },
+         "명령어를 입력하세요": {
+          "en": "Enter a command",
+          "zh": "请输入命令",
+          "ja": "コマンドを入力してください",
+          "th": "พิมพ์คำสั่ง",
+          "ru": "Введите команду",
+          "pt": "Digite um comando",
+          "fr": "Saisissez une commande",
+          "es": "Escribe un comando",
+          "de": "Befehl eingeben"
+         },
+         "모든 생명력을 소모했습니다.": {
+          "en": "All your lives are used up.",
+          "zh": "所有生命值已耗尽。",
+          "ja": "すべての体力を失いました。",
+          "th": "พลังชีวิตหมดแล้ว",
+          "ru": "Все жизни потеряны.",
+          "pt": "Todas as vidas foram perdidas.",
+          "fr": "Toutes les vies ont été perdues.",
+          "es": "Has perdido todas tus vidas.",
+          "de": "Alle Leben verbraucht."
+         },
+         "같은 맵에 다시 도전합니다.": {
+          "en": "Retrying the same map.",
+          "zh": "在同一张地图上再次挑战。",
+          "ja": "同じマップにもう一度挑戦します。",
+          "th": "ลองใหม่ในแผนที่เดิม",
+          "ru": "Повтор на той же карте.",
+          "pt": "Tentando de novo no mesmo mapa.",
+          "fr": "Nouvelle tentative sur la même carte.",
+          "es": "Reintentando en el mismo mapa.",
+          "de": "Erneuter Versuch auf derselben Karte."
+         },
+         "모험 시작!": {
+          "en": "Start adventure!",
+          "zh": "开始冒险！",
+          "ja": "冒険スタート！",
+          "th": "เริ่มการผจญภัย!",
+          "ru": "Начать приключение!",
+          "pt": "Começar a aventura!",
+          "fr": "Commencer l'aventure !",
+          "es": "¡Empezar aventura!",
+          "de": "Abenteuer starten!"
+         },
+         "모험 음악이 활성화됩니다.": {
+          "en": "Adventure music will start.",
+          "zh": "冒险音乐将会开启。",
+          "ja": "冒険の音楽が有効になります。",
+          "th": "เพลงผจญภัยจะเปิดใช้งาน",
+          "ru": "Включится музыка приключений.",
+          "pt": "A música de aventura será ativada.",
+          "fr": "La musique d'aventure sera activée.",
+          "es": "Se activará la música de aventura.",
+          "de": "Abenteuermusik wird aktiviert."
+         },
+         "별명을 입력하세요": {
+          "en": "Enter a nickname",
+          "zh": "请输入昵称",
+          "ja": "ニックネームを入力",
+          "th": "พิมพ์ชื่อเล่น",
+          "ru": "Введите псевдоним",
+          "pt": "Digite um apelido",
+          "fr": "Saisissez un pseudo",
+          "es": "Escribe un apodo",
+          "de": "Spitznamen eingeben"
+         },
+         "보내기": {
+          "en": "Send",
+          "zh": "发送",
+          "ja": "送信",
+          "th": "ส่ง",
+          "ru": "Отправить",
+          "pt": "Enviar",
+          "fr": "Envoyer",
+          "es": "Enviar",
+          "de": "Senden"
+         },
+         "보상으로 생명력이 회복되었습니다!": {
+          "en": "Your lives were restored as a reward!",
+          "zh": "奖励已恢复生命值！",
+          "ja": "ごほうびで体力が回復しました！",
+          "th": "ได้รับพลังชีวิตคืนเป็นรางวัล!",
+          "ru": "Жизни восстановлены в награду!",
+          "pt": "Vidas recuperadas como recompensa!",
+          "fr": "Vies restaurées en récompense !",
+          "es": "¡Vidas recuperadas como recompensa!",
+          "de": "Als Belohnung wurden Leben wiederhergestellt!"
+         },
+         "빈 블록": {
+          "en": "Empty block",
+          "zh": "空方块",
+          "ja": "空のブロック",
+          "th": "บล็อกว่าง",
+          "ru": "Пустой блок",
+          "pt": "Bloco vazio",
+          "fr": "Bloc vide",
+          "es": "Bloque vacío",
+          "de": "Leerer Block"
+         },
+         "사운드": {
+          "en": "Sound",
+          "zh": "声音",
+          "ja": "サウンド",
+          "th": "เสียง",
+          "ru": "Звук",
+          "pt": "Som",
+          "fr": "Son",
+          "es": "Sonido",
+          "de": "Ton"
+         },
+         "사운드 엔진": {
+          "en": "Sound engine",
+          "zh": "声音引擎",
+          "ja": "サウンドエンジン",
+          "th": "เอนจินเสียง",
+          "ru": "Звуковой движок",
+          "pt": "Motor de som",
+          "fr": "Moteur sonore",
+          "es": "Motor de sonido",
+          "de": "Soundengine"
+         },
+         "사이트가 보이지 않으면 '새 탭에서 열기'를 눌러주세요.": {
+          "en": "If the site doesn't show, tap 'Open in new tab'.",
+          "zh": "如果页面没有显示，请点击“在新标签页中打开”。",
+          "ja": "サイトが表示されない場合は「新しいタブで開く」を押してください。",
+          "th": "ถ้าเว็บไซต์ไม่แสดง ให้กด 'เปิดในแท็บใหม่'",
+          "ru": "Если сайт не открывается, нажмите «Открыть в новой вкладке».",
+          "pt": "Se o site não aparecer, toque em 'Abrir em nova aba'.",
+          "fr": "Si le site ne s'affiche pas, appuyez sur « Ouvrir dans un nouvel onglet ».",
+          "es": "Si el sitio no se ve, pulsa 'Abrir en una pestaña nueva'.",
+          "de": "Wenn die Seite nicht erscheint, tippe auf 'In neuem Tab öffnen'."
+         },
+         "새 탭에서 열기 ↗": {
+          "en": "Open in new tab ↗",
+          "zh": "在新标签页中打开 ↗",
+          "ja": "新しいタブで開く ↗",
+          "th": "เปิดในแท็บใหม่ ↗",
+          "ru": "Открыть в новой вкладке ↗",
+          "pt": "Abrir em nova aba ↗",
+          "fr": "Ouvrir dans un nouvel onglet ↗",
+          "es": "Abrir en una pestaña nueva ↗",
+          "de": "In neuem Tab öffnen ↗"
+         },
+         "서바이벌": {
+          "en": "Survival",
+          "zh": "生存",
+          "ja": "サバイバル",
+          "th": "เอาตัวรอด",
+          "ru": "Выживание",
+          "pt": "Sobrevivência",
+          "fr": "Survie",
+          "es": "Supervivencia",
+          "de": "Überleben"
+         },
+         "설정": {
+          "en": "Settings",
+          "zh": "设置",
+          "ja": "設定",
+          "th": "การตั้งค่า",
+          "ru": "Настройки",
+          "pt": "Configurações",
+          "fr": "Paramètres",
+          "es": "Ajustes",
+          "de": "Einstellungen"
+         },
+         "소리 및 진동": {
+          "en": "Sound & vibration",
+          "zh": "声音和震动",
+          "ja": "サウンドと振動",
+          "th": "เสียงและการสั่น",
+          "ru": "Звук и вибрация",
+          "pt": "Som e vibração",
+          "fr": "Son et vibration",
+          "es": "Sonido y vibración",
+          "de": "Ton und Vibration"
+         },
+         "수상한 핑크빛 비밀 상자는 기이한 시공간 왜곡을 자아내니 주의하세요!": {
+          "en": "Be careful: the suspicious pink secret box causes strange space-time distortions!",
+          "zh": "可疑的粉色神秘箱会引起奇怪的时空扭曲，请小心！",
+          "ja": "あやしいピンクの秘密の箱は不思議な時空のゆがみを起こすので注意！",
+          "th": "กล่องลับสีชมพูน่าสงสัยทำให้กาลเวลาบิดเบี้ยว ระวังไว้!",
+          "ru": "Подозрительная розовая коробка вызывает странные искажения пространства-времени — будьте осторожны!",
+          "pt": "Cuidado: a caixa secreta rosa suspeita causa distorções estranhas no espaço-tempo!",
+          "fr": "Attention : la boîte secrète rose suspecte provoque d'étranges distorsions spatio-temporelles !",
+          "es": "¡Cuidado! La caja secreta rosa sospechosa causa extrañas distorsiones del espacio-tiempo.",
+          "de": "Vorsicht: Die verdächtige pinke Geheimbox verursacht seltsame Raum-Zeit-Verzerrungen!"
+         },
+         "수중": {
+          "en": "Underwater",
+          "zh": "水下",
+          "ja": "水中",
+          "th": "ใต้น้ำ",
+          "ru": "Под водой",
+          "pt": "Subaquático",
+          "fr": "Sous l'eau",
+          "es": "Bajo el agua",
+          "de": "Unterwasser"
+         },
+         "시작하려면 화면 아무 곳이나 탭하세요!": {
+          "en": "Tap anywhere on the screen to start!",
+          "zh": "点击屏幕任意位置开始！",
+          "ja": "画面のどこかをタップして開始！",
+          "th": "แตะที่หน้าจอเพื่อเริ่ม!",
+          "ru": "Коснитесь экрана, чтобы начать!",
+          "pt": "Toque na tela para começar!",
+          "fr": "Touchez l'écran pour commencer !",
+          "es": "¡Toca la pantalla para empezar!",
+          "de": "Zum Starten irgendwo auf den Bildschirm tippen!"
+         },
+         "안내방송": {
+          "en": "Announcement",
+          "zh": "广播",
+          "ja": "アナウンス",
+          "th": "ประกาศ",
+          "ru": "Объявление",
+          "pt": "Anúncio",
+          "fr": "Annonce",
+          "es": "Anuncio",
+          "de": "Durchsage"
+         },
+         "약함": {
+          "en": "Weak",
+          "zh": "弱",
+          "ja": "弱い",
+          "th": "อ่อน",
+          "ru": "Слабо",
+          "pt": "Fraco",
+          "fr": "Faible",
+          "es": "Débil",
+          "de": "Schwach"
+         },
+         "에디터로": {
+          "en": "To editor",
+          "zh": "前往编辑器",
+          "ja": "エディターへ",
+          "th": "ไปที่ตัวแก้ไข",
+          "ru": "В редактор",
+          "pt": "Para o editor",
+          "fr": "Vers l'éditeur",
+          "es": "Al editor",
+          "de": "Zum Editor"
+         },
+         "이 게임에 접속해 주셔서 감사합니다": {
+          "en": "Thanks for joining this game",
+          "zh": "感谢你加入这个游戏",
+          "ja": "このゲームに接続していただき、ありがとうございます",
+          "th": "ขอบคุณที่เข้าร่วมเกมนี้",
+          "ru": "Спасибо, что зашли в игру",
+          "pt": "Obrigado por entrar neste jogo",
+          "fr": "Merci d'avoir rejoint ce jeu",
+          "es": "Gracias por entrar en este juego",
+          "de": "Danke, dass du dieses Spiel besuchst"
+         },
+         "이전 단계로 돌아가 다시 도전합니다.": {
+          "en": "Going back to the previous stage to try again.",
+          "zh": "返回上一关重新挑战。",
+          "ja": "前のステージに戻って再挑戦します。",
+          "th": "กลับไปด่านก่อนหน้าเพื่อลองใหม่",
+          "ru": "Возврат на предыдущий этап для новой попытки.",
+          "pt": "Voltando à fase anterior para tentar de novo.",
+          "fr": "Retour à l'étape précédente pour réessayer.",
+          "es": "Volviendo al nivel anterior para reintentar.",
+          "de": "Zurück zur vorherigen Stufe für einen neuen Versuch."
+         },
+         "일반": {
+          "en": "General",
+          "zh": "常规",
+          "ja": "一般",
+          "th": "ทั่วไป",
+          "ru": "Общие",
+          "pt": "Geral",
+          "fr": "Général",
+          "es": "General",
+          "de": "Allgemein"
+         },
+         "일반 마이크": {
+          "en": "Normal mic",
+          "zh": "普通麦克风",
+          "ja": "通常マイク",
+          "th": "ไมค์ปกติ",
+          "ru": "Обычный микрофон",
+          "pt": "Microfone normal",
+          "fr": "Micro normal",
+          "es": "Micrófono normal",
+          "de": "Normales Mikrofon"
+         },
+         "자동": {
+          "en": "Auto",
+          "zh": "自动",
+          "ja": "自動",
+          "th": "อัตโนมัติ",
+          "ru": "Авто",
+          "pt": "Automático",
+          "fr": "Auto",
+          "es": "Automático",
+          "de": "Automatisch"
+         },
+         "자폭 67": {
+          "en": "Self-destruct 67",
+          "zh": "自爆 67",
+          "ja": "自爆67",
+          "th": "67 ระเบิดตัวเอง",
+          "ru": "67 самоподрыв",
+          "pt": "67 autodestruição",
+          "fr": "67 autodestruction",
+          "es": "67 autodestrucción",
+          "de": "67 Selbstzerstörung"
+         },
+         "장애물을 뛰어넘고 목적지까지 도달하세요!": {
+          "en": "Jump over obstacles and reach the goal!",
+          "zh": "跳过障碍，到达终点！",
+          "ja": "障害物を飛び越えて、ゴールまでたどり着こう！",
+          "th": "กระโดดข้ามสิ่งกีดขวางแล้วไปให้ถึงเป้าหมาย!",
+          "ru": "Перепрыгивайте препятствия и дойдите до цели!",
+          "pt": "Pule os obstáculos e chegue ao destino!",
+          "fr": "Sautez les obstacles et atteignez l'objectif !",
+          "es": "¡Salta los obstáculos y llega a la meta!",
+          "de": "Spring über Hindernisse und erreiche das Ziel!"
+         },
+         "저장": {
+          "en": "Save",
+          "zh": "保存",
+          "ja": "保存",
+          "th": "บันทึก",
+          "ru": "Сохранить",
+          "pt": "Salvar",
+          "fr": "Enregistrer",
+          "es": "Guardar",
+          "de": "Speichern"
+         },
+         "중간": {
+          "en": "Medium",
+          "zh": "中",
+          "ja": "中",
+          "th": "ปานกลาง",
+          "ru": "Средне",
+          "pt": "Médio",
+          "fr": "Moyen",
+          "es": "Medio",
+          "de": "Mittel"
+         },
+         "지상": {
+          "en": "Ground",
+          "zh": "地面",
+          "ja": "地上",
+          "th": "พื้นดิน",
+          "ru": "Земля",
+          "pt": "Superfície",
+          "fr": "Surface",
+          "es": "Superficie",
+          "de": "Oberfläche"
+         },
+         "지하": {
+          "en": "Underground",
+          "zh": "地下",
+          "ja": "地下",
+          "th": "ใต้ดิน",
+          "ru": "Подземелье",
+          "pt": "Subterrâneo",
+          "fr": "Souterrain",
+          "es": "Subterráneo",
+          "de": "Untergrund"
+         },
+         "진동": {
+          "en": "Vibration",
+          "zh": "震动",
+          "ja": "振動",
+          "th": "การสั่น",
+          "ru": "Вибрация",
+          "pt": "Vibração",
+          "fr": "Vibration",
+          "es": "Vibración",
+          "de": "Vibration"
+         },
+         "진동 강도": {
+          "en": "Vibration strength",
+          "zh": "震动强度",
+          "ja": "振動の強さ",
+          "th": "ความแรงการสั่น",
+          "ru": "Сила вибрации",
+          "pt": "Intensidade da vibração",
+          "fr": "Intensité de la vibration",
+          "es": "Intensidad de vibración",
+          "de": "Vibrationsstärke"
+         },
+         "진동 강도는 보급형 폰(겔럭시 a12, a17 등)에서만 정상적으로 동작합니다. 최신형 폰(겔럭시 s26 ultra, IPhone 16 pro 등)을 사용 중이시라면 진동 강도는 최강으로 두세요.": {
+          "en": "Vibration strength only works properly on budget phones (Galaxy A12, A17, etc.). If you use a newer phone (Galaxy S26 Ultra, iPhone 16 Pro, etc.), set vibration strength to max.",
+          "zh": "震动强度仅在入门机型（如 Galaxy A12、A17 等）上正常工作。如果你使用的是新款手机（如 Galaxy S26 Ultra、iPhone 16 Pro 等），请将震动强度设为最强。",
+          "ja": "振動の強さは普及機（Galaxy A12、A17など）でのみ正常に動作します。最新機種（Galaxy S26 Ultra、iPhone 16 Proなど）をお使いの場合は、振動の強さを「最強」にしてください。",
+          "th": "ความแรงการสั่นทำงานได้ปกติเฉพาะบนมือถือรุ่นประหยัด (Galaxy A12, A17 ฯลฯ) หากใช้มือถือรุ่นใหม่ (Galaxy S26 Ultra, iPhone 16 Pro ฯลฯ) ให้ตั้งความแรงเป็นสูงสุด",
+          "ru": "Сила вибрации нормально работает только на бюджетных телефонах (Galaxy A12, A17 и др.). Если у вас новый телефон (Galaxy S26 Ultra, iPhone 16 Pro и др.), выставьте силу вибрации на максимум.",
+          "pt": "A intensidade da vibração só funciona corretamente em celulares básicos (Galaxy A12, A17 etc.). Se você usa um celular mais novo (Galaxy S26 Ultra, iPhone 16 Pro etc.), deixe a intensidade no máximo.",
+          "fr": "L'intensité de vibration ne fonctionne correctement que sur les téléphones d'entrée de gamme (Galaxy A12, A17, etc.). Si vous utilisez un téléphone récent (Galaxy S26 Ultra, iPhone 16 Pro, etc.), réglez-la sur le maximum.",
+          "es": "La intensidad de vibración solo funciona bien en teléfonos básicos (Galaxy A12, A17, etc.). Si usas un teléfono más nuevo (Galaxy S26 Ultra, iPhone 16 Pro, etc.), ponla al máximo.",
+          "de": "Die Vibrationsstärke funktioniert nur auf einfachen Smartphones (Galaxy A12, A17 usw.) richtig. Wenn du ein neueres Handy (Galaxy S26 Ultra, iPhone 16 Pro usw.) nutzt, stelle die Vibrationsstärke auf Maximum."
+         },
+         "초기화": {
+          "en": "Reset",
+          "zh": "重置",
+          "ja": "初期化",
+          "th": "รีเซ็ต",
+          "ru": "Сброс",
+          "pt": "Redefinir",
+          "fr": "Réinitialiser",
+          "es": "Restablecer",
+          "de": "Zurücksetzen"
+         },
+         "최강": {
+          "en": "Max",
+          "zh": "最强",
+          "ja": "最強",
+          "th": "สูงสุด",
+          "ru": "Максимум",
+          "pt": "Máximo",
+          "fr": "Maximum",
+          "es": "Máximo",
+          "de": "Maximal"
+         },
+         "친구 메시지 읽어주기": {
+          "en": "Read friend messages aloud",
+          "zh": "朗读好友消息",
+          "ja": "友達のメッセージを読み上げ",
+          "th": "อ่านข้อความเพื่อนออกเสียง",
+          "ru": "Читать сообщения друзей вслух",
+          "pt": "Ler mensagens dos amigos em voz alta",
+          "fr": "Lire à voix haute les messages des amis",
+          "es": "Leer en voz alta los mensajes de amigos",
+          "de": "Freundesnachrichten vorlesen"
+         },
+         "친구 추가": {
+          "en": "Add friend",
+          "zh": "添加好友",
+          "ja": "フレンド追加",
+          "th": "เพิ่มเพื่อน",
+          "ru": "Добавить друга",
+          "pt": "Adicionar amigo",
+          "fr": "Ajouter un ami",
+          "es": "Añadir amigo",
+          "de": "Freund hinzufügen"
+         },
+         "친구들과 플레이": {
+          "en": "Play with friends",
+          "zh": "和朋友一起玩",
+          "ja": "友達と遊ぶ",
+          "th": "เล่นกับเพื่อน",
+          "ru": "Играть с друзьями",
+          "pt": "Jogar com amigos",
+          "fr": "Jouer avec des amis",
+          "es": "Jugar con amigos",
+          "de": "Mit Freunden spielen"
+         },
+         "카메라": {
+          "en": "Camera",
+          "zh": "相机",
+          "ja": "カメラ",
+          "th": "กล้อง",
+          "ru": "Камера",
+          "pt": "Câmera",
+          "fr": "Caméra",
+          "es": "Cámara",
+          "de": "Kamera"
+         },
+         "카메라 아이템을 먹으면 1분간 플레이가 자동으로 녹화됩니다.": {
+          "en": "Eating the camera item records your play for 1 minute automatically.",
+          "zh": "吃到相机道具后，游戏会自动录制 1 分钟。",
+          "ja": "カメラアイテムを取ると、1分間のプレイが自動で録画されます。",
+          "th": "กินไอเทมกล้องแล้ว การเล่นจะถูกบันทึกอัตโนมัติ 1 นาที",
+          "ru": "Съев предмет-камеру, игра автоматически запишется на 1 минуту.",
+          "pt": "Pegar o item câmera grava sua jogada por 1 minuto automaticamente.",
+          "fr": "Prendre l'objet caméra enregistre automatiquement votre partie pendant 1 minute.",
+          "es": "Coger el objeto cámara graba tu partida durante 1 minuto automáticamente.",
+          "de": "Das Kamera-Item nehmen zeichnet dein Spiel automatisch 1 Minute lang auf."
+         },
+         "코인": {
+          "en": "Coin",
+          "zh": "金币",
+          "ja": "コイン",
+          "th": "เหรียญ",
+          "ru": "Монета",
+          "pt": "Moeda",
+          "fr": "Pièce",
+          "es": "Moneda",
+          "de": "Münze"
+         },
+         "파란 67": {
+          "en": "Blue 67",
+          "zh": "蓝色 67",
+          "ja": "青い67",
+          "th": "67 สีฟ้า",
+          "ru": "Синяя 67",
+          "pt": "67 azul",
+          "fr": "67 bleu",
+          "es": "67 azul",
+          "de": "Blaue 67"
+         },
+         "플레이 방식": {
+          "en": "Play mode",
+          "zh": "游戏方式",
+          "ja": "プレイ方式",
+          "th": "รูปแบบการเล่น",
+          "ru": "Режим игры",
+          "pt": "Modo de jogo",
+          "fr": "Mode de jeu",
+          "es": "Modo de juego",
+          "de": "Spielmodus"
+         },
+         "플레이해주셔서 진심으로 감사합니다!": {
+          "en": "Thank you sincerely for playing!",
+          "zh": "真诚感谢你的游玩！",
+          "ja": "プレイしてくださり、本当にありがとうございます！",
+          "th": "ขอบคุณที่เล่นจริงๆ!",
+          "ru": "Большое спасибо за игру!",
+          "pt": "Muito obrigado por jogar!",
+          "fr": "Merci sincèrement d'avoir joué !",
+          "es": "¡Muchas gracias de corazón por jugar!",
+          "de": "Vielen Dank fürs Spielen!"
+         },
+         "핑크 상자": {
+          "en": "Pink box",
+          "zh": "粉色箱子",
+          "ja": "ピンクの箱",
+          "th": "กล่องสีชมพู",
+          "ru": "Розовая коробка",
+          "pt": "Caixa rosa",
+          "fr": "Boîte rose",
+          "es": "Caja rosa",
+          "de": "Pinke Box"
+         },
+         "하늘": {
+          "en": "Sky",
+          "zh": "天空",
+          "ja": "空",
+          "th": "ท้องฟ้า",
+          "ru": "Небо",
+          "pt": "Céu",
+          "fr": "Ciel",
+          "es": "Cielo",
+          "de": "Himmel"
+         },
+         "한국어": {
+          "en": "한국어",
+          "zh": "한국어",
+          "ja": "한국어",
+          "th": "한국어",
+          "ru": "한국어",
+          "pt": "한국어",
+          "fr": "한국어",
+          "es": "한국어",
+          "de": "한국어"
+         },
+         "현재 점수:": {
+          "en": "Current score: ",
+          "zh": "当前分数：",
+          "ja": "現在のスコア：",
+          "th": "คะแนนปัจจุบัน: ",
+          "ru": "Текущий счёт: ",
+          "pt": "Pontuação atual: ",
+          "fr": "Score actuel : ",
+          "es": "Puntuación actual: ",
+          "de": "Aktuelle Punkte: "
+         },
+         "혼자서 플레이": {
+          "en": "Play alone",
+          "zh": "单人游戏",
+          "ja": "ひとりでプレイ",
+          "th": "เล่นคนเดียว",
+          "ru": "Играть одному",
+          "pt": "Jogar sozinho",
+          "fr": "Jouer seul",
+          "es": "Jugar solo",
+          "de": "Alleine spielen"
+         },
+         "화면 녹화": {
+          "en": "Screen recording",
+          "zh": "屏幕录制",
+          "ja": "画面録画",
+          "th": "บันทึกหน้าจอ",
+          "ru": "Запись экрана",
+          "pt": "Gravação de tela",
+          "fr": "Enregistrement d'écran",
+          "es": "Grabación de pantalla",
+          "de": "Bildschirmaufnahme"
+         },
+         "황금 67": {
+          "en": "Gold 67",
+          "zh": "金色 67",
+          "ja": "金の67",
+          "th": "67 สีทอง",
+          "ru": "Золотая 67",
+          "pt": "67 dourado",
+          "fr": "67 doré",
+          "es": "67 dorado",
+          "de": "Goldene 67"
+         },
+         "황금 비약은 생명력을 회복시키고, 파란색 비약은 시원한 물줄기 총을 선사합니다.": {
+          "en": "The golden potion restores your life, and the blue potion gives you a cool water gun.",
+          "zh": "金色药水可以恢复生命值，蓝色药水会给你一把清爽的水枪。",
+          "ja": "金のポーションは体力を回復し、青いポーションは冷たい水鉄砲をくれます。",
+          "th": "ยาสีทองฟื้นพลังชีวิต ยาสีฟ้ามอบปืนน้ำเย็นให้",
+          "ru": "Золотое зелье восстанавливает жизни, а синее даёт освежающий водомёт.",
+          "pt": "A poção dourada restaura sua vida, e a azul te dá uma pistola de água refrescante.",
+          "fr": "La potion dorée restaure la vie, et la potion bleue donne un pistolet à eau rafraîchissant.",
+          "es": "La poción dorada restaura tu vida y la azul te da una pistola de agua refrescante.",
+          "de": "Der goldene Trank heilt dich, und der blaue Trank gibt dir eine erfrischende Wasserpistole."
+         },
+         "🏁 골": {
+          "en": "🏁 Goal",
+          "zh": "🏁 终点",
+          "ja": "🏁 ゴール",
+          "th": "🏁 เป้าหมาย",
+          "ru": "🏁 Финиш",
+          "pt": "🏁 Meta",
+          "fr": "🏁 Arrivée",
+          "es": "🏁 Meta",
+          "de": "🏁 Ziel"
+         },
+         "👾 적": {
+          "en": "👾 Enemy",
+          "zh": "👾 敌人",
+          "ja": "👾 敵",
+          "th": "👾 ศัตรู",
+          "ru": "👾 Враг",
+          "pt": "👾 Inimigo",
+          "fr": "👾 Ennemi",
+          "es": "👾 Enemigo",
+          "de": "👾 Gegner"
+         },
+         "🟢 시작": {
+          "en": "🟢 Start",
+          "zh": "🟢 开始",
+          "ja": "🟢 スタート",
+          "th": "🟢 เริ่ม",
+          "ru": "🟢 Старт",
+          "pt": "🟢 Início",
+          "fr": "🟢 Départ",
+          "es": "🟢 Inicio",
+          "de": "🟢 Start"
+         },
+         "🟫 땅": {
+          "en": "🟫 Ground",
+          "zh": "🟫 地面",
+          "ja": "🟫 地面",
+          "th": "🟫 พื้น",
+          "ru": "🟫 Земля",
+          "pt": "🟫 Chão",
+          "fr": "🟫 Sol",
+          "es": "🟫 Suelo",
+          "de": "🟫 Boden"
+         },
+         "🦟 모기": {
+          "en": "🦟 Mosquito",
+          "zh": "🦟 蚊子",
+          "ja": "🦟 蚊",
+          "th": "🦟 ยุง",
+          "ru": "🦟 Комар",
+          "pt": "🦟 Mosquito",
+          "fr": "🦟 Moustique",
+          "es": "🦟 Mosquito",
+          "de": "🦟 Mücke"
+         },
+         "🧽 지우개": {
+          "en": "🧽 Eraser",
+          "zh": "🧽 橡皮",
+          "ja": "🧽 消しゴム",
+          "th": "🧽 ยางลบ",
+          "ru": "🧽 Ластик",
+          "pt": "🧽 Borracha",
+          "fr": "🧽 Gomme",
+          "es": "🧽 Borrador",
+          "de": "🧽 Radierer"
+         },
+         "게임오버": {
+          "en": "Game over",
+          "zh": "游戏结束",
+          "ja": "ゲームオーバー",
+          "th": "เกมโอเวอร์",
+          "ru": "Игра окончена",
+          "pt": "Fim de jogo",
+          "fr": "Game over",
+          "es": "Fin del juego",
+          "de": "Game Over"
+         },
+         "골 깃발을 놓아 주세요": {
+          "en": "Please set down the goal flag",
+          "zh": "请放下终点旗",
+          "ja": "ゴール旗を置いてください",
+          "th": "กรุณาวางธงเป้าหมาย",
+          "ru": "Пожалуйста, опустите флаг финиша",
+          "pt": "Por favor, solte a bandeira da meta",
+          "fr": "Veuillez poser le drapeau d'arrivée",
+          "es": "Por favor, suelta la bandera de meta",
+          "de": "Bitte die Ziel-Fahne loslassen"
+         },
+         "남은 시간": {
+          "en": "Time left",
+          "zh": "剩余时间",
+          "ja": "残り時間",
+          "th": "เวลาที่เหลือ",
+          "ru": "Осталось времени",
+          "pt": "Tempo restante",
+          "fr": "Temps restant",
+          "es": "Tiempo restante",
+          "de": "Verbleibende Zeit"
+         },
+         "{n}님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.": {
+          "en": "{n} is not here. The connection dropped or your friend left.",
+          "zh": "{n} 不在。连接已断开，或朋友已离开。",
+          "ja": "{n}は存在しません。接続が切れたか、友達が退出しました。",
+          "th": "{n} ไม่อยู่แล้ว การเชื่อมต่อขาดหรือเพื่อนออกไปแล้ว",
+          "ru": "{n} не здесь. Связь прервалась или друг вышел.",
+          "pt": "{n} não está mais aqui. A conexão caiu ou seu amigo saiu.",
+          "fr": "{n} n'est plus là. La connexion a été coupée ou votre ami est parti.",
+          "es": "{n} ya no está. Se cortó la conexión o tu amigo se fue.",
+          "de": "{n} ist nicht mehr da. Die Verbindung wurde getrennt oder dein Freund ist gegangen."
+         },
+         "{n}님이 끝까지 살아남았어요!": {
+          "en": "{n} survived to the end!",
+          "zh": "{n} 坚持到了最后！",
+          "ja": "{n}が最後まで生き残りました！",
+          "th": "{n} รอดมาจนจบ!",
+          "ru": "{n} выжил до конца!",
+          "pt": "{n} sobreviveu até o fim!",
+          "fr": "{n} a survécu jusqu'au bout !",
+          "es": "¡{n} sobrevivió hasta el final!",
+          "de": "{n} hat bis zum Ende überlebt!"
+         },
+         "{n}님이 당신과 서바이벌을 플레이하고 싶대요. 어서 {n}님을 초대해 주세요!": {
+          "en": "{n} wants to play survival with you. Hurry and invite {n}!",
+          "zh": "{n} 想和你一起玩生存模式。快去邀请 {n} 吧！",
+          "ja": "{n}があなたとサバイバルで遊びたいそうです。早く{n}を招待してください！",
+          "th": "{n} อยากเล่นเอาตัวรอดกับคุณ รีบเชิญ {n} เลย!",
+          "ru": "{n} хочет играть с вами в выживание. Пригласите {n} скорее!",
+          "pt": "{n} quer jogar sobrevivência com você. Convide {n} logo!",
+          "fr": "{n} veut jouer à la survie avec vous. Invitez vite {n} !",
+          "es": "¡{n} quiere jugar a supervivencia contigo. ¡Invita ya a {n}!",
+          "de": "{n} möchte mit dir Überleben spielen. Lade {n} schnell ein!"
+         },
+         "님이 초대했어요": {
+          "en": "{n} invited you",
+          "zh": "{n} 邀请了你",
+          "ja": "{n}が招待しました",
+          "th": "{n} ชวนคุณ",
+          "ru": "{n} пригласил вас",
+          "pt": "{n} convidou você",
+          "fr": "{n} vous a invité",
+          "es": "{n} te invitó",
+          "de": "{n} hat dich eingeladen"
+         },
+         "라이스점프 죽는소리.mp3": {
+          "en": "Rice Jump death sound.mp3",
+          "zh": "라이스점프 死亡音效.mp3",
+          "ja": "ライスジャンプ 死亡音.mp3",
+          "th": "เสียงตาย Rice Jump.mp3",
+          "ru": "Звук гибели Rice Jump.mp3",
+          "pt": "Som de morte Rice Jump.mp3",
+          "fr": "Son de mort Rice Jump.mp3",
+          "es": "Sonido de muerte Rice Jump.mp3",
+          "de": "Rice Jump Todesgeräusch.mp3"
+         },
+         "마이크를 켤 수 없어요. 브라우저에서 마이크 권한을 허용해 주세요.": {
+          "en": "Can't turn on the mic. Please allow microphone access in your browser.",
+          "zh": "无法打开麦克风。请在浏览器中允许麦克风权限。",
+          "ja": "マイクをオンにできません。ブラウザでマイクの許可を出してください。",
+          "th": "เปิดไมค์ไม่ได้ กรุณาอนุญาตการใช้ไมค์ในเบราว์เซอร์",
+          "ru": "Не удалось включить микрофон. Разрешите доступ к микрофону в браузере.",
+          "pt": "Não foi possível ligar o microfone. Permita o acesso ao microfone no navegador.",
+          "fr": "Impossible d'activer le micro. Autorisez l'accès au micro dans le navigateur.",
+          "es": "No se puede activar el micrófono. Permite el acceso al micrófono en el navegador.",
+          "de": "Mikrofon kann nicht aktiviert werden. Erlaube den Mikrofonzugriff im Browser."
+         },
+         "맵을 처음 상태로 되돌릴까요?": {
+          "en": "Reset the map to its original state?",
+          "zh": "要将地图恢复到初始状态吗？",
+          "ja": "マップを最初の状態に戻しますか？",
+          "th": "จะรีเซ็ตแผนที่กลับเป็นสถานะเริ่มต้นไหม?",
+          "ru": "Вернуть карту в исходное состояние?",
+          "pt": "Restaurar o mapa ao estado original?",
+          "fr": "Remettre la carte dans son état initial ?",
+          "es": "¿Devolver el mapa a su estado original?",
+          "de": "Karte in den Ursprungszustand zurücksetzen?"
+         },
+         "모기": {
+          "en": "Mosquito",
+          "zh": "蚊子",
+          "ja": "蚊",
+          "th": "ยุง",
+          "ru": "Комар",
+          "pt": "Mosquito",
+          "fr": "Moustique",
+          "es": "Mosquito",
+          "de": "Mücke"
+         },
+         "몬스터 죽는 소리": {
+          "en": "Monster death sound",
+          "zh": "怪物死亡音",
+          "ja": "モンスターの死亡音",
+          "th": "เสียงมอนสเตอร์ตาย",
+          "ru": "Звук гибели монстра",
+          "pt": "Som de morte do monstro",
+          "fr": "Son de mort du monstre",
+          "es": "Sonido de muerte del monstruo",
+          "de": "Monster-Todesgeräusch"
+         },
+         "무승부예요. 아무도 이기지 못했어요.": {
+          "en": "It's a draw. No one won.",
+          "zh": "平局，没有人获胜。",
+          "ja": "引き分けです。誰も勝てませんでした。",
+          "th": "เสมอ ไม่มีใครชนะ",
+          "ru": "Ничья. Никто не выиграл.",
+          "pt": "Empate. Ninguém venceu.",
+          "fr": "Égalité. Personne n'a gagné.",
+          "es": "Empate. Nadie ganó.",
+          "de": "Unentschieden. Niemand hat gewonnen."
+         },
+         "방장이 시작하기를 기다리고 있어요": {
+          "en": "Waiting for the host to start",
+          "zh": "等待房主开始",
+          "ja": "ホストの開始を待っています",
+          "th": "รอให้เจ้าของห้องเริ่ม",
+          "ru": "Ждём, когда хост начнёт",
+          "pt": "Aguardando o anfitrião iniciar",
+          "fr": "En attente du lancement par l'hôte",
+          "es": "Esperando a que el anfitrión empiece",
+          "de": "Warte auf den Start durch den Host"
+         },
+         "배경음악 목록을 열어요.": {
+          "en": "Opens the background music list.",
+          "zh": "打开背景音乐列表。",
+          "ja": "BGMの一覧を開きます。",
+          "th": "เปิดรายการเพลงพื้นหลัง",
+          "ru": "Открывает список фоновой музыки.",
+          "pt": "Abre a lista de músicas de fundo.",
+          "fr": "Ouvre la liste des musiques de fond.",
+          "es": "Abre la lista de música de fondo.",
+          "de": "Öffnet die Liste der Hintergrundmusik."
+         },
+         "번개": {
+          "en": "Lightning",
+          "zh": "闪电",
+          "ja": "雷",
+          "th": "ฟ้าผ่า",
+          "ru": "Молния",
+          "pt": "Relâmpago",
+          "fr": "Éclair",
+          "es": "Rayo",
+          "de": "Blitz"
+         },
+         "벽돌 타격": {
+          "en": "Brick hit",
+          "zh": "砖块撞击",
+          "ja": "ブロック打撃",
+          "th": "ชนบล็อก",
+          "ru": "Удар по блоку",
+          "pt": "Batida no bloco",
+          "fr": "Coup sur brique",
+          "es": "Golpe al bloque",
+          "de": "Steinschlag"
+         },
+         "보스 죽는 소리": {
+          "en": "Boss death sound",
+          "zh": "Boss 死亡音效",
+          "ja": "ボスの死亡音",
+          "th": "เสียงบอสตาย",
+          "ru": "Звук гибели босса",
+          "pt": "Som de morte do chefe",
+          "fr": "Son de mort du boss",
+          "es": "Sonido de muerte del jefe",
+          "de": "Boss-Todesgeräusch"
+         },
+         "보스전": {
+          "en": "Boss battle",
+          "zh": "Boss 战",
+          "ja": "ボス戦",
+          "th": "ศึกบอส",
+          "ru": "Битва с боссом",
+          "pt": "Batalha com o chefe",
+          "fr": "Combat de boss",
+          "es": "Batalla de jefe",
+          "de": "Bosskampf"
+         },
+         "블록 타격": {
+          "en": "Block hit",
+          "zh": "方块撞击",
+          "ja": "ブロック打撃",
+          "th": "ชนบล็อก",
+          "ru": "Удар по блоку",
+          "pt": "Batida no bloco",
+          "fr": "Coup sur bloc",
+          "es": "Golpe al bloque",
+          "de": "Blockschlag"
+         },
+         "블록 타격 (자동)": {
+          "en": "Block hit (auto)",
+          "zh": "方块撞击（自动）",
+          "ja": "ブロック打撃（自動）",
+          "th": "ชนบล็อก (อัตโนมัติ)",
+          "ru": "Удар по блоку (авто)",
+          "pt": "Batida no bloco (auto)",
+          "fr": "Coup sur bloc (auto)",
+          "es": "Golpe al bloque (auto)",
+          "de": "Blockschlag (auto)"
+         },
+         "서바이벌 규칙\n50스테이지까지 앞으로 가세요. 10스테이지마다 안전지대예요.\n생명 3개로 서로 뺏고 뺏기며 살아남으세요.\n67은 물총, L은 돌진을 줘요.\n10분 안에 가장 오래 살아남은 사람이 이겨요.": {
+          "en": "Survival rules\nMove forward through 50 stages. Every 10th stage is a safe zone.\nWith 3 lives, take and lose lives from each other to survive.\n67 gives a water gun, L gives a dash.\nIn 10 minutes, the one who survives the longest wins.",
+          "zh": "生存规则\n向前推进到第 50 关。每 10 关是安全区。\n用 3 条生命互相夺取与被夺取，活到最后。\n67 给予水枪，L 给予冲刺。\n10 分钟内活得最久的人获胜。",
+          "ja": "サバイバルのルール\n50ステージまで進もう。10ステージごとが安全地帯。\n命3つで奪い合いながら生き残ろう。\n67は水鉄砲、Lはダッシュ。\n10分間で最も長く生き残った人の勝ち。",
+          "th": "กติกาเอาตัวรอด\nไปให้ถึงด่านที่ 50 ทุก 10 ด่านคือเขตปลอดภัย\nมีชีวิต 3 ดวง แย่งชิงและถูกแย่งชิงเพื่อเอาตัวรอด\n67 ให้ปืนน้ำ, L ให้พุ่งทะยาน\nใน 10 นาที คนที่รอดนานที่สุดจะชนะ",
+          "ru": "Правила выживания\nПройдите 50 этапов. Каждый 10-й этап — безопасная зона.\nУ вас 3 жизни: отнимайте и теряйте их, чтобы выжить.\n67 даёт водомёт, L — рывок.\nЗа 10 минут выиграет тот, кто дольше всех выживет.",
+          "pt": "Regras de sobrevivência\nAvance pelas 50 fases. A cada 10 fases há uma zona segura.\nCom 3 vidas, tire e perca vidas dos outros para sobreviver.\n67 dá uma arma de água, L dá um impulso.\nEm 10 minutos, vence quem sobreviver por mais tempo.",
+          "fr": "Règles de survie\nAvancez à travers les 50 étapes. Chaque 10e étape est une zone sûre.\nAvec 3 vies, prenez et perdez des vies pour survivre.\n67 donne un pistolet à eau, L donne un dash.\nEn 10 minutes, celui qui survit le plus longtemps gagne.",
+          "es": "Reglas de supervivencia\nAvanza por las 50 fases. Cada 10 fases hay una zona segura.\nCon 3 vidas, quita y pierde vidas para sobrevivir.\n67 da una pistola de agua, L da un impulso.\nEn 10 minutos gana quien más tiempo sobreviva.",
+          "de": "Überlebensregeln\nKämpfe dich durch 50 Stufen. Jede 10. Stufe ist eine sichere Zone.\nMit 3 Leben nimmst und verlierst du Leben, um zu überleben.\n67 gibt eine Wasserpistole, L einen Sprint.\nNach 10 Minuten gewinnt, wer am längsten überlebt."
+         },
+         "서바이벌 인원이 꽉 찼습니다": {
+          "en": "The survival room is full",
+          "zh": "生存房间已满",
+          "ja": "サバイバルの定員がいっぱいです",
+          "th": "ห้องเอาตัวรอดเต็มแล้ว",
+          "ru": "Комната выживания заполнена",
+          "pt": "A sala de sobrevivência está cheia",
+          "fr": "La salle de survie est pleine",
+          "es": "La sala de supervivencia está llena",
+          "de": "Der Überlebensraum ist voll"
+         },
+         "서버 고치면 될테니 잠시 기다려주세요.": {
+          "en": "We're fixing the server, so please wait a moment.",
+          "zh": "正在修复服务器，请稍等。",
+          "ja": "サーバーを直しているので、少々お待ちください。",
+          "th": "กำลังซ่อมเซิร์ฟเวอร์ รอสักครู่นะ",
+          "ru": "Сервер чинят, пожалуйста, подождите.",
+          "pt": "Estamos consertando o servidor, aguarde um instante.",
+          "fr": "Nous réparons le serveur, veuillez patienter.",
+          "es": "Estamos arreglando el servidor, espera un momento.",
+          "de": "Der Server wird repariert, bitte warte einen Moment."
+         },
+         "스테이지 클리어 (자동)": {
+          "en": "Stage clear (auto)",
+          "zh": "通关（自动）",
+          "ja": "ステージクリア（自動）",
+          "th": "ผ่านด่าน (อัตโนมัติ)",
+          "ru": "Этап пройден (авто)",
+          "pt": "Fase concluída (auto)",
+          "fr": "Étape réussie (auto)",
+          "es": "Nivel superado (auto)",
+          "de": "Stufe geschafft (auto)"
+         },
+         "스테이지는 1부터 50까지 있어요.": {
+          "en": "There are 50 stages, from 1 to 50.",
+          "zh": "关卡从 1 到 50。",
+          "ja": "ステージは1から50まであります。",
+          "th": "มี 50 ด่าน ตั้งแต่ 1 ถึง 50",
+          "ru": "Всего 50 этапов, с 1 по 50.",
+          "pt": "Há 50 fases, de 1 a 50.",
+          "fr": "Il y a 50 étapes, de 1 à 50.",
+          "es": "Hay 50 niveles, del 1 al 50.",
+          "de": "Es gibt 50 Stufen, von 1 bis 50."
+         },
+         "시작": {
+          "en": "Start",
+          "zh": "开始",
+          "ja": "スタート",
+          "th": "เริ่ม",
+          "ru": "Старт",
+          "pt": "Início",
+          "fr": "Départ",
+          "es": "Inicio",
+          "de": "Start"
+         },
+         "시작!": {
+          "en": "Go!",
+          "zh": "开始！",
+          "ja": "スタート！",
+          "th": "เริ่ม!",
+          "ru": "Старт!",
+          "pt": "Já!",
+          "fr": "Partez !",
+          "es": "¡Ya!",
+          "de": "Los!"
+         },
+         "아... 친구를 모아 봤지만 친구가 오질 않네요ㅠㅠ": {
+          "en": "Ugh... I gathered friends, but no one came ㅠㅠ",
+          "zh": "唉……召集了朋友，可是没人来ㅠㅠ",
+          "ja": "あーあ…友達を集めたのに、誰も来ないです ㅠㅠ",
+          "th": "อ้า... เรียกเพื่อนมาแล้ว แต่ไม่มีใครมาเลย ㅠㅠ",
+          "ru": "Эх... собрали друзей, а никто не пришёл ㅠㅠ",
+          "pt": "Ah... chamei amigos, mas ninguém veio ㅠㅠ",
+          "fr": "Oh... j'ai réuni des amis, mais personne n'est venu ㅠㅠ",
+          "es": "Ay... reuní amigos, pero nadie vino ㅠㅠ",
+          "de": "Ach... ich habe Freunde gesammelt, aber niemand kam ㅠㅠ"
+         },
+         "아무도 살아남지 못했어요.": {
+          "en": "No one survived.",
+          "zh": "没有人活下来。",
+          "ja": "誰も生き残れませんでした。",
+          "th": "ไม่มีใครรอด",
+          "ru": "Никто не выжил.",
+          "pt": "Ninguém sobreviveu.",
+          "fr": "Personne n'a survécu.",
+          "es": "Nadie sobrevivió.",
+          "de": "Niemand hat überlebt."
+         },
+         "아이템 획득": {
+          "en": "Item acquired",
+          "zh": "获得道具",
+          "ja": "アイテム取得",
+          "th": "ได้ไอเทม",
+          "ru": "Предмет получен",
+          "pt": "Item obtido",
+          "fr": "Objet obtenu",
+          "es": "Objeto obtenido",
+          "de": "Item erhalten"
+         },
+         "안녕하세요": {
+          "en": "Hello",
+          "zh": "你好",
+          "ja": "こんにちは",
+          "th": "สวัสดี",
+          "ru": "Привет",
+          "pt": "Olá",
+          "fr": "Bonjour",
+          "es": "Hola",
+          "de": "Hallo"
+         },
+         "안녕하세요.mp3": {
+          "en": "Hello.mp3",
+          "zh": "你好.mp3",
+          "ja": "こんにちは.mp3",
+          "th": "สวัสดี.mp3",
+          "ru": "Привет.mp3",
+          "pt": "Olá.mp3",
+          "fr": "Bonjour.mp3",
+          "es": "Hola.mp3",
+          "de": "Hallo.mp3"
+         },
+         "안전지대": {
+          "en": "Safe zone",
+          "zh": "安全区",
+          "ja": "安全地帯",
+          "th": "เขตปลอดภัย",
+          "ru": "Безопасная зона",
+          "pt": "Zona segura",
+          "fr": "Zone sûre",
+          "es": "Zona segura",
+          "de": "Sichere Zone"
+         },
+         "안정적으로 서바이벌을 돌리기 위해 10명 이상이 서바이벌에 참가할 수 없습니다. 이번 경기가 끝날 때까지 모험을 혼자 하다가 다음 경기에서 참여하세요.": {
+          "en": "To keep survival stable, more than 10 players can't join. Adventure alone until this match ends, then join the next one.",
+          "zh": "为了让生存模式稳定运行，参与人数不能超过 10 人。请先独自冒险到本场比赛结束，然后在下一场比赛中参加。",
+          "ja": "安定してサバイバルを運営するため、10人以上は参加できません。今回の試合が終わるまでひとりで冒険し、次の試合から参加してください。",
+          "th": "เพื่อให้เอาตัวรอดทำงานอย่างเสถียร ผู้เล่นเกิน 10 คนเข้าร่วมไม่ได้ ระหว่างนี้ผจญภัยคนเดียวไปก่อน แล้วเข้าร่วมในแมตช์ถัดไป",
+          "ru": "Чтобы выживание работало стабильно, больше 10 игроков не могут участвовать. Пока матч не закончится, играйте в приключение в одиночку и присоединитесь в следующем матче.",
+          "pt": "Para manter a sobrevivência estável, não é possível participar com mais de 10 pessoas. Enquanto esta partida não termina, jogue a aventura sozinho e participe na próxima.",
+          "fr": "Pour un fonctionnement stable, plus de 10 joueurs ne peuvent pas participer. Jouez l'aventure seul jusqu'à la fin de cette partie, puis rejoignez la suivante.",
+          "es": "Para que la supervivencia funcione bien, no pueden participar más de 10 personas. Juega la aventura solo hasta que termine esta partida y únete en la siguiente.",
+          "de": "Damit das Überleben stabil läuft, können nicht mehr als 10 Spieler teilnehmen. Spiele bis zum Ende dieser Runde allein das Abenteuer und tritt in der nächsten Runde bei."
+         },
+         "어라? 서버가 아작났는데요?": {
+          "en": "Uh-oh, the server is down!",
+          "zh": "咦？服务器挂了！",
+          "ja": "あれ？サーバーが落ちたみたいです！",
+          "th": "เอ๊ะ? เซิร์ฟเวอร์ล่มแล้ว!",
+          "ru": "Ой, сервер упал!",
+          "pt": "Ops, o servidor caiu!",
+          "fr": "Oups, le serveur est tombé !",
+          "es": "¡Ups, el servidor se ha caído!",
+          "de": "Oh nein, der Server ist ausgefallen!"
+         },
+         "어라? 인터넷이 안 잡히는데요?": {
+          "en": "Uh-oh, no internet connection?",
+          "zh": "咦？网络连不上吗？",
+          "ja": "あれ？インターネットがつながらないです？",
+          "th": "เอ๊ะ? อินเทอร์เน็ตไม่ติดเลย?",
+          "ru": "Ой, интернет не ловит?",
+          "pt": "Ops, sem internet?",
+          "fr": "Oups, pas de connexion internet ?",
+          "es": "¡Ups! ¿No hay internet?",
+          "de": "Oh, kein Internet?"
+         },
+         "얼어붙음": {
+          "en": "Frozen ",
+          "zh": "冻结 ",
+          "ja": "凍結 ",
+          "th": "แข็งทื่อ ",
+          "ru": "Заморожен ",
+          "pt": "Congelado ",
+          "fr": "Gelé ",
+          "es": "Congelado ",
+          "de": "Eingefroren "
+         },
+         "에디터로 돌아가기": {
+          "en": "Back to editor",
+          "zh": "返回编辑器",
+          "ja": "エディターに戻る",
+          "th": "กลับไปที่ตัวแก้ไข",
+          "ru": "Вернуться в редактор",
+          "pt": "Voltar ao editor",
+          "fr": "Retour à l'éditeur",
+          "es": "Volver al editor",
+          "de": "Zurück zum Editor"
+         },
+         "엔딩": {
+          "en": "Ending",
+          "zh": "结局",
+          "ja": "エンディング",
+          "th": "จบเรื่อง",
+          "ru": "Концовка",
+          "pt": "Final",
+          "fr": "Fin",
+          "es": "Final",
+          "de": "Ende"
+         },
+         "엔딩 · 타이틀 · 크레딧": {
+          "en": "Ending · Title · Credits",
+          "zh": "结局 · 标题 · 制作人员",
+          "ja": "エンディング・タイトル・クレジット",
+          "th": "จบเรื่อง · ชื่อเกม · เครดิต",
+          "ru": "Концовка · Заставка · Титры",
+          "pt": "Final · Título · Créditos",
+          "fr": "Fin · Titre · Crédits",
+          "es": "Final · Título · Créditos",
+          "de": "Ende · Titel · Abspann"
+         },
+         "열려있는 페이지를 닫아도 안되면 새로고침해 보세요.": {
+          "en": "If closing open pages doesn't help, try refreshing.",
+          "zh": "如果关闭打开的页面仍无效，请尝试刷新。",
+          "ja": "開いているページを閉じてもダメなら、再読み込みしてみてください。",
+          "th": "ถ้าปิดหน้าที่เปิดอยู่แล้วยังไม่ได้ ลองรีเฟรชดู",
+          "ru": "Если закрытие вкладок не помогает, попробуйте обновить страницу.",
+          "pt": "Se fechar as páginas abertas não resolver, tente atualizar.",
+          "fr": "Si fermer les pages ouvertes ne suffit pas, essayez de recharger.",
+          "es": "Si cerrar las páginas abiertas no funciona, prueba a recargar.",
+          "de": "Wenn das Schließen offener Seiten nicht hilft, lade die Seite neu."
+         },
+         "이 브라우저에서는 마이크를 쓸 수 없어요.": {
+          "en": "This browser can't use the microphone.",
+          "zh": "这个浏览器无法使用麦克风。",
+          "ja": "このブラウザではマイクを使えません。",
+          "th": "เบราว์เซอร์นี้ใช้ไมค์ไม่ได้",
+          "ru": "Этот браузер не может использовать микрофон.",
+          "pt": "Este navegador não pode usar o microfone.",
+          "fr": "Ce navigateur ne peut pas utiliser le micro.",
+          "es": "Este navegador no puede usar el micrófono.",
+          "de": "Dieser Browser kann das Mikrofon nicht nutzen."
+         },
+         "인터넷 연결이 끊겼어요": {
+          "en": "Internet connection lost",
+          "zh": "网络连接已断开",
+          "ja": "インターネット接続が切れました",
+          "th": "การเชื่อมต่ออินเทอร์เน็ตขาดหาย",
+          "ru": "Соединение с интернетом потеряно",
+          "pt": "Conexão com a internet perdida",
+          "fr": "Connexion internet perdue",
+          "es": "Conexión a internet perdida",
+          "de": "Internetverbindung unterbrochen"
+         },
+         "인터넷을 연결해 주세요.": {
+          "en": "Please connect to the internet.",
+          "zh": "请连接网络。",
+          "ja": "インターネットに接続してください。",
+          "th": "กรุณาเชื่อมต่ออินเทอร์เน็ต",
+          "ru": "Пожалуйста, подключитесь к интернету.",
+          "pt": "Por favor, conecte-se à internet.",
+          "fr": "Veuillez vous connecter à internet.",
+          "es": "Por favor, conéctate a internet.",
+          "de": "Bitte verbinde dich mit dem Internet."
+         },
+         "잠시만요? 램이 터졌는데요?": {
+          "en": "Hold on? Looks like memory ran out.",
+          "zh": "等一下？内存好像爆了？",
+          "ja": "ちょっと待って？メモリがいっぱいみたいです。",
+          "th": "เดี๋ยวก่อน? หน่วยความจำเต็มเหรอ?",
+          "ru": "Подождите? Похоже, память закончилась.",
+          "pt": "Espera aí? Parece que a memória acabou.",
+          "fr": "Attendez ? La mémoire semble saturée.",
+          "es": "¿Espera? Parece que se ha agotado la memoria.",
+          "de": "Moment mal? Der Arbeitsspeicher scheint voll zu sein."
+         },
+         "저장됨": {
+          "en": "Saved",
+          "zh": "已保存",
+          "ja": "保存しました",
+          "th": "บันทึกแล้ว",
+          "ru": "Сохранено",
+          "pt": "Salvo",
+          "fr": "Enregistré",
+          "es": "Guardado",
+          "de": "Gespeichert"
+         },
+         "점프 (자동)": {
+          "en": "Jump (auto)",
+          "zh": "跳跃（自动）",
+          "ja": "ジャンプ（自動）",
+          "th": "กระโดด (อัตโนมัติ)",
+          "ru": "Прыжок (авто)",
+          "pt": "Pulo (auto)",
+          "fr": "Saut (auto)",
+          "es": "Salto (auto)",
+          "de": "Sprung (auto)"
+         },
+         "죽는 소리": {
+          "en": "Death sound",
+          "zh": "死亡音效",
+          "ja": "死亡音",
+          "th": "เสียงตาย",
+          "ru": "Звук гибели",
+          "pt": "Som de morte",
+          "fr": "Son de mort",
+          "es": "Sonido de muerte",
+          "de": "Todesgeräusch"
+         },
+         "진동 목록을 열어요.": {
+          "en": "Opens the vibration list.",
+          "zh": "打开震动列表。",
+          "ja": "振動の一覧を開きます。",
+          "th": "เปิดรายการการสั่น",
+          "ru": "Открывает список вибраций.",
+          "pt": "Abre a lista de vibrações.",
+          "fr": "Ouvre la liste des vibrations.",
+          "es": "Abre la lista de vibraciones.",
+          "de": "Öffnet die Vibrationsliste."
+         },
+         "초기화했어요": {
+          "en": "Reset done",
+          "zh": "已重置",
+          "ja": "初期化しました",
+          "th": "รีเซ็ตแล้ว",
+          "ru": "Сброс выполнен",
+          "pt": "Redefinido",
+          "fr": "Réinitialisé",
+          "es": "Restablecido",
+          "de": "Zurückgesetzt"
+         },
+         "친구": {
+          "en": "Friend",
+          "zh": "好友",
+          "ja": "友達",
+          "th": "เพื่อน",
+          "ru": "Друг",
+          "pt": "Amigo",
+          "fr": "Ami",
+          "es": "Amigo",
+          "de": "Freund"
+         },
+         "친구가 왔어요! 준비되면 시작하세요": {
+          "en": "A friend came! Start when you're ready",
+          "zh": "朋友来了！准备好就开始吧",
+          "ja": "友達が来ました！準備ができたら始めてください",
+          "th": "เพื่อนมาแล้ว! เริ่มได้เมื่อพร้อม",
+          "ru": "Друг пришёл! Начинайте, когда будете готовы",
+          "pt": "Um amigo chegou! Comece quando estiver pronto",
+          "fr": "Un ami est arrivé ! Commencez quand vous êtes prêt",
+          "es": "¡Ha llegado un amigo! Empieza cuando quieras",
+          "de": "Ein Freund ist da! Starte, wenn du bereit bist"
+         },
+         "친구를 모으고 있어요.": {
+          "en": "Gathering friends...",
+          "zh": "正在召集好友。",
+          "ja": "友達を集めています。",
+          "th": "กำลังเรียกเพื่อน",
+          "ru": "Собираем друзей...",
+          "pt": "Reunindo amigos...",
+          "fr": "On rassemble des amis...",
+          "es": "Reuniendo amigos...",
+          "de": "Freunde werden gesammelt..."
+         },
+         "친구를 찾을 수 없습니다": {
+          "en": "Can't find your friend",
+          "zh": "找不到好友",
+          "ja": "友達が見つかりません",
+          "th": "หาเพื่อนไม่เจอ",
+          "ru": "Не удаётся найти друга",
+          "pt": "Não foi possível encontrar seu amigo",
+          "fr": "Impossible de trouver votre ami",
+          "es": "No se puede encontrar a tu amigo",
+          "de": "Freund nicht gefunden"
+         },
+         "친구에게 연결하는 중...": {
+          "en": "Connecting to your friend...",
+          "zh": "正在连接好友...",
+          "ja": "友達に接続中...",
+          "th": "กำลังเชื่อมต่อกับเพื่อน...",
+          "ru": "Подключаемся к другу...",
+          "pt": "Conectando ao seu amigo...",
+          "fr": "Connexion à votre ami...",
+          "es": "Conectando con tu amigo...",
+          "de": "Verbinde mit deinem Freund..."
+         },
+         "친구에게 연결하지 못했어요.": {
+          "en": "Couldn't connect to your friend.",
+          "zh": "无法连接到好友。",
+          "ja": "友達に接続できませんでした。",
+          "th": "เชื่อมต่อกับเพื่อนไม่ได้",
+          "ru": "Не удалось подключиться к другу.",
+          "pt": "Não foi possível conectar ao seu amigo.",
+          "fr": "Impossible de se connecter à votre ami.",
+          "es": "No se pudo conectar con tu amigo.",
+          "de": "Verbindung zum Freund fehlgeschlagen."
+         },
+         "화면이나 인터넷 연결을 확인하고 다시 시도해 주세요.": {
+          "en": "Check your screen or internet connection and try again.",
+          "zh": "请检查屏幕或网络连接，然后重试。",
+          "ja": "画面やインターネット接続を確認して、もう一度お試しください。",
+          "th": "ตรวจสอบหน้าจอหรือการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่",
+          "ru": "Проверьте экран или подключение к интернету и попробуйте снова.",
+          "pt": "Verifique a tela ou a conexão com a internet e tente novamente.",
+          "fr": "Vérifiez l'écran ou la connexion internet, puis réessayez.",
+          "es": "Revisa la pantalla o la conexión a internet y vuelve a intentarlo.",
+          "de": "Prüfe Bildschirm oder Internetverbindung und versuche es erneut."
+         },
+         "효과음 목록을 열어요.": {
+          "en": "Opens the sound effect list.",
+          "zh": "打开音效列表。",
+          "ja": "効果音の一覧を開きます。",
+          "th": "เปิดรายการเอฟเฟกต์เสียง",
+          "ru": "Открывает список звуковых эффектов.",
+          "pt": "Abre a lista de efeitos sonoros.",
+          "fr": "Ouvre la liste des effets sonores.",
+          "es": "Abre la lista de efectos de sonido.",
+          "de": "Öffnet die Liste der Soundeffekte."
+         },
+         "🏆 승리! 끝까지 살아남았어요!": {
+          "en": "🏆 Victory! You survived to the end!",
+          "zh": "🏆 胜利！你坚持到了最后！",
+          "ja": "🏆 勝利！最後まで生き残りました！",
+          "th": "🏆 ชนะ! คุณรอดมาจนจบ!",
+          "ru": "🏆 Победа! Вы выжили до конца!",
+          "pt": "🏆 Vitória! Você sobreviveu até o fim!",
+          "fr": "🏆 Victoire ! Vous avez survécu jusqu'au bout !",
+          "es": "🏆 ¡Victoria! ¡Has sobrevivido hasta el final!",
+          "de": "🏆 Sieg! Du hast bis zum Ende überlebt!"
+         },
+         "L 돌진 ×": {
+          "en": "L dash ×",
+          "zh": "L 冲刺 ×",
+          "ja": "Lダッシュ ×",
+          "th": "L พุ่ง ×",
+          "ru": "L рывок ×",
+          "pt": "Impulso L ×",
+          "fr": "Dash L ×",
+          "es": "Impulso L ×",
+          "de": "L-Sprint ×"
+         },
+         "l을가져가": {
+          "en": "Take L",
+          "zh": "拿走L",
+          "ja": "Lを取る",
+          "th": "เอา L ไป",
+          "ru": "Забери L",
+          "pt": "Pegue o L",
+          "fr": "Prends le L",
+          "es": "Lleva L",
+          "de": "Nimm L"
+         },
+         "l을가져가 (자동)": {
+          "en": "Take L (auto)",
+          "zh": "拿走L（自动）",
+          "ja": "Lを取る（自動）",
+          "th": "เอา L ไป (อัตโนมัติ)",
+          "ru": "Забери L (авто)",
+          "pt": "Pegue o L (auto)",
+          "fr": "Prends le L (auto)",
+          "es": "Lleva L (auto)",
+          "de": "Nimm L (auto)"
+         },
+         "10초 남음": {
+          "en": "10s left",
+          "zh": "剩余10秒",
+          "ja": "残り10秒",
+          "th": "เหลือ 10 วินาที",
+          "ru": "Осталось 10 с",
+          "pt": "10 s restantes",
+          "fr": "10 s restantes",
+          "es": "Quedan 10 s",
+          "de": "Noch 10 s"
+         },
+         "15초 남음": {
+          "en": "15s left",
+          "zh": "剩余15秒",
+          "ja": "残り15秒",
+          "th": "เหลือ 15 วินาที",
+          "ru": "Осталось 15 с",
+          "pt": "15 s restantes",
+          "fr": "15 s restantes",
+          "es": "Quedan 15 s",
+          "de": "Noch 15 s"
+         },
+         "30초 남음": {
+          "en": "30s left",
+          "zh": "剩余30秒",
+          "ja": "残り30秒",
+          "th": "เหลือ 30 วินาที",
+          "ru": "Осталось 30 с",
+          "pt": "30 s restantes",
+          "fr": "30 s restantes",
+          "es": "Quedan 30 s",
+          "de": "Noch 30 s"
+         },
+         "3초 남음": {
+          "en": "3s left",
+          "zh": "剩余3秒",
+          "ja": "残り3秒",
+          "th": "เหลือ 3 วินาที",
+          "ru": "Осталось 3 с",
+          "pt": "3 s restantes",
+          "fr": "3 s restantes",
+          "es": "Quedan 3 s",
+          "de": "Noch 3 s"
+         },
+         "5초 남음": {
+          "en": "5s left",
+          "zh": "剩余5秒",
+          "ja": "残り5秒",
+          "th": "เหลือ 5 วินาที",
+          "ru": "Осталось 5 с",
+          "pt": "5 s restantes",
+          "fr": "5 s restantes",
+          "es": "Quedan 5 s",
+          "de": "Noch 5 s"
+         },
+         "60초 남음": {
+          "en": "60s left",
+          "zh": "剩余60秒",
+          "ja": "残り60秒",
+          "th": "เหลือ 60 วินาที",
+          "ru": "Осталось 60 с",
+          "pt": "60 s restantes",
+          "fr": "60 s restantes",
+          "es": "Quedan 60 s",
+          "de": "Noch 60 s"
+         },
+         "six seven 10초 남음": {
+          "en": "six seven 10s left",
+          "zh": "six seven 剩余10秒",
+          "ja": "six seven 残り10秒",
+          "th": "six seven เหลือ 10 วินาที",
+          "ru": "six seven осталось 10 с",
+          "pt": "six seven 10 s restantes",
+          "fr": "six seven 10 s restantes",
+          "es": "six seven quedan 10 s",
+          "de": "six seven noch 10 s"
+         },
+         "six seven 15초 남음": {
+          "en": "six seven 15s left",
+          "zh": "six seven 剩余15秒",
+          "ja": "six seven 残り15秒",
+          "th": "six seven เหลือ 15 วินาที",
+          "ru": "six seven осталось 15 с",
+          "pt": "six seven 15 s restantes",
+          "fr": "six seven 15 s restantes",
+          "es": "six seven quedan 15 s",
+          "de": "six seven noch 15 s"
+         },
+         "six seven 30초 남음": {
+          "en": "six seven 30s left",
+          "zh": "six seven 剩余30秒",
+          "ja": "six seven 残り30秒",
+          "th": "six seven เหลือ 30 วินาที",
+          "ru": "six seven осталось 30 с",
+          "pt": "six seven 30 s restantes",
+          "fr": "six seven 30 s restantes",
+          "es": "six seven quedan 30 s",
+          "de": "six seven noch 30 s"
+         },
+         "six seven 3초 남음": {
+          "en": "six seven 3s left",
+          "zh": "six seven 剩余3秒",
+          "ja": "six seven 残り3秒",
+          "th": "six seven เหลือ 3 วินาที",
+          "ru": "six seven осталось 3 с",
+          "pt": "six seven 3 s restantes",
+          "fr": "six seven 3 s restantes",
+          "es": "six seven quedan 3 s",
+          "de": "six seven noch 3 s"
+         },
+         "six seven 5초 남음": {
+          "en": "six seven 5s left",
+          "zh": "six seven 剩余5秒",
+          "ja": "six seven 残り5秒",
+          "th": "six seven เหลือ 5 วินาที",
+          "ru": "six seven осталось 5 с",
+          "pt": "six seven 5 s restantes",
+          "fr": "six seven 5 s restantes",
+          "es": "six seven quedan 5 s",
+          "de": "six seven noch 5 s"
+         },
+         "six seven 60초 남음": {
+          "en": "six seven 60s left",
+          "zh": "six seven 剩余60秒",
+          "ja": "six seven 残り60秒",
+          "th": "six seven เหลือ 60 วินาที",
+          "ru": "six seven осталось 60 с",
+          "pt": "six seven 60 s restantes",
+          "fr": "six seven 60 s restantes",
+          "es": "six seven quedan 60 s",
+          "de": "six seven noch 60 s"
+         },
+         "six seven 효과음": {
+          "en": "six seven sound effect",
+          "zh": "six seven 音效",
+          "ja": "six seven 効果音",
+          "th": "เอฟเฟกต์ six seven",
+          "ru": "звуковой эффект six seven",
+          "pt": "efeito sonoro six seven",
+          "fr": "effet sonore six seven",
+          "es": "efecto de sonido six seven",
+          "de": "six seven Soundeffekt"
+         },
+         "VIBRATION (진동 미지원 기기)": {
+          "en": "VIBRATION (not supported on this device)",
+          "zh": "VIBRATION（此设备不支持震动）",
+          "ja": "VIBRATION（この端末は振動非対応）",
+          "th": "VIBRATION (อุปกรณ์นี้ไม่รองรับการสั่น)",
+          "ru": "VIBRATION (вибрация не поддерживается)",
+          "pt": "VIBRATION (não suportado neste aparelho)",
+          "fr": "VIBRATION (non pris en charge sur cet appareil)",
+          "es": "VIBRATION (no compatible con este dispositivo)",
+          "de": "VIBRATION (auf diesem Gerät nicht unterstützt)"
+         },
+         "stage15처럼 스테이지 번호를 붙여서 입력해 주세요.": {
+          "en": "Please enter it with a stage number, like stage15.",
+          "zh": "请像 stage15 这样带上关卡编号输入。",
+          "ja": "stage15のようにステージ番号を付けて入力してください。",
+          "th": "กรุณาพิมพ์พร้อมหมายเลขด่าน เช่น stage15",
+          "ru": "Введите с номером этапа, например stage15.",
+          "pt": "Digite com o número da fase, como stage15.",
+          "fr": "Saisissez avec le numéro d'étape, comme stage15.",
+          "es": "Escríbelo con el número de nivel, como stage15.",
+          "de": "Bitte mit Stufennummer eingeben, z. B. stage15."
+         },
+         "{s}스테이지  ♥ {h}": {
+          "en": "Stage {s} ♥ {h}",
+          "zh": "第{s}关 ♥ {h}",
+          "ja": "{s}ステージ ♥ {h}",
+          "th": "ด่าน {s} ♥ {h}",
+          "ru": "Этап {s} ♥ {h}",
+          "pt": "Fase {s} ♥ {h}",
+          "fr": "Étape {s} ♥ {h}",
+          "es": "Nivel {s} ♥ {h}",
+          "de": "Stufe {s} ♥ {h}"
+         },
+         "얼어붙음 {s}초": {
+          "en": "Frozen {s}s",
+          "zh": "冻结 {s}秒",
+          "ja": "凍結 {s}秒",
+          "th": "แข็งทื่อ {s} วินาที",
+          "ru": "Заморожен {s} с",
+          "pt": "Congelado {s} s",
+          "fr": "Gelé {s} s",
+          "es": "Congelado {s} s",
+          "de": "Eingefroren {s} s"
+         },
+         "{n}님이 초대했어요": {
+          "en": "{n} invited you",
+          "zh": "{n} 邀请了你",
+          "ja": "{n}が招待しました",
+          "th": "{n} ชวนคุณ",
+          "ru": "{n} пригласил вас",
+          "pt": "{n} convidou você",
+          "fr": "{n} vous a invité",
+          "es": "{n} te invitó",
+          "de": "{n} hat dich eingeladen"
+         },
+         "방송 내용을 입력하세요": {
+          "en": "Enter your announcement",
+          "zh": "请输入广播内容",
+          "ja": "放送内容を入力してください",
+          "th": "พิมพ์ประกาศของคุณ",
+          "ru": "Введите объявление",
+          "pt": "Digite o anúncio",
+          "fr": "Saisissez votre annonce",
+          "es": "Escribe tu anuncio",
+          "de": "Ansage eingeben"
+         },
+         "방송하기": {
+          "en": "Announce",
+          "zh": "广播",
+          "ja": "放送する",
+          "th": "ประกาศ",
+          "ru": "Объявить",
+          "pt": "Anunciar",
+          "fr": "Annoncer",
+          "es": "Anunciar",
+          "de": "Ansagen"
+         },
+         "채팅": {
+          "en": "Chat",
+          "zh": "聊天",
+          "ja": "チャット",
+          "th": "แชท",
+          "ru": "Чат",
+          "pt": "Chat",
+          "fr": "Chat",
+          "es": "Chat",
+          "de": "Chat"
+         },
+         "메시지를 입력하세요": {
+          "en": "Type a message",
+          "zh": "请输入消息",
+          "ja": "メッセージを入力してください",
+          "th": "พิมพ์ข้อความ",
+          "ru": "Введите сообщение",
+          "pt": "Digite uma mensagem",
+          "fr": "Saisissez un message",
+          "es": "Escribe un mensaje",
+          "de": "Nachricht eingeben"
+         },
+         "취소": {
+          "en": "Cancel",
+          "zh": "取消",
+          "ja": "キャンセル",
+          "th": "ยกเลิก",
+          "ru": "Отмена",
+          "pt": "Cancelar",
+          "fr": "Annuler",
+          "es": "Cancelar",
+          "de": "Abbrechen"
+         },
+         "초대": {
+          "en": "Invite",
+          "zh": "邀请",
+          "ja": "招待",
+          "th": "ชวน",
+          "ru": "Пригласить",
+          "pt": "Convidar",
+          "fr": "Inviter",
+          "es": "Invitar",
+          "de": "Einladen"
+         },
+         "예": {
+          "en": "Yes",
+          "zh": "是",
+          "ja": "はい",
+          "th": "ใช่",
+          "ru": "Да",
+          "pt": "Sim",
+          "fr": "Oui",
+          "es": "Sí",
+          "de": "Ja"
+         },
+         "아니오": {
+          "en": "No",
+          "zh": "否",
+          "ja": "いいえ",
+          "th": "ไม่",
+          "ru": "Нет",
+          "pt": "Não",
+          "fr": "Non",
+          "es": "No",
+          "de": "Nein"
+         },
+         "공격": {
+          "en": "Attack",
+          "zh": "攻击",
+          "ja": "攻撃",
+          "th": "โจมตี",
+          "ru": "Атака",
+          "pt": "Atacar",
+          "fr": "Attaquer",
+          "es": "Atacar",
+          "de": "Angriff"
+         },
+         "점프": {
+          "en": "Jump",
+          "zh": "跳跃",
+          "ja": "ジャンプ",
+          "th": "กระโดด",
+          "ru": "Прыжок",
+          "pt": "Pular",
+          "fr": "Sauter",
+          "es": "Saltar",
+          "de": "Springen"
+         },
+         "같이 플레이하시겠어요?": {
+          "en": "Want to play together?",
+          "zh": "要一起玩吗？",
+          "ja": "一緒に遊びますか？",
+          "th": "อยากเล่นด้วยกันไหม?",
+          "ru": "Сыграем вместе?",
+          "pt": "Quer jogar junto?",
+          "fr": "Voulez-vous jouer ensemble ?",
+          "es": "¿Quieres jugar juntos?",
+          "de": "Möchtest du zusammen spielen?"
+         },
+         "친구가 당신을 기다리고 있어요. 같이 플레이하시겠어요?": {
+          "en": "A friend is waiting for you. Want to play together?",
+          "zh": "朋友在等你。要一起玩吗？",
+          "ja": "友達があなたを待っています。一緒に遊びますか？",
+          "th": "เพื่อนกำลังรอคุณ อยากเล่นด้วยกันไหม?",
+          "ru": "Друг ждёт вас. Сыграем вместе?",
+          "pt": "Um amigo está esperando você. Quer jogar junto?",
+          "fr": "Un ami vous attend. Voulez-vous jouer ensemble ?",
+          "es": "Un amigo te está esperando. ¿Quieres jugar juntos?",
+          "de": "Ein Freund wartet auf dich. Möchtest du zusammen spielen?"
+         },
+         "탈락! 끝까지 구경해요": {
+          "en": "Eliminated! Keep watching till the end",
+          "zh": "淘汰！请继续观战到最后",
+          "ja": "脱落！最後まで観戦しましょう",
+          "th": "ตกรอบ! ดูจนจบนะ",
+          "ru": "Выбыли! Смотрите до конца",
+          "pt": "Eliminado! Assista até o fim",
+          "fr": "Éliminé ! Regardez jusqu'au bout",
+          "es": "¡Eliminado! Mira hasta el final",
+          "de": "Ausgeschieden! Schau bis zum Ende zu"
+         },
+         "피격": {
+          "en": "Hit",
+          "zh": "受击",
+          "ja": "被弾",
+          "th": "โดนโจมตี",
+          "ru": "Попадание",
+          "pt": "Atingido",
+          "fr": "Touché",
+          "es": "Golpeado",
+          "de": "Getroffen"
+         },
+         "피격 (자동)": {
+          "en": "Hit (auto)",
+          "zh": "受击（自动）",
+          "ja": "被弾（自動）",
+          "th": "โดนโจมตี (อัตโนมัติ)",
+          "ru": "Попадание (авто)",
+          "pt": "Atingido (auto)",
+          "fr": "Touché (auto)",
+          "es": "Golpeado (auto)",
+          "de": "Getroffen (auto)"
+         },
+         "클리어": {
+          "en": "Clear",
+          "zh": "通关",
+          "ja": "クリア",
+          "th": "ผ่าน",
+          "ru": "Пройдено",
+          "pt": "Concluído",
+          "fr": "Réussi",
+          "es": "Superado",
+          "de": "Geschafft"
+         },
+         "타이틀": {
+          "en": "Title",
+          "zh": "标题",
+          "ja": "タイトル",
+          "th": "ชื่อเกม",
+          "ru": "Заставка",
+          "pt": "Título",
+          "fr": "Titre",
+          "es": "Título",
+          "de": "Titel"
+         },
+         "크레딧": {
+          "en": "Credits",
+          "zh": "制作人员",
+          "ja": "クレジット",
+          "th": "เครดิต",
+          "ru": "Титры",
+          "pt": "Créditos",
+          "fr": "Crédits",
+          "es": "Créditos",
+          "de": "Abspann"
+         }
+        };
+                const LANG_CODES = { ko: 'ko-KR', en: 'en-US', zh: 'zh-CN', ja: 'ja-JP', th: 'th-TH', ru: 'ru-RU', pt: 'pt-BR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE' };
+        function tx(v) {
+            if (typeof currentLang === 'undefined' || currentLang === 'ko') return v;
+            const str = String(v);
+            const core = str.trim();
+            const e = core && UI_TEXT[core];
+            const out = e && e[currentLang];
+            if (!out) return v;
+            return str.split(core).join(out);
+        }
+        function tf(key, vars) {
+            let out = tx(key);
+            Object.keys(vars).forEach(function (k) {
+                out = out.split('{' + k + '}').join(String(vars[k]));
+            });
+            return out;
+        }
+
         let currentLang = 'ko';
 
         function applyLanguage(lang) {
@@ -3802,7 +5834,7 @@
 
             playTitleMusic();
             resetDemoTimer();
-            applyLanguage('ko');
+            applyLanguage(currentLang);
         }
 
         unlockBtn.addEventListener('click', unlockAudio);
@@ -4773,7 +6805,7 @@
             edDraw();
         });
         document.getElementById('ed-clear').addEventListener('click', () => {
-            if (!window.confirm('맵을 처음 상태로 되돌릴까요?')) return;
+            if (!window.confirm(tx('맵을 처음 상태로 되돌릴까요?'))) return;
             const w = edMap.world;
             edMap = edDefaultMap();
             edMap.world = w;
@@ -5736,13 +7768,13 @@
     var silentTrk = null;
     var voiceCalls = {};
     var remoteAudios = {};
-    var SERVER_BIG = '어라? 서버가 아작났는데요?';
-    var SERVER_SMALL = '서버 고치면 될테니 잠시 기다려주세요.';
-    var NET_BIG = '인터넷 연결이 끊겼어요';
-    var NET_SMALL = '화면이나 인터넷 연결을 확인하고 다시 시도해 주세요.';
-    var FULL_BIG = '서바이벌 인원이 꽉 찼습니다';
-    var FULL_SMALL = '안정적으로 서바이벌을 돌리기 위해 10명 이상이 서바이벌에 참가할 수 없습니다. 이번 경기가 끝날 때까지 모험을 혼자 하다가 다음 경기에서 참여하세요.';
-    var GONE_BIG = '친구를 찾을 수 없습니다';
+    var SERVER_BIG = tx('어라? 서버가 아작났는데요?');
+    var SERVER_SMALL = tx('서버 고치면 될테니 잠시 기다려주세요.');
+    var NET_BIG = tx('인터넷 연결이 끊겼어요');
+    var NET_SMALL = tx('화면이나 인터넷 연결을 확인하고 다시 시도해 주세요.');
+    var FULL_BIG = tx('서바이벌 인원이 꽉 찼습니다');
+    var FULL_SMALL = tx('안정적으로 서바이벌을 돌리기 위해 10명 이상이 서바이벌에 참가할 수 없습니다. 이번 경기가 끝날 때까지 모험을 혼자 하다가 다음 경기에서 참여하세요.');
+    var GONE_BIG = tx('친구를 찾을 수 없습니다');
     var pendingJoins = [];
     var toastTimer = null;
     var annOn = false;
@@ -5766,10 +7798,10 @@
         try { return (localStorage.getItem(NICK_KEY) || '').trim().slice(0, 12); } catch (e) { return ''; }
     }
 
-    function displayNick() { return getNick() || '이름 없는 쌀'; }
+    function displayNick() { return getNick() || tx('이름 없는 쌀'); }
 
     function cleanNick(n) {
-        return String(n || '').replace(/[\r\n]/g, ' ').trim().slice(0, 12) || '이름 없는 쌀';
+        return String(n || '').replace(/[\r\n]/g, ' ').trim().slice(0, 12) || tx('이름 없는 쌀');
     }
 
     function send(conn, msg) {
@@ -5965,9 +7997,9 @@
         } else if (m.t === 'left') {
             if (players[m.pid]) { players[m.pid].left = true; players[m.pid].hp = 0; }
             if (mode !== 'over' && mode !== 'gone') {
-                var leaver = m.n || '친구';
+                var leaver = m.n || tx('친구');
                 if (allOthersLeft()) friendGone(leaver);
-                else showToast(GONE_BIG, leaver + '님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.');
+                else showToast(GONE_BIG, tf('{n}님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.', { n: leaver }));
             }
         } else if (m.t === 'over') {
             showResult(m.w);
@@ -6315,10 +8347,10 @@
         stopBGM();
         bgmWorld = -1;
         var text;
-        if (winner === myPid) text = '🏆 승리! 끝까지 살아남았어요!';
-        else if (winner === -2) text = '무승부예요. 아무도 이기지 못했어요.';
-        else if (winner >= 0 && players[winner]) text = players[winner].nick + '님이 끝까지 살아남았어요!';
-        else text = '아무도 살아남지 못했어요.';
+        if (winner === myPid) text = tx('🏆 승리! 끝까지 살아남았어요!');
+        else if (winner === -2) text = tx('무승부예요. 아무도 이기지 못했어요.');
+        else if (winner >= 0 && players[winner]) text = tf('{n}님이 끝까지 살아남았어요!', { n: players[winner].nick });
+        else text = tx('아무도 살아남지 못했어요.');
         showPanel(text);
         try {
             if (winner === myPid) { if (soundEnabled) playDieAudio(congratAudio); }
@@ -6335,12 +8367,12 @@
         try {
             if (soundEnabled) { gameoverAudio.currentTime = 0; gameoverAudio.play().catch(function () {}); }
         } catch (e) {}
-        showPanel('아... 친구를 모아 봤지만 친구가 오질 않네요ㅠㅠ');
+        showPanel(tx('아... 친구를 모아 봤지만 친구가 오질 않네요ㅠㅠ'));
         cleanupNet();
     }
 
     function showPanel(text) {
-        panelText.textContent = text;
+        panelText.textContent = tx(text);
         panel.hidden = false;
     }
 
@@ -6473,7 +8505,7 @@
         delete clientConns[pid];
         if (!players[pid]) return;
         var name = players[pid].nick;
-        var gone = name + '님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.';
+        var gone = tf('{n}님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.', { n: name });
         if (mode === 'lobby') {
             delete players[pid];
             bcast({ t: 'lobby', pl: rosterWire() });
@@ -6501,7 +8533,7 @@
         var fail = function () {
             if (mode === 'joining') {
                 mode = 'gone';
-                showPanel('친구에게 연결하지 못했어요.');
+                showPanel(tx('친구에게 연결하지 못했어요.'));
             }
         };
         joinTimer = setTimeout(fail, 12000);
@@ -6526,7 +8558,7 @@
         controlsEl.hidden = true;
         stopGunFx();
         stopRec();
-        friendGone(players[0] ? players[0].nick : '친구');
+        friendGone(players[0] ? players[0].nick : tx('친구'));
     }
 
     function loop(ts) {
@@ -6624,7 +8656,7 @@
         drawRice(waitRice.x, waitRice.y, waitRice.f, me ? me.color : COLORS[0], {});
         if (mode === 'waiting') {
             ctx.globalAlpha = 0.65 + 0.35 * Math.sin(frame / 14);
-            drawText('친구를 모으고 있어요.', W / 2, 250, 44, '#fde047');
+            drawText(tx('친구를 모으고 있어요.'), W / 2, 250, 44, '#fde047');
             ctx.globalAlpha = 1;
         }
     }
@@ -6632,9 +8664,9 @@
     function drawLobby() {
         drawBackdrop();
         drawGround();
-        var head = '방장이 시작하기를 기다리고 있어요';
-        if (mode === 'joining') head = '친구에게 연결하는 중...';
-        else if (isHost) head = '친구가 왔어요! 준비되면 시작하세요';
+        var head = tx('방장이 시작하기를 기다리고 있어요');
+        if (mode === 'joining') head = tx('친구에게 연결하는 중...');
+        else if (isHost) head = tx('친구가 왔어요! 준비되면 시작하세요');
         drawText(head, W / 2, 200, 40, '#fde047');
         var pids = Object.keys(players).map(Number);
         pids.forEach(function (pid, i) {
@@ -6704,24 +8736,24 @@
             ctx.globalAlpha = p.hp > 0 && !p.left ? 1 : 0.4;
             ctx.fillStyle = p.color;
             ctx.fillRect(20, y - 12, 24, 24);
-            var label = nameOf(p.pid, p.nick).slice(0, 8) + '  ' + stageOf(p.x) + '스테이지  ♥ ' + p.hp;
+            var label = nameOf(p.pid, p.nick).slice(0, 8) + '  ' + tf('{s}스테이지  ♥ {h}', { s: stageOf(p.x), h: p.hp });
             drawText(label, 54, y, 20, pid === myPid ? '#fde047' : '#ffffff', 'left');
         });
         ctx.globalAlpha = 1;
         var left = Math.max(0, Math.ceil((matchEnd - t) / 1000));
         var mm = String(Math.floor(left / 60)).padStart(2, '0');
         var ss = String(left % 60).padStart(2, '0');
-        drawText('남은 시간 ' + mm + ':' + ss, W - 64, 34, 22, '#fde047', 'right');
+        drawText(tx('남은 시간 ') + mm + ':' + ss, W - 64, 34, 22, '#fde047', 'right');
         if (me && me.pw) {
             var label2 = me.pw.k === 'g'
-                ? '67 ' + Math.max(0, (me.pw.until - t) / 1000).toFixed(1) + '초'
-                : 'L 돌진 ×' + me.pw.charges;
+                ? '67 ' + Math.max(0, (me.pw.until - t) / 1000).toFixed(1) + tx('초')
+                : tx('L 돌진 ×') + me.pw.charges;
             drawText(label2, W / 2, H - 30, 26, me.pw.k === 'g' ? '#67e8f9' : '#d8b4fe');
         }
-        if (me && me.frozenUntil && t < me.frozenUntil) drawText('얼어붙음 ' + Math.ceil((me.frozenUntil - t) / 1000) + '초', W / 2, 110, 26, '#67e8f9');
-        if (me && inSafe(me)) drawText('안전지대', W / 2, 70, 20, '#86efac');
-        if (t < goUntil) drawText('시작!', W / 2, 150, 64, '#fde047');
-        if (me && me.hp <= 0 && mode === 'playing') drawText('탈락! 끝까지 구경해요', W / 2, 100, 32, '#fca5a5');
+        if (me && me.frozenUntil && t < me.frozenUntil) drawText(tf('얼어붙음 {s}초', { s: Math.ceil((me.frozenUntil - t) / 1000) }), W / 2, 110, 26, '#67e8f9');
+        if (me && inSafe(me)) drawText(tx('안전지대'), W / 2, 70, 20, '#86efac');
+        if (t < goUntil) drawText(tx('시작!'), W / 2, 150, 64, '#fde047');
+        if (me && me.hp <= 0 && mode === 'playing') drawText(tx('탈락! 끝까지 구경해요'), W / 2, 100, 32, '#fca5a5');
     }
 
     function drawArena() {
@@ -6955,7 +8987,7 @@
 
     function showInvite(gid) {
         shownInvite = gid;
-        inviteNick.textContent = '🍚 ' + pendingInvites[gid].nick + '님이 초대했어요';
+        inviteNick.textContent = '🍚 ' + tf('{n}님이 초대했어요', { n: pendingInvites[gid].nick });
         inviteBox.hidden = false;
     }
 
@@ -7013,8 +9045,8 @@
     }
 
     function nameOf(pid, nick) {
-        if (recorder) return pid === myPid ? '나' : '친구';
-        return nick || '쌀';
+        if (recorder) return pid === myPid ? tx('나') : tx('친구');
+        return nick || tx('쌀');
     }
 
     function getAutoRec() {
@@ -7169,30 +9201,26 @@
         });
     }
 
-    function annNote(freq, t0, d, step) {
-        if (!audioCtx || !masterGain) return;
-        const g = audioCtx.createGain();
-        g.connect(masterGain);
-        const src = audioCtx.createOscillator();
-        src.type = 'square';
-        src.frequency.setValueAtTime(freq, t0);
-        src.connect(g);
-        g.gain.setValueAtTime(1, t0);
-        for (let k = 1; k * step < d - 1e-9; k++) {
-            g.gain.setValueAtTime(Math.max(0.0001, 1 - 0.01 * k), t0 + k * step);
-        }
-        g.gain.setValueAtTime(0.0001, t0 + d);
-        src.start(t0);
-        src.stop(t0 + d + 0.02);
-    }
-
-    function playAnn(notes, step) {
-        if (!audioCtx) return 0;
-        const t0 = audioCtx.currentTime + 0.02;
-        let t = t0;
+    function playAnn(notes, step, factor) {
+        if (!audioCtx || !masterGain) return 0;
+        let t = audioCtx.currentTime + 0.02;
+        const t0 = t;
         notes.forEach(function (n) {
-            annNote(noteToFreq(n[0]), t, n[1], step);
-            t += n[1];
+            const d = n[1];
+            const g = audioCtx.createGain();
+            g.connect(masterGain);
+            g.gain.setValueAtTime(1, t);
+            for (let k = 1; k * step < d - 1e-9; k++) {
+                g.gain.setValueAtTime(Math.max(0.0001, Math.pow(factor, k)), t + k * step);
+            }
+            g.gain.setValueAtTime(0.0001, t + d);
+            const src = audioCtx.createOscillator();
+            src.type = 'square';
+            src.frequency.setValueAtTime(noteToFreq(n[0]), t);
+            src.connect(g);
+            src.start(t);
+            src.stop(t + d + 0.02);
+            t += d;
         });
         return t - t0;
     }
@@ -7200,7 +9228,7 @@
     function speakAnn(text, done) {
         if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { done(); return; }
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'ko-KR';
+        u.lang = LANG_CODES[currentLang] || 'ko-KR';
         u.onend = done;
         u.onerror = done;
         speechSynthesis.speak(u);
@@ -7209,13 +9237,13 @@
     function handleAnnounce(m) {
         if (!audioCtx) return;
         if (m.k === 'on') {
-            playAnn(ANN_ON, 0.3);
+            playAnn(ANN_ON, 0.3, 0.5);
         } else if (m.k === 'off') {
-            playAnn(ANN_OFF, 0.03);
+            playAnn(ANN_OFF, 0.03, 0.85);
         } else if (m.k === 'say') {
-            const len = playAnn(ANN_ON, 0.3);
+            const len = playAnn(ANN_ON, 0.3, 0.5);
             setTimeout(function () {
-                speakAnn(m.text, function () { playAnn(ANN_OFF, 0.03); });
+                speakAnn(m.text, function () { playAnn(ANN_OFF, 0.03, 0.85); });
             }, len * 1000);
         }
     }
@@ -7283,8 +9311,8 @@
 
     function showError(big, small) {
         hideToast();
-        errBig.textContent = big;
-        errSmall.textContent = small;
+        errBig.textContent = tx(big);
+        errSmall.textContent = tx(small);
         errBox.hidden = false;
     }
 
@@ -7293,8 +9321,8 @@
     }
 
     function showToast(big, small) {
-        toastBig.textContent = big;
-        toastSmall.textContent = small;
+        toastBig.textContent = tx(big);
+        toastSmall.textContent = tx(small);
         toastBox.hidden = false;
         clearTimeout(toastTimer);
         toastTimer = setTimeout(hideToast, 4000);
@@ -7312,7 +9340,7 @@
         stopRec();
         stopBGM();
         stopGunFx();
-        showError(GONE_BIG, name + '님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.');
+        showError(GONE_BIG, tf('{n}님은 존재하지 않습니다. 연결이 끊겼거나 친구가 나갔습니다.', { n: name }));
     }
 
     function internetDown() {
@@ -7327,7 +9355,7 @@
     function showAsk() {
         if (!pendingJoins.length) return;
         var n = pendingJoins[0];
-        askText.textContent = n + '님이 당신과 서바이벌을 플레이하고 싶대요. 어서 ' + n + '님을 초대해 주세요!';
+        askText.textContent = tf('{n}님이 당신과 서바이벌을 플레이하고 싶대요. 어서 {n}님을 초대해 주세요!', { n: n });
         askBox.hidden = false;
     }
 
@@ -7431,7 +9459,7 @@
     function speakText(t) {
         if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
         var u = new SpeechSynthesisUtterance(t);
-        u.lang = 'ko-KR';
+        u.lang = LANG_CODES[currentLang] || 'ko-KR';
         speechSynthesis.speak(u);
     }
 
@@ -7466,8 +9494,9 @@
         if (recentChats.length > 20) recentChats.shift();
         var row = document.createElement('div');
         row.className = 'fr-msg ' + (mine ? 'mine' : 'friend');
+        row.setAttribute('data-nolang', '');
         var who = document.createElement('b');
-        who.textContent = m.n || '쌀';
+        who.textContent = m.n || tx('쌀');
         var body = document.createElement('span');
         body.textContent = ' ' + (m.x || '');
         row.appendChild(who);
@@ -7577,7 +9606,7 @@
         }
         if (micOn) { setMic(false); return; }
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            sysMsg('이 브라우저에서는 마이크를 쓸 수 없어요.');
+            sysMsg(tx('이 브라우저에서는 마이크를 쓸 수 없어요.'));
             return;
         }
         navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
@@ -7588,7 +9617,7 @@
             micTrack = stream.getAudioTracks()[0];
             setMic(true);
         }).catch(function () {
-            sysMsg('마이크를 켤 수 없어요. 브라우저에서 마이크 권한을 허용해 주세요.');
+            sysMsg(tx('마이크를 켤 수 없어요. 브라우저에서 마이크 권한을 허용해 주세요.'));
         });
     }
 
@@ -7716,8 +9745,8 @@
                 if (v) localStorage.setItem(NICK_KEY, v);
                 else localStorage.removeItem(NICK_KEY);
             } catch (e) {}
-            save.textContent = '저장됨';
-            setTimeout(function () { save.textContent = '저장'; }, 1200);
+            save.textContent = tx('저장됨');
+            setTimeout(function () { save.textContent = tx('저장'); }, 1200);
         };
         save.addEventListener('click', commit);
         input.addEventListener('keydown', function (e) {
@@ -7818,4 +9847,94 @@
             letter-spacing: 0.04em;
         }
     </style>
+    <script>
+    (function () {
+        const ATTRS = ['placeholder', 'aria-label', 'title'];
+        const textMap = new WeakMap();
+        const attrMap = new WeakMap();
+        let busy = false;
+
+        function swap(prev, cur, setter) {
+            if (prev && prev.tr === cur) {
+                if (currentLang === 'ko') { setter(prev.orig); return true; }
+                return true;
+            }
+            return false;
+        }
+
+        function translateText(node) {
+            const parent = node.parentNode;
+            if (!parent || (parent.closest && parent.closest('[data-nolang]'))) return;
+            const cur = node.nodeValue;
+            const core = cur.trim();
+            if (!core) return;
+            const prev = textMap.get(node);
+            if (prev && prev.tr === cur) {
+                if (currentLang === 'ko') { node.nodeValue = prev.orig; textMap.delete(node); }
+                return;
+            }
+            if (currentLang === 'ko') return;
+            const e = UI_TEXT[core];
+            const out = e && e[currentLang];
+            if (!out) return;
+            const tr = cur.split(core).join(out);
+            textMap.set(node, { orig: cur, tr: tr });
+            node.nodeValue = tr;
+        }
+
+        function translateAttrs(el) {
+            if (!el.hasAttribute) return;
+            ATTRS.forEach(function (name) {
+                if (!el.hasAttribute(name)) return;
+                const cur = el.getAttribute(name);
+                const core = cur.trim();
+                if (!core) return;
+                const map = attrMap.get(el) || {};
+                attrMap.set(el, map);
+                const prev = map[name];
+                if (prev && prev.tr === cur) {
+                    if (currentLang === 'ko') { el.setAttribute(name, prev.orig); delete map[name]; }
+                    return;
+                }
+                if (currentLang === 'ko') return;
+                const e = UI_TEXT[core];
+                const out = e && e[currentLang];
+                if (!out) return;
+                const tr = cur.split(core).join(out);
+                map[name] = { orig: cur, tr: tr };
+                el.setAttribute(name, tr);
+            });
+        }
+
+        function walk(root) {
+            if (root.nodeType === 3) { translateText(root); return; }
+            if (root.nodeType !== 1) return;
+            if (root.hasAttribute && root.hasAttribute('data-nolang')) return;
+            if (root.tagName === 'SCRIPT' || root.tagName === 'STYLE') return;
+            translateAttrs(root);
+            root.childNodes.forEach(walk);
+        }
+
+        const observer = new MutationObserver(function (records) {
+            if (busy) return;
+            busy = true;
+            try {
+                records.forEach(function (r) {
+                    if (r.type === 'characterData') walk(r.target);
+                    else if (r.type === 'attributes') translateAttrs(r.target);
+                    else r.addedNodes.forEach(walk);
+                });
+            } finally {
+                busy = false;
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+        const baseApply = applyLanguage;
+        applyLanguage = function (lang) {
+            baseApply(lang);
+            walk(document.body);
+        };
+    })();
+    </script>
 </body></html>
