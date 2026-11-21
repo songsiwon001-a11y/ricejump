@@ -1090,13 +1090,14 @@
             sawtooth: { key: 'saw',    base: SF_FILES.saw.base }
         };
         const sfBuffers = {};
+        const SF_EFFECT_BOOST = 4;
         const sfSeqSources = new Set();
         const MUSIC_KEY = { sine: 'bell', triangle: 'piano', square: 'square', sawtooth: 'saw' };
 
         function sfMusicNote(type, freq, t, dur, vol) {
             const key = MUSIC_KEY[type];
             if (!key) return;
-            sfPlayKey(key, SF_FILES[key].base, [[freq, 0]], t, dur, vol, sfSeqSources);
+            sfPlayKey(key, SF_FILES[key].base, [[freq, 0]], t, dur, 1, sfSeqSources);
         }
 
         function noteToFreq(name) {
@@ -1214,7 +1215,7 @@
             }
             const now = audioCtx.currentTime;
             sfMosq.src.playbackRate.setValueAtTime((MOSQ_FREQ_MIN + Math.random() * (MOSQ_FREQ_MAX - MOSQ_FREQ_MIN)) / SF_FILES.saw.base, now);
-            const target = level > 0 ? level * (0.01 + Math.random() * 0.05) : 0;
+            const target = level > 0 ? Math.min(1, level * SF_EFFECT_BOOST * (0.01 + Math.random() * 0.05)) : 0;
             sfMosq.g.gain.setTargetAtTime(target, now, 0.01);
         }
 
@@ -1226,7 +1227,7 @@
             const t0 = audioCtx.currentTime;
             for (let i = 0; i < 20; i++) {
                 src.playbackRate.setValueAtTime((MOSQ_FREQ_MIN + Math.random() * (MOSQ_FREQ_MAX - MOSQ_FREQ_MIN)) / SF_FILES.saw.base, t0 + i * 0.05);
-                g.gain.setValueAtTime(0.01 + Math.random() * 0.05, t0 + i * 0.05);
+                g.gain.setValueAtTime(Math.min(1, SF_EFFECT_BOOST * (0.01 + Math.random() * 0.05)), t0 + i * 0.05);
             }
             g.gain.setValueAtTime(0, t0 + 1);
             src.connect(g);
@@ -1259,6 +1260,7 @@
         function sfPlayKey(key, base, points, t, dur, vol, group) {
             const buf = sfBuffers[key];
             if (!buf) return null;
+            const level = group ? vol : Math.min(1, vol * SF_EFFECT_BOOST);
             const src = audioCtx.createBufferSource();
             src.buffer = buf;
             const rate = src.playbackRate;
@@ -1267,7 +1269,7 @@
                 rate.exponentialRampToValueAtTime(points[i][0] / base, t + points[i][1]);
             }
             const g = audioCtx.createGain();
-            g.gain.setValueAtTime(vol, t);
+            g.gain.setValueAtTime(level, t);
             g.gain.linearRampToValueAtTime(0.001, t + dur);
             src.connect(g);
             g.connect(masterGain);
