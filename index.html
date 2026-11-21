@@ -817,22 +817,15 @@
             </div>
             <h3 class="st-section">소리 및 진동</h3>
             <div class="st-row">
-                <span>드럼 비트</span>
-                <select id="st-drum" class="st-select">
-                    <option value="bang">쾅</option>
-                    <option value="retro">레트로</option>
-                </select>
-            </div>
-            <div id="st-vol-row" class="st-row">
-                <span>쾅 볼륨</span>
-                <div class="st-range-wrap">
-                    <input id="st-vol" class="st-range" type="range" min="0" max="100" step="1" value="30">
-                    <span id="st-pct" class="st-pct">30%</span>
-                </div>
-            </div>
-            <div class="st-row">
                 <span>진동</span>
                 <label class="st-switch"><input id="st-vib" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+            <div class="st-row">
+                <span>사운드 엔진</span>
+                <select id="st-engine" class="st-select">
+                    <option value="tone">tone.js</option>
+                    <option value="sf2026super">sf2026super</option>
+                </select>
             </div>
             <div class="st-row">
                 <span>사운드</span>
@@ -919,6 +912,7 @@
         const deathAudio = new Audio('라이스점프 죽는소리.mp3');
         const monsterDieAudio = new Audio('몬스터 죽는 소리.mp3');
         const bossDieAudio = new Audio('보스 죽는 소리.mp3');
+        const congratAudio = new Audio('congratulation.wav');
         function playDieAudio(a) {
             try {
                 a.currentTime = 0;
@@ -958,6 +952,15 @@
                 drum.play().catch(e => {});
                 nextDrumIdx = (nextDrumIdx + 1) % DRUM_POOL_SIZE;
             } catch (e) {}
+        }
+
+        function triggerDrumBlast() {
+            playDrumBeat();
+            if (enemies.length) {
+                enemies.forEach(e => spawnExplosion((e.x || 0) + 20, (e.y || 0) + 20, '#ef4444', 10));
+                enemies = [];
+                playDieAudio(monsterDieAudio);
+            }
         }
 
         const canvas = document.getElementById('gameCanvas');
@@ -1061,8 +1064,260 @@
             }
         }
 
+        const ENGINE_KEY = 'riceJumpSoundEngine';
+        let soundEngine = 'tone';
+        try {
+            const savedEngine = localStorage.getItem(ENGINE_KEY);
+            if (savedEngine === 'sf2026super') soundEngine = 'sf2026super';
+        } catch (e) {}
+
+        const SF_FILES = {
+            bell:   { file: 'bell.wav',           base: 670 },
+            piano:  { file: 'piano.wav',          base: 130.81 },
+            square: { file: 'square_wave.wav',    base: 5 },
+            saw:    { file: 'sawtooth_wave.wav',  base: 50 },
+            srjs:   { file: 'srjs_synth.wav',     base: 20 }
+        };
+        const SF_KIND = {
+            sine:     { key: 'srjs',   base: SF_FILES.srjs.base },
+            triangle: { key: 'srjs',   base: SF_FILES.srjs.base },
+            square:   { key: 'square', base: SF_FILES.square.base },
+            sawtooth: { key: 'saw',    base: SF_FILES.saw.base }
+        };
+        const sfBuffers = {};
+        const sfSeqSources = new Set();
+        const MUSIC_KEY = { sine: 'bell', triangle: 'piano', square: 'square', sawtooth: 'saw' };
+
+        function sfMusicNote(type, freq, t, dur, vol) {
+            const key = MUSIC_KEY[type];
+            if (!key) return;
+            sfPlayKey(key, SF_FILES[key].base, [[freq, 0]], t, dur, vol, sfSeqSources);
+        }
+
+        function noteToFreq(name) {
+            const m = /^([A-G])(#?)(\d)$/.exec(name);
+            if (!m) return 440;
+            const semis = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] ? 1 : 0);
+            const midi = (parseInt(m[3], 10) + 1) * 12 + semis;
+            return 440 * Math.pow(2, (midi - 69) / 12);
+        }
+
+        let sfSeq = null;
+
+        function stopSfSequence() {
+            if (sfSeq) {
+                clearInterval(sfSeq.timer);
+                sfSeq = null;
+            }
+            sfSeqSources.forEach(src => { try { src.stop(); } catch (e) {} });
+            sfSeqSources.clear();
+        }
+
+        function sfTick() {
+            const q = sfSeq;
+            if (!q || !audioCtx) return;
+            const nowR = audioCtx.currentTime;
+            const f = Math.max(1, Math.min(TONE_MAX_SPEED, q.getSpeed ? q.getSpeed() : 1));
+            q.songPos += (nowR - q.lastReal) * q.lastF;
+            q.lastReal = nowR;
+            q.lastF = f;
+            const limit = q.songPos + 0.12 * f;
+            q.lanes.forEach(lane => {
+                if (!lane.ev.length) return;
+                while (true) {
+                    const ev = lane.ev[lane.ptr];
+                    const abs = lane.rep * q.loopSec + ev.t;
+                    if (abs >= limit) break;
+                    const when = nowR + Math.max(0, (abs - q.songPos) / f);
+                    if (q.shouldPlay() && when - lane.last >= 0.012) {
+                        lane.last = when;
+                        sfMusicNote(lane.type, ev.f, when, ev.d / f * 0.92, lane.vol);
+                    }
+                    lane.ptr++;
+                    if (lane.ptr >= lane.ev.length) {
+                        lane.ptr = 0;
+                        lane.rep++;
+                    }
+                }
+            });
+        }
+
+        function playSfSequence(mode, tracks, shouldPlay, getSpeed) {
+            stopToneSequence();
+            stopSfSequence();
+            const loopSec = Math.max(...tracks.map(t => t.notes.reduce((a, n) => a + n.dur, 0)));
+            const lanes = tracks.map(tr => {
+                let pos = 0;
+                const ev = [];
+                tr.notes.forEach(n => {
+                    if (n.note) ev.push({ t: pos, d: n.dur, f: noteToFreq(n.note) });
+                    pos += n.dur;
+                });
+                return { type: tr.type, vol: Math.pow(10, tr.vol / 20), ev, ptr: 0, rep: 0, last: -1 };
+            });
+            toneSeqMode = mode;
+            sfSeq = {
+                lanes, loopSec, shouldPlay, getSpeed,
+                songPos: 0, lastReal: audioCtx.currentTime, lastF: 1,
+                timer: setInterval(sfTick, 25)
+            };
+            sfTick();
+        }
+
+        function sfTitleStep(step, melody, bass, sine, square) {
+            const t = audioCtx.currentTime + 0.01;
+            sfMusicNote('triangle', melody[step % melody.length], t, 0.2, 0.04);
+            sfMusicNote('sawtooth', bass[Math.floor(step / 2) % bass.length], t, 0.4, 0.015);
+            sfMusicNote('sine', sine[step % sine.length], t, 0.2, 0.03);
+            sfMusicNote('square', square[step % square.length], t, 0.2, 0.012);
+            if (step % 4 === 2) sfPlayKey('srjs', SF_FILES.srjs.base, [[1400, 0], [900, 0.08]], t, 0.08, 0.012);
+        }
+
+        function sfLightning() {
+            const t = audioCtx.currentTime + 0.01;
+            sfPlayKey('saw', SF_FILES.saw.base, [[45, 0], [25, 2.0]], t, 2.4, 0.6);
+            sfPlayKey('srjs', SF_FILES.srjs.base, [[1200, 0], [60, 0.6]], t, 0.7, 0.6);
+        }
+
+        function sfRecordFeedback() {
+            const t = audioCtx.currentTime + 0.01;
+            sfPlayKey('srjs', SF_FILES.srjs.base, [[1200, 0], [100, 0.03]], t, 0.04, 0.3);
+            [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+                sfPlayKey('srjs', SF_FILES.srjs.base, [[f, 0]], t + 0.05 + idx * 0.06, 0.06, 0.15);
+            });
+        }
+
+        let sfMosq = null;
+
+        function sfMosqUpdate(level) {
+            if (!sfBuffers.saw) return;
+            if (!sfMosq) {
+                const src = audioCtx.createBufferSource();
+                src.buffer = sfBuffers.saw;
+                src.loop = true;
+                const g = audioCtx.createGain();
+                g.gain.value = 0;
+                src.connect(g);
+                g.connect(masterGain);
+                src.start();
+                sfMosq = { src, g };
+            }
+            const now = audioCtx.currentTime;
+            sfMosq.src.playbackRate.setValueAtTime((MOSQ_FREQ_MIN + Math.random() * (MOSQ_FREQ_MAX - MOSQ_FREQ_MIN)) / SF_FILES.saw.base, now);
+            const target = level > 0 ? level * (0.01 + Math.random() * 0.05) : 0;
+            sfMosq.g.gain.setTargetAtTime(target, now, 0.01);
+        }
+
+        function sfMosquitoOnce() {
+            const src = audioCtx.createBufferSource();
+            src.buffer = sfBuffers.saw;
+            src.loop = true;
+            const g = audioCtx.createGain();
+            const t0 = audioCtx.currentTime;
+            for (let i = 0; i < 20; i++) {
+                src.playbackRate.setValueAtTime((MOSQ_FREQ_MIN + Math.random() * (MOSQ_FREQ_MAX - MOSQ_FREQ_MIN)) / SF_FILES.saw.base, t0 + i * 0.05);
+                g.gain.setValueAtTime(0.01 + Math.random() * 0.05, t0 + i * 0.05);
+            }
+            g.gain.setValueAtTime(0, t0 + 1);
+            src.connect(g);
+            g.connect(masterGain);
+            src.start(t0);
+            src.stop(t0 + 1.02);
+        }
+        let sfReady = false;
+        let sfLoading = false;
+
+        function loadSfSamples() {
+            if (sfReady || sfLoading) return;
+            if (!audioCtx) { try { initAudio(); } catch (e) {} }
+            if (!audioCtx) return;
+            sfLoading = true;
+            const keys = Object.keys(SF_FILES);
+            Promise.all(keys.map(k =>
+                fetch(SF_FILES[k].file)
+                    .then(r => { if (!r.ok) throw new Error('missing'); return r.arrayBuffer(); })
+                    .then(b => audioCtx.decodeAudioData(b))
+                    .then(buf => { sfBuffers[k] = buf; })
+            )).then(() => {
+                sfReady = true;
+                sfLoading = false;
+            }).catch(() => {
+                sfLoading = false;
+            });
+        }
+
+        function sfPlayKey(key, base, points, t, dur, vol, group) {
+            const buf = sfBuffers[key];
+            if (!buf) return null;
+            const src = audioCtx.createBufferSource();
+            src.buffer = buf;
+            const rate = src.playbackRate;
+            rate.setValueAtTime(points[0][0] / base, t);
+            for (let i = 1; i < points.length; i++) {
+                rate.exponentialRampToValueAtTime(points[i][0] / base, t + points[i][1]);
+            }
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(vol, t);
+            g.gain.linearRampToValueAtTime(0.001, t + dur);
+            src.connect(g);
+            g.connect(masterGain);
+            src.start(t);
+            src.stop(t + dur + 0.02);
+            if (group) {
+                group.add(src);
+                src.onended = () => group.delete(src);
+            }
+            return src;
+        }
+
+        function sfContour(kind, points, t, dur, vol) {
+            const cfg = SF_KIND[kind];
+            if (!cfg) return;
+            sfPlayKey(cfg.key, cfg.base, points, t, dur, vol);
+        }
+
+        function sfNote(kind, freq, t, dur, vol) {
+            sfContour(kind, [[freq, 0]], t, dur, vol);
+        }
+
+        function sfSynthEffect(type) {
+            const t = audioCtx.currentTime + 0.01;
+            switch (type) {
+                case 'jump':
+                    sfContour('triangle', [[160, 0], [700, 0.15]], t, 0.2, 0.12);
+                    return true;
+                case 'shoot':
+                    sfContour('sine', [[880, 0], [110, 0.1]], t, 0.15, 0.15);
+                    return true;
+                case 'item_get':
+                    [[392, 0], [523, 0.08], [659, 0.16]].forEach(([f, o]) => sfNote('square', f, t + o, 0.3 - o, 0.1));
+                    return true;
+                case 'hit':
+                    sfContour('sawtooth', [[300, 0], [80, 0.2]], t, 0.25, 0.15);
+                    return true;
+                case 'clear':
+                    [523, 659, 783, 1046].forEach((f, i) => sfNote('square', f, t + i * 0.08, 0.25, 0.08));
+                    return true;
+                case 'block_hit':
+                    sfContour('triangle', [[220, 0], [580, 0.08], [110, 0.15]], t, 0.2, 0.2);
+                    return true;
+                case 'six_seven':
+                    [261.6, 329.6, 392, 523.3, 659.3, 784, 1046.5].forEach((f, i) => sfNote('square', f, t + i * 0.06, 0.2, 0.12));
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         function playSynthSound(type) {
             if (!audioCtx || !soundEnabled) return;
+            if (soundEngine === 'sf2026super') {
+                if (sfReady) {
+                    if (sfSynthEffect(type)) return;
+                } else {
+                    loadSfSamples();
+                }
+            }
             const now = audioCtx.currentTime;
 
             if (type === 'jump') {
@@ -1166,6 +1421,7 @@
 
         function playLightningSynth() {
             if (!audioCtx || !soundEnabled) return;
+            if (soundEngine === 'sf2026super' && sfReady) { sfLightning(); return; }
             const now = audioCtx.currentTime;
 
             const bufferSize = audioCtx.sampleRate * 1.0;
@@ -1236,6 +1492,7 @@
 
         function playRecordStartFeedback() {
             if (!audioCtx || !soundEnabled) return;
+            if (soundEngine === 'sf2026super' && sfReady) { sfRecordFeedback(); return; }
             const now = audioCtx.currentTime;
             
             const oscClick = audioCtx.createOscillator();
@@ -1288,6 +1545,11 @@
 
             titleMusicInterval = setInterval(() => {
                 const now = audioCtx.currentTime;
+                if (soundEngine === 'sf2026super' && sfReady) {
+                    sfTitleStep(step, melody, bass, titleSine, titleSquare);
+                    step++;
+                    return;
+                }
                 
                 const oscMelody = audioCtx.createOscillator();
                 const gainMelody = audioCtx.createGain();
@@ -1492,6 +1754,7 @@
         }
 
         function stopToneSequence() {
+            stopSfSequence();
             if (typeof Tone === 'undefined') { toneSeqMode = null; return; }
             try {
                 const T = toneTransport();
@@ -1507,6 +1770,13 @@
         }
 
         function playToneSequence(mode, tracks, drumSec, shouldPlay, getSpeed) {
+            if (soundEngine === 'sf2026super') {
+                if (sfReady && audioCtx) {
+                    playSfSequence(mode, tracks, shouldPlay, getSpeed);
+                    return;
+                }
+                loadSfSamples();
+            }
             if (typeof Tone === 'undefined' || !audioCtx) return;
             stopToneSequence();
             const T = toneTransport();
@@ -1572,7 +1842,7 @@
                 }
                 let lastDrumTime = -1;
                 const drumPart = new Tone.Part((time) => {
-                    if (!shouldPlay()) return;
+                    return;
                     if (time - lastDrumTime < 0.04) return;
                     lastDrumTime = time;
                     const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
@@ -1992,7 +2262,8 @@
                             if (Math.random() < getBombChance(gameState.stage)) randItem = 'bomb';
                             else if (Math.random() < 0.05) randItem = 'camera';
                             else if (Math.random() < 0.03) randItem = 'takeL';
-                            else if (randVal < 0.05) randItem = 'golden';
+                            else if (Math.random() < 0.04) randItem = 'drum';
+            else if (randVal < 0.05) randItem = 'golden';
                             else if (randVal < 0.12) randItem = 'blue';
                             else if (randVal < 0.18) randItem = 'fake';
                             else if (randVal < 0.65) randItem = 'coin';
@@ -2547,6 +2818,9 @@
                             progress: 0
                         };
                     } 
+                    else if (item.type === 'drum') {
+                        triggerDrumBlast();
+                    }
                     else if (item.type === 'takeL') {
                         spawnExplosion(item.x + 22, item.y + 22, '#a855f7', 24);
                         if (!gameState.isDemo) {
@@ -2798,6 +3072,12 @@
                     ctx.textBaseline = 'middle';
                     ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
                 } 
+                else if (item.type === 'drum') {
+                    ctx.font = '34px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🥁', item.x - gameState.cameraX + 22, item.y + 22 + hover);
+                }
                 else if (item.type === 'takeL') {
                     const lx = item.x - gameState.cameraX;
                     const ly = item.y + hover;
@@ -2973,7 +3253,7 @@
             boss = null;
             document.getElementById('boss-hp-container').classList.add('hidden');
             playSynthSound('clear');
-            if (soundEnabled) playDrumBeat();
+            if (soundEnabled) playDieAudio(congratAudio);
 
             goal = { x: 1400, y: 350, width: 70, height: 200 };
         }
@@ -3387,7 +3667,7 @@
             if (timerInterval) clearInterval(timerInterval);
             
             playSynthSound('clear');
-            if (soundEnabled) playDrumBeat();
+            if (soundEnabled) playDieAudio(congratAudio);
 
             if (!gameState.isCustom && gameState.stage >= 50) {
                 triggerEnding();
@@ -4075,11 +4355,14 @@
 
         document.getElementById('rice-prompt-btn').addEventListener('click', openPrompt);
 
-        const stDrum = document.getElementById('st-drum');
-        const stVol = document.getElementById('st-vol');
-        const stPct = document.getElementById('st-pct');
-        const stVolRow = document.getElementById('st-vol-row');
         const stVib = document.getElementById('st-vib');
+        const stEngine = document.getElementById('st-engine');
+        stEngine.value = soundEngine;
+        stEngine.addEventListener('change', () => {
+            soundEngine = stEngine.value;
+            try { localStorage.setItem(ENGINE_KEY, soundEngine); } catch (e) {}
+            if (soundEngine === 'sf2026super') loadSfSamples();
+        });
         const stSnd = document.getElementById('st-snd');
         const stOverlay = document.getElementById('st-overlay');
 
@@ -4095,10 +4378,6 @@
         }
 
         function syncSettingsUI() {
-            stDrum.value = drumMode;
-            stVol.value = Math.round(drumVolume * 100);
-            stPct.textContent = stVol.value + '%';
-            stVolRow.hidden = (drumMode !== 'bang');
             stVib.checked = vibrationEnabled;
             stSnd.checked = soundEnabled;
         }
@@ -4134,18 +4413,6 @@
             resumeFromOverlay(r);
         }
 
-        stDrum.addEventListener('change', () => {
-            drumMode = stDrum.value;
-            stVolRow.hidden = (drumMode !== 'bang');
-            saveSettings();
-        });
-        stVol.addEventListener('input', () => {
-            drumVolume = stVol.value / 100;
-            stPct.textContent = stVol.value + '%';
-            if (drumGain && audioCtx) drumGain.gain.setValueAtTime(drumVolume, audioCtx.currentTime);
-            saveSettings();
-        });
-        stVol.addEventListener('change', () => playDrumBeat());
         stVib.addEventListener('change', () => {
             vibrationEnabled = stVib.checked;
             if (!vibrationEnabled) vib(0);
@@ -4623,6 +4890,7 @@
                     if (l > level) level = l;
                 }
             }
+            if (soundEngine === 'sf2026super' && sfReady) { sfMosqUpdate(level); return; }
             if (level <= 0 && !mosqOsc) return;
             if (!mosqOsc) {
                 mosqOsc = audioCtx.createOscillator();
@@ -4641,6 +4909,7 @@
 
         function playMosquitoSample() {
             if (!audioCtx || !soundEnabled) return;
+            if (soundEngine === 'sf2026super' && sfReady) { sfMosquitoOnce(); return; }
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sawtooth';
@@ -5467,6 +5736,10 @@
         var kind = items[idx].k;
         items.splice(idx, 1);
         bcast({ t: 'gone', id: id });
+        if (kind === 'd') {
+            bcast({ t: 'freeze' }, pid);
+            if (pid !== myPid) applyFreeze();
+        }
         if (pid === myPid) applyGrant(kind);
         else send(clientConns[pid], { t: 'grant', k: kind });
     }
@@ -5538,6 +5811,8 @@
             addBullet(m.b);
         } else if (m.t === 'bx') {
             removeBullet(m.id);
+        } else if (m.t === 'freeze') {
+            applyFreeze();
         } else if (m.t === 'gone') {
             items = items.filter(function (it) { return it.id !== m.id; });
         } else if (m.t === 'rules') {
@@ -5568,7 +5843,18 @@
         p.pw = null;
     }
 
+    function applyFreeze() {
+        var me = players[myPid];
+        if (!me || me.hp <= 0) return;
+        me.frozenUntil = now() + 10000;
+        playDrumBeat();
+    }
+
     function applyGrant(kind) {
+        if (kind === 'd') {
+            playDrumBeat();
+            return;
+        }
         if (kind === 'c') {
             if (!recorder) startRec(180000);
             return;
@@ -5635,7 +5921,7 @@
     }
 
     function stepLocal(p, t) {
-        var canAct = p.hp > 0 && t >= goUntil;
+        var canAct = p.hp > 0 && t >= goUntil && !(p.frozenUntil && t < p.frozenUntil);
         var dir = (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
         if (p.pw && (t > p.pw.until || (p.pw.k === 'l' && p.pw.charges <= 0 && p.dash === 0))) clearPw(p);
         if (canAct) {
@@ -5643,7 +5929,10 @@
                 p.dash--;
                 p.vx = p.f * 20;
             } else {
-                p.vx = dir * 7;
+                var target = dir * 5;
+                var step = p.grounded ? 1 : 0.6;
+                if (p.vx < target) p.vx = Math.min(target, p.vx + step);
+                else if (p.vx > target) p.vx = Math.max(target, p.vx - step);
                 if (dir) p.f = dir;
             }
             if (inp.j && p.grounded && p.dash === 0) {
@@ -5784,7 +6073,7 @@
             items.forEach(function (it) {
                 if (!pendingPick[it.id] && overlap(r, { x: it.x, y: it.y, w: 45, h: 45 })) {
                     pendingPick[it.id] = true;
-                    items = items.filter(function (x) { return x.id !== it.id; });
+                    if (!isHost) items = items.filter(function (x) { return x.id !== it.id; });
                     toHost({ t: 'pick', id: it.id });
                 }
             });
@@ -5888,7 +6177,7 @@
         else text = '아무도 살아남지 못했어요.';
         showPanel(text);
         try {
-            if (winner === myPid) playSynthSound('clear');
+            if (winner === myPid) { if (soundEnabled) playDieAudio(congratAudio); }
             else if (soundEnabled) { gameoverAudio.currentTime = 0; gameoverAudio.play().catch(function () {}); }
         } catch (e) {}
     }
@@ -6225,6 +6514,7 @@
 
     function drawItem(it) {
         if (it.k === 'c') { drawCamItem(it); return; }
+        if (it.k === 'd') { drawDrumItem(it); return; }
         var hover = Math.sin((frame + it.id * 7) / 10) * 4;
         var ix = it.x - camX;
         ctx.save();
@@ -6271,6 +6561,7 @@
                 : 'L 돌진 ×' + me.pw.charges;
             drawText(label2, W / 2, H - 30, 26, me.pw.k === 'g' ? '#67e8f9' : '#d8b4fe');
         }
+        if (me && me.frozenUntil && t < me.frozenUntil) drawText('얼어붙음 ' + Math.ceil((me.frozenUntil - t) / 1000) + '초', W / 2, 110, 26, '#67e8f9');
         if (me && inSafe(me)) drawText('안전지대', W / 2, 70, 20, '#86efac');
         if (t < goUntil) drawText('시작!', W / 2, 150, 64, '#fde047');
         if (me && me.hp <= 0 && mode === 'playing') drawText('탈락! 끝까지 구경해요', W / 2, 100, 32, '#fca5a5');
@@ -6558,9 +6849,10 @@
 
     function pickKind() {
         var q = Math.random();
-        if (q < 0.45) return 'g';
-        if (q < 0.85) return 'l';
-        return 'c';
+        if (q < 0.40) return 'g';
+        if (q < 0.70) return 'l';
+        if (q < 0.82) return 'c';
+        return 'd';
     }
 
     function nameOf(pid, nick) {
@@ -6675,6 +6967,16 @@
             ctx.restore();
             drawText(text, W / 2, y - 3, 30, '#ffffff');
         });
+    }
+
+    function drawDrumItem(it) {
+        var hover = Math.sin((frame + it.id * 7) / 10) * 4;
+        ctx.save();
+        ctx.font = '34px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🥁', it.x - camX + 22, it.y + 22 + hover);
+        ctx.restore();
     }
 
     function drawCamItem(it) {
