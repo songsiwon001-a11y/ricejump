@@ -920,6 +920,25 @@
         const monsterDieAudio = new Audio('몬스터 죽는 소리.mp3');
         const bossDieAudio = new Audio('보스 죽는 소리.mp3');
         const congratAudio = new Audio('congratulation.wav');
+        const zezeiyaAudio = new Audio('제제이야.mp3');
+        const btReadyAudio = new Audio('the bluetooth device is ready to pear.mp3');
+        const btConnectAudio = new Audio('the bluetooth device is conected suxasfly.mp3');
+        const killAudio = new Audio('적을_처치했씁니다.mp3');
+        const riceGuitarAudio = new Audio('rice guitar.mp3');
+
+        function playBtConnect() {
+            playDieAudio(btConnectAudio);
+        }
+        let guitarStage = -1;
+        let pianoActive = false;
+
+        function guitarOn() {
+            return guitarStage === gameState.stage;
+        }
+
+        function monsterSafe() {
+            return guitarOn() || pianoActive;
+        }
         function playDieAudio(a) {
             try {
                 a.currentTime = 0;
@@ -974,6 +993,7 @@
                 enemies.forEach(e => spawnExplosion((e.x || 0) + 20, (e.y || 0) + 20, '#ef4444', 10));
                 enemies = [];
                 playDieAudio(monsterDieAudio);
+                playDieAudio(killAudio);
             }
         }
 
@@ -1777,6 +1797,34 @@
         const SHORT_A = S('c6:0.1 c5:0.1 c6:0.1 c5:0.1 g5:0.1 c5:0.1 g5:0.1 c5:0.1 a#5:0.1 c5:0.1 a#5:0.1 c5:0.1 f5:0.1 c5:0.1 f5:0.1');
         const SHORT_B = S('c3:0.1 c2:0.1 c2:0.1 c3:0.1 c3:0.1 c2:0.1 c2:0.1 c3:0.1 a#2:0.1 c2:0.1 c2:0.1 a#2:0.1 a#2:0.1 c2:0.1 c2:0.1 a#2:0.1');
 
+        const PIANO_1 = S('E5:0.2 D#5:0.2 E5:0.2 D#5:0.2 E5:0.2 B4:0.2 D5:0.2 C5:0.2 A4:0.6 C4:0.2 E4:0.2 A4:0.2 B4:0.6 E4:0.2 C5:0.2 B4:0.2 A4:0.2');
+        const PIANO_2 = S('-:1.6 A2:0.2 E3:0.2 A3:0.8 E2:0.2 E3:0.2 G#3:0.8 A4:0.6');
+
+        function ensurePiano() {
+            if (sfBuffers.piano) return Promise.resolve(true);
+            if (!audioCtx) { try { initAudio(); } catch (e) {} }
+            if (!audioCtx) return Promise.resolve(false);
+            return fetch(SF_FILES.piano.file)
+                .then(r => { if (!r.ok) throw new Error('missing'); return r.arrayBuffer(); })
+                .then(b => audioCtx.decodeAudioData(b))
+                .then(buf => { sfBuffers.piano = buf; return true; })
+                .catch(() => false);
+        }
+
+        function playPianoMelody() {
+            ensurePiano().then(ok => {
+                if (!ok || !audioCtx) return;
+                const t0 = audioCtx.currentTime + 0.02;
+                [PIANO_1, PIANO_2].forEach(seq => {
+                    let t = t0;
+                    seq.forEach(n => {
+                        if (n.note) sfPlayKey('piano', SF_FILES.piano.base, [[noteToFreq(n.note), 0]], t, n.dur * 0.95, 1);
+                        t += n.dur;
+                    });
+                });
+            });
+        }
+
         const STAGE_CLEAR_PIANO = [
             { vol: -12, notes: S('-:0.1 c4:0.1 d4:0.1 c4:0.1 d4:0.1 e4:0.2 c4:0.1 d4:0.1 c4:0.1 d4:0.1 c4:0.1 d4:0.1 e4:0.2 c4:0.05 c#4:0.05 d4:0.2 d5:0.2 d5:0.2 d5:0.1 a#4:0.1 a4:0.1 g4:0.1 f4:0.2 f4:0.3 a4:0.2 a#4:0.1 a4:0.1 b4:0.1 d5:0.1 c5:0.1 b4:0.1 a4:0.1 g4:0.1 f#4:0.1 g4:0.1 g#4:0.1 a4:0.1 g4:0.1 f4:0.1 e4:0.1 d4:0.1 c#4:0.1 d4:0.1 e4:0.1 g4:0.1 f4:0.1 e4:0.1 d4:0.1 c4:0.8') },
             { vol: -14, notes: S('-:0.1 g3:0.1 a3:0.1 g3:0.1 a3:0.1 c4:0.2 g3:0.1 a3:0.1 g3:0.1 a3:0.1 g3:0.1 a3:0.1 c4:0.3 a3:0.4 a3:0.4 f3:0.4 f3:0.3 f4:0.2 e4:0.1 f4:0.1 g4:0.1 b4:0.1 a#4:0.1 a4:0.1 f4:0.1 e4:0.1 c5:0.1 e4:0.1 c4:0.1 f4:0.1 e4:0.1 d4:0.1 c4:0.1 b3:0.1 a#3:0.1 b3:0.1 a#3:0.1 b3:0.1 g3:0.1 a3:0.1 b3:0.1 c4:0.1') },
@@ -2066,6 +2114,7 @@
                 if (this.x < 0) this.x = 0;
 
                 if (this.y > canvas.height + 150) {
+                    pianoActive = false;
                     this.deductLife(1, true, true); 
                 }
 
@@ -2180,6 +2229,18 @@
                     ctx.fillRect(gunX + (this.facingRight ? 5 : 15), this.y + 20, 15, 8);
                 }
 
+                if (pianoActive) {
+                    ctx.font = '30px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎹', this.x - gameState.cameraX + this.width / 2, this.y - 16);
+                } else if (guitarOn()) {
+                    ctx.font = '30px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎸', this.x - gameState.cameraX + this.width / 2, this.y - 16);
+                }
+
                 ctx.restore();
             }
         };
@@ -2189,6 +2250,7 @@
         let enemies = [];
         let items = [];
         let bullets = [];
+        let allyBullets = [];
         let goal = null;
         let boss = null;
         let particles = [];
@@ -2249,6 +2311,7 @@
             enemies = [];
             items = [];
             bullets = [];
+        allyBullets = [];
             particles = [];
             boss = null;
             goal = null;
@@ -2378,6 +2441,9 @@
                             else if (Math.random() < 0.05) randItem = 'camera';
                             else if (Math.random() < 0.03) randItem = 'takeL';
                             else if (Math.random() < 0.04) randItem = 'drum';
+            else if (Math.random() < 0.03) randItem = 'zezeiya';
+            else if (Math.random() < 0.03) randItem = 'guitar';
+            else if (Math.random() < 0.02) randItem = 'piano';
             else if (randVal < 0.05) randItem = 'golden';
                             else if (randVal < 0.12) randItem = 'blue';
                             else if (randVal < 0.18) randItem = 'fake';
@@ -2533,6 +2599,7 @@
             enemies = [];
             items = [];
             bullets = [];
+        allyBullets = [];
 
             gameState.levelWidth = 5000;
             platforms.push({ x: 0, y: 550, width: 600, height: 200 });
@@ -2811,7 +2878,13 @@
                     }
                 }
 
-                if (checkCollision(player, boss)) {
+                if (pianoActive && boss.hp > 0 && checkCollision(player, boss)) {
+                    boss.hp = 0;
+                    boss.damageFlash = 25;
+                    spawnExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, '#f472b6', 30);
+                    updateBossHPBar();
+                    triggerBossDefeat();
+                } else if (checkCollision(player, boss)) {
                     const isFallingOnTop = (player.vy > 0 && player.y + player.height <= boss.y + 40);
                     if (isFallingOnTop) {
                         player.vy = -14;
@@ -2824,14 +2897,20 @@
                         if (boss.hp <= 0) {
                             triggerBossDefeat();
                         }
-                    } else if (player.invincibleCooldown === 0 && !gameState.isGolden) {
+                    } else if (player.invincibleCooldown === 0 && !gameState.isGolden && !guitarOn()) {
                         player.deductLife(2, false, false);
                     }
                 }
             }
 
+            updateAllyBullets();
+
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
+                if (e.ally) {
+                    updateAlly(e);
+                    continue;
+                }
 
                 if (e.type === 'normal') {
                     e.x += e.speed;
@@ -2884,24 +2963,26 @@
                             updateScoreDisplay();
                             playSynthSound('item_get'); 
                         } else {
-                            if (gameState.isGolden) {
+                            if (gameState.isGolden || pianoActive) {
+                                if (pianoActive) playDieAudio(killAudio);
                                 spawnExplosion(e.x, e.y, '#fbbf24', 12);
                                 enemies.splice(i, 1);
                                 playDieAudio(monsterDieAudio);
                                 gameState.score += 200;
                                 updateScoreDisplay();
-                            } else if (player.invincibleCooldown === 0) {
+                            } else if (player.invincibleCooldown === 0 && !monsterSafe()) {
                                 player.deductLife(1, false, false);
                             }
                         }
                     } else {
-                        if (gameState.isGolden) {
+                        if (gameState.isGolden || pianoActive) {
+                            if (pianoActive) playDieAudio(killAudio);
                             spawnExplosion(e.x, e.y, '#fbbf24', 12);
                             enemies.splice(i, 1);
                             playDieAudio(monsterDieAudio);
                             gameState.score += 200;
                             updateScoreDisplay();
-                        } else if (player.invincibleCooldown === 0) {
+                        } else if (player.invincibleCooldown === 0 && !monsterSafe()) {
                             player.deductLife(e.type === 'mosquito' ? 2 : 1, false, false);
                         }
                     }
@@ -2933,6 +3014,17 @@
                             progress: 0
                         };
                     } 
+                    else if (item.type === 'guitar') {
+                        guitarStage = gameState.stage;
+                        playDieAudio(riceGuitarAudio);
+                    }
+                    else if (item.type === 'piano') {
+                        pianoActive = true;
+                        playPianoMelody();
+                    }
+                    else if (item.type === 'zezeiya') {
+                        captureAllEnemies();
+                    }
                     else if (item.type === 'drum') {
                         triggerDrumBlast();
                     }
@@ -3116,8 +3208,13 @@
                 ctx.fill();
             }
 
-            for (let e of enemies) {
+            drawAllyBullets();
+        for (let e of enemies) {
                 ctx.save();
+                if (e.ally) {
+                    ctx.shadowColor = '#22c55e';
+                    ctx.shadowBlur = 20;
+                }
                 if (e.type === 'projectile') {
                     ctx.fillStyle = '#f43f5e';
                     ctx.beginPath();
@@ -3187,6 +3284,18 @@
                     ctx.textBaseline = 'middle';
                     ctx.fillText('67', item.x - gameState.cameraX + 22, item.y + 22 + hover);
                 } 
+                else if (item.type === 'guitar' || item.type === 'piano') {
+                    ctx.font = '34px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(item.type === 'guitar' ? '🎸' : '🎹', item.x - gameState.cameraX + 22, item.y + 22 + hover);
+                }
+                else if (item.type === 'zezeiya') {
+                    ctx.font = '34px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🧲', item.x - gameState.cameraX + 22, item.y + 22 + hover);
+                }
                 else if (item.type === 'drum') {
                     ctx.font = '34px sans-serif';
                     ctx.textAlign = 'center';
@@ -3360,6 +3469,103 @@
             const pct = Math.max(0, (boss.hp / boss.maxHp) * 100);
             document.getElementById('boss-hp-bar').style.width = `${pct}%`;
             document.getElementById('boss-hp-text').innerText = `${Math.ceil(pct)}%`;
+        }
+
+        function captureAllEnemies() {
+            playDieAudio(zezeiyaAudio);
+            enemies.forEach(e => {
+                if (e.type === 'projectile') return;
+                e.ally = true;
+                e.power = 1;
+                e.fireTimer = Math.floor(Math.random() * 40) + 10;
+                spawnExplosion(e.x + e.width / 2, e.y + e.height / 2, '#22c55e', 12);
+            });
+        }
+
+        function nearestHostile(e) {
+            if (boss) return boss;
+            let best = null;
+            let bestDist = Infinity;
+            const ex = e.x + e.width / 2;
+            const ey = e.y + e.height / 2;
+            enemies.forEach(t => {
+                if (t.ally || t.type === 'projectile' || t === e) return;
+                const d = Math.hypot(t.x + t.width / 2 - ex, t.y + t.height / 2 - ey);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = t;
+                }
+            });
+            return best;
+        }
+
+        function updateAlly(e) {
+            e.fireTimer = (e.fireTimer || 0) - 1;
+            if (e.fireTimer > 0) return;
+            e.fireTimer = Math.max(18, Math.round(45 / (e.power || 1)));
+            const target = nearestHostile(e);
+            if (!target) return;
+            const sx = e.x + e.width / 2;
+            const sy = e.y + e.height / 2;
+            const tx = target.x + target.width / 2;
+            const ty = target.y + target.height / 2;
+            const d = Math.hypot(tx - sx, ty - sy) || 1;
+            const sp = 12;
+            allyBullets.push({
+                x: sx,
+                y: sy,
+                vx: (tx - sx) / d * sp,
+                vy: (ty - sy) / d * sp,
+                width: 12,
+                height: 12,
+                power: e.power || 1
+            });
+        }
+
+        function updateAllyBullets() {
+            for (let i = allyBullets.length - 1; i >= 0; i--) {
+                const b = allyBullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                if (b.x < gameState.cameraX - 300 || b.x > gameState.cameraX + canvas.width + 300 || b.y < -300 || b.y > canvas.height + 300) {
+                    allyBullets.splice(i, 1);
+                    continue;
+                }
+                if (boss && checkCollision(b, boss)) {
+                    allyBullets.splice(i, 1);
+                    spawnExplosion(b.x, b.y, '#22c55e', 10);
+                    boss.hp = 0;
+                    boss.damageFlash = 25;
+                    updateBossHPBar();
+                    triggerBossDefeat();
+                    return;
+                }
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const t = enemies[j];
+                    if (t.ally || t.type === 'projectile') continue;
+                    if (checkCollision(b, t)) {
+                        t.ally = true;
+                        t.power = b.power * 2;
+                        t.fireTimer = 20;
+                        spawnExplosion(t.x + t.width / 2, t.y + t.height / 2, '#22c55e', 14);
+                        allyBullets.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function drawAllyBullets() {
+            ctx.save();
+            ctx.fillStyle = '#22c55e';
+            ctx.shadowColor = '#4ade80';
+            ctx.shadowBlur = 12;
+            allyBullets.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x - gameState.cameraX, b.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
         }
 
         function triggerBossDefeat() {
@@ -3636,6 +3842,7 @@
         };
 
         const UI_TEXT = {
+  "흠... 다 모였군요! 그럼 서바이벌 시작합니다!": {"en": "Hmm... everyone's here! Starting the survival now!", "zh": "嗯……人都到齐了！现在开始生存！", "ja": "うーん…全員そろいましたね！サバイバルを開始します！", "th": "อืม... ครบแล้วนะ! เริ่มเอาตัวรอดเลย!", "ru": "Хм... все собрались! Начинаем выживание!", "pt": "Hmm... todos reunidos! Começando a sobrevivência!", "fr": "Hmm... tout le monde est là ! La survie commence !", "es": "Mmm... ¡ya estamos todos! ¡Empieza la supervivencia!", "de": "Hm... alle sind da! Das Überleben beginnt!"},
   "축하": {"en": "Congrats", "zh": "祝贺", "ja": "おめでとう", "th": "ยินดีด้วย", "ru": "Поздравляем", "pt": "Parabéns", "fr": "Félicitations", "es": "¡Felicidades!", "de": "Glückwunsch"},
          "15초간 대기하면 오토 데모가 시작됩니다.": {
           "en": "Wait 15 seconds and the auto demo starts.",
@@ -5889,8 +6096,10 @@
             unlockScreen.classList.add('hidden');
             document.getElementById('start-screen').classList.remove('hidden');
 
-            helloAudio.currentTime = 0;
-            if (soundEnabled) helloAudio.play().catch(e => {});
+            const btMode = (function () { try { return localStorage.getItem('riceJumpPlayMode') === 'friends'; } catch (e) { return false; } })();
+            const greetAudio = btMode ? btReadyAudio : helloAudio;
+            greetAudio.currentTime = 0;
+            if (soundEnabled) greetAudio.play().catch(e => {});
             
             if (navigator.vibrate) {
                 vib(VIB_START);
@@ -7580,6 +7789,8 @@
         #fr-ann-input:focus { border-color: #22d3ee; }
         #fr-ann-send { background: #34d399; color: #000; }
         #fr-ann-cancel { background: #374151; color: #fff; }
+        #fr-note { position: fixed; inset: 0; z-index: 9900; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #fff; background: rgba(2, 6, 23, 0.85); font-size: clamp(16px, 4vw, 26px); line-height: 1.6; word-break: keep-all; }
+        #fr-note[hidden] { display: none; }
         #fr-ann .fr-actions button { min-width: 100px; padding: 12px 16px; font-family: inherit; font-size: 12px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; }
         #fr-ask .fr-actions button { min-width: 100px; padding: 12px 16px; font-family: inherit; font-size: 12px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; }
         #fr-go {
@@ -7837,7 +8048,7 @@
     var annOn = false;
     var annOpen = false;
     var annBox, annInput;
-    var errBox, errBig, errSmall, toastBox, toastBig, toastSmall, askBox, askText;
+    var errBox, errBig, errSmall, toastBox, toastBig, toastSmall, askBox, askText, noteBox;
     var TTS_KEY = 'riceJumpTTS';
     var AUTOREC_KEY = 'riceJumpAutoRec';
     var recorder = null;
@@ -8036,6 +8247,9 @@
             addBullet(m.b);
         } else if (m.t === 'bx') {
             removeBullet(m.id);
+        } else if (m.t === 'fullnote') {
+            mode = 'starting';
+            showNote(tx('흠... 다 모였군요! 그럼 서바이벌 시작합니다!'));
         } else if (m.t === 'freeze') {
             applyFreeze();
         } else if (m.t === 'gone') {
@@ -8083,6 +8297,15 @@
     }
 
     function applyGrant(kind) {
+        if (kind === 'pi') {
+            const pme = players[myPid];
+            if (pme && pme.hp > 0) {
+                clearPw(pme);
+                pme.pw = { k: 'pi' };
+                playPianoMelody();
+            }
+            return;
+        }
         if (kind === 'd') {
             playDrumBeat();
             return;
@@ -8119,6 +8342,7 @@
     function damage(p, n, by) {
         if (p.inv > 0 || p.hp <= 0 || inSafe(p)) return;
         p.hp -= n;
+        if (p.pw && p.pw.k === 'pi') p.pw = null;
         p.inv = 75;
         p.vy = -9;
         try { vib(VIB_HIT); } catch (e) {}
@@ -8382,6 +8606,7 @@
 
     function startPlay(duration) {
         clearTimeout(rulesTimer);
+        hideNote();
         panel.hidden = true;
         try { stopTitleMusic(); } catch (e) {}
         started = true;
@@ -8472,7 +8697,9 @@
         clearTimeout(rulesTimer);
         bgmWorld = -1;
         stopBGM();
-        if (startScreen) startScreen.classList.remove('hidden');
+        if (startScreen) startScreen.classList.add('hidden');
+        const unlockEl = document.getElementById('audio-unlock-screen');
+        if (unlockEl) unlockEl.classList.remove('hidden');
         try { playTitleMusic(); } catch (e) {}
         if (typeof resetDemoTimer === 'function') resetDemoTimer();
     }
@@ -8553,8 +8780,9 @@
             if (mode === 'waiting') {
                 mode = 'lobby';
                 lobbyEnd = now() + LOBBY_MS;
-                try { playSynthSound('item_get'); } catch (e) {}
             }
+            playBtConnect();
+            if (Object.keys(players).length >= MAX_PLAYERS && (mode === 'lobby' || mode === 'waiting')) autoStart();
         });
     }
 
@@ -8761,6 +8989,16 @@
     function drawItem(it) {
         if (it.k === 'c') { drawCamItem(it); return; }
         if (it.k === 'd') { drawDrumItem(it); return; }
+        if (it.k === 'pi') {
+            const hv = Math.sin((frame + it.id * 7) / 10) * 4;
+            ctx.save();
+            ctx.font = '34px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎹', it.x - camX + 22, it.y + 22 + hv);
+            ctx.restore();
+            return;
+        }
         var hover = Math.sin((frame + it.id * 7) / 10) * 4;
         var ix = it.x - camX;
         ctx.save();
@@ -8849,6 +9087,7 @@
             var sx = p.x - camX;
             drawRice(sx, p.y, p.f, p.color, o);
             if (p.hp > 0) drawText(nameOf(p.pid, p.nick).slice(0, 8), sx + PW / 2, p.y - 14, 16, isMe ? '#fde047' : '#ffffff');
+            if (p.hp > 0 && k2 === 'pi') drawText('🎹', sx + PW / 2, p.y - 36, 22, '#ffffff');
         });
         drawHud(me, t);
         drawChatOverlay();
@@ -9082,10 +9321,25 @@
 
     function beginRules() {
         if (!isHost || mode !== 'lobby') return;
-        mode = 'rules';
-        bcast({ t: 'rules' });
-        showPanel(RULES_TEXT);
-        rulesTimer = setTimeout(launch, RULES_MS);
+        launch();
+    }
+
+    function autoStart() {
+        mode = 'starting';
+        bcast({ t: 'fullnote' });
+        showNote(tx('흠... 다 모였군요! 그럼 서바이벌 시작합니다!'));
+        setTimeout(function () {
+            if (mode === 'starting') launch();
+        }, 3000);
+    }
+
+    function showNote(text) {
+        noteBox.textContent = text;
+        noteBox.hidden = false;
+    }
+
+    function hideNote() {
+        if (noteBox) noteBox.hidden = true;
     }
 
     function refreshGo() {
@@ -9095,10 +9349,11 @@
 
     function pickKind() {
         var q = Math.random();
-        if (q < 0.40) return 'g';
-        if (q < 0.70) return 'l';
-        if (q < 0.82) return 'c';
-        return 'd';
+        if (q < 0.36) return 'g';
+        if (q < 0.62) return 'l';
+        if (q < 0.74) return 'c';
+        if (q < 0.84) return 'd';
+        return 'pi';
     }
 
     function nameOf(pid, nick) {
@@ -9450,6 +9705,11 @@
             '<div class="fr-actions"><button id="fr-ask-cancel" type="button">취소</button><button id="fr-ask-invite" type="button">초대</button></div>' +
             '</div>';
         document.body.appendChild(askBox);
+        noteBox = document.createElement('div');
+        noteBox.id = 'fr-note';
+        noteBox.hidden = true;
+        noteBox.setAttribute('role', 'status');
+        document.body.appendChild(noteBox);
 
         errBig = document.getElementById('fr-err-big');
         errSmall = document.getElementById('fr-err-small');
