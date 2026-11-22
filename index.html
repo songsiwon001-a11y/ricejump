@@ -931,6 +931,9 @@
         }
         let guitarStage = -1;
         let pianoActive = false;
+        let zezeiyaActive = false;
+        let zezeiyaConverted = false;
+        let instCur = null;
 
         function guitarOn() {
             return guitarStage === gameState.stage;
@@ -2025,6 +2028,7 @@
 
         function startBGM() {
             if (!audioCtx) return;
+            if (guitarOn() || pianoActive) return;
             stopBGM();
             const data = gameState.stage % 5 === 0 ? BOSS_BGM : BGM_BY_WORLD[getWorldIdx(gameState.stage)];
             playToneSequence(
@@ -2114,6 +2118,8 @@
                 if (this.x < 0) this.x = 0;
 
                 if (this.y > canvas.height + 150) {
+                    if (zezeiyaActive && !zezeiyaConverted) convertOneEnemy();
+                    zezeiyaActive = false;
                     pianoActive = false;
                     this.deductLife(1, true, true); 
                 }
@@ -2123,6 +2129,8 @@
 
                 if (gameState.isWaterGun && keys.shoot && this.shootCooldown === 0) {
                     this.shootWaterGun();
+                } else if (!gameState.isWaterGun && keys.shoot && this.shootCooldown === 0) {
+                    tryFireWeapon(this);
                 }
             },
 
@@ -2764,6 +2772,7 @@
 
         function update() {
             if (!gameState.isActive) return;
+            instrumentSync();
 
             if (gameState.isDemo) {
                 handleDemoAI();
@@ -2897,7 +2906,7 @@
                         if (boss.hp <= 0) {
                             triggerBossDefeat();
                         }
-                    } else if (player.invincibleCooldown === 0 && !gameState.isGolden && !guitarOn()) {
+                    } else if (player.invincibleCooldown === 0 && !gameState.isGolden && !monsterSafe()) {
                         player.deductLife(2, false, false);
                     }
                 }
@@ -2909,6 +2918,10 @@
                 const e = enemies[i];
                 if (e.ally) {
                     updateAlly(e);
+                    continue;
+                }
+                if (zezeiyaActive && e.type !== 'projectile' && checkCollision(player, e)) {
+                    convertEnemyToWeapon(e);
                     continue;
                 }
 
@@ -2963,9 +2976,8 @@
                             updateScoreDisplay();
                             playSynthSound('item_get'); 
                         } else {
-                            if (gameState.isGolden || pianoActive) {
-                                if (pianoActive) playDieAudio(killAudio);
-                                spawnExplosion(e.x, e.y, '#fbbf24', 12);
+                            if (gameState.isGolden) {
+                                                                spawnExplosion(e.x, e.y, '#fbbf24', 12);
                                 enemies.splice(i, 1);
                                 playDieAudio(monsterDieAudio);
                                 gameState.score += 200;
@@ -2975,9 +2987,8 @@
                             }
                         }
                     } else {
-                        if (gameState.isGolden || pianoActive) {
-                            if (pianoActive) playDieAudio(killAudio);
-                            spawnExplosion(e.x, e.y, '#fbbf24', 12);
+                        if (gameState.isGolden) {
+                                                        spawnExplosion(e.x, e.y, '#fbbf24', 12);
                             enemies.splice(i, 1);
                             playDieAudio(monsterDieAudio);
                             gameState.score += 200;
@@ -3016,14 +3027,15 @@
                     } 
                     else if (item.type === 'guitar') {
                         guitarStage = gameState.stage;
-                        playDieAudio(riceGuitarAudio);
                     }
                     else if (item.type === 'piano') {
                         pianoActive = true;
-                        playPianoMelody();
+                        ensurePiano();
                     }
                     else if (item.type === 'zezeiya') {
-                        captureAllEnemies();
+                        zezeiyaActive = true;
+                        zezeiyaConverted = false;
+                        playDieAudio(zezeiyaAudio);
                     }
                     else if (item.type === 'drum') {
                         triggerDrumBlast();
@@ -3471,67 +3483,81 @@
             document.getElementById('boss-hp-text').innerText = `${Math.ceil(pct)}%`;
         }
 
-        function captureAllEnemies() {
-            playDieAudio(zezeiyaAudio);
-            enemies.forEach(e => {
-                if (e.type === 'projectile') return;
-                e.ally = true;
-                e.power = 1;
-                e.fireTimer = Math.floor(Math.random() * 40) + 10;
-                spawnExplosion(e.x + e.width / 2, e.y + e.height / 2, '#22c55e', 12);
+        function convertEnemyToWeapon(e) {
+            e.ally = true;
+            e.weapon = true;
+            e.power = e.power || 1;
+            zezeiyaConverted = true;
+            spawnExplosion(e.x + e.width / 2, e.y + e.height / 2, '#22c55e', 14);
+        }
+
+        function convertOneEnemy() {
+            let best = null;
+            let bestDist = Infinity;
+            const px = player.x + player.width / 2;
+            const py = player.y + player.height / 2;
+            enemies.forEach(t => {
+                if (t.ally || t.type === 'projectile') return;
+                const d = Math.hypot(t.x + t.width / 2 - px, t.y + t.height / 2 - py);
+                if (d < bestDist) { bestDist = d; best = t; }
+            });
+            if (best) convertEnemyToWeapon(best);
+        }
+
+        function tryFireWeapon(p) {
+            const idx = enemies.findIndex(e => e.ally && e.weapon);
+            if (idx < 0) return;
+            const e = enemies.splice(idx, 1)[0];
+            p.shootCooldown = 15;
+            playSynthSound('shoot');
+            allyBullets.push({
+                x: e.x + e.width / 2,
+                y: e.y + e.height / 2,
+                vx: p.facingRight ? 12 : -12,
+                vy: 0,
+                width: e.width,
+                height: e.height,
+                power: e.power || 1,
+                returning: false
             });
         }
 
-        function nearestHostile(e) {
-            if (boss) return boss;
-            let best = null;
-            let bestDist = Infinity;
-            const ex = e.x + e.width / 2;
-            const ey = e.y + e.height / 2;
-            enemies.forEach(t => {
-                if (t.ally || t.type === 'projectile' || t === e) return;
-                const d = Math.hypot(t.x + t.width / 2 - ex, t.y + t.height / 2 - ey);
-                if (d < bestDist) {
-                    bestDist = d;
-                    best = t;
-                }
-            });
-            return best;
+        function bulletRect(b) {
+            return { x: b.x - b.width / 2, y: b.y - b.height / 2, width: b.width, height: b.height };
         }
 
         function updateAlly(e) {
-            e.fireTimer = (e.fireTimer || 0) - 1;
-            if (e.fireTimer > 0) return;
-            e.fireTimer = Math.max(18, Math.round(45 / (e.power || 1)));
-            const target = nearestHostile(e);
-            if (!target) return;
-            const sx = e.x + e.width / 2;
-            const sy = e.y + e.height / 2;
-            const tx = target.x + target.width / 2;
-            const ty = target.y + target.height / 2;
-            const d = Math.hypot(tx - sx, ty - sy) || 1;
-            const sp = 12;
-            allyBullets.push({
-                x: sx,
-                y: sy,
-                vx: (tx - sx) / d * sp,
-                vy: (ty - sy) / d * sp,
-                width: 12,
-                height: 12,
-                power: e.power || 1
-            });
         }
 
         function updateAllyBullets() {
             for (let i = allyBullets.length - 1; i >= 0; i--) {
                 const b = allyBullets[i];
+                if (b.returning) {
+                    const cx = player.x + player.width / 2;
+                    const cy = player.y + player.height / 2;
+                    const dx = cx - b.x;
+                    const dy = cy - b.y;
+                    const d = Math.hypot(dx, dy) || 1;
+                    b.vx = dx / d * 14;
+                    b.vy = dy / d * 14;
+                    b.x += b.vx;
+                    b.y += b.vy;
+                    if (checkCollision(bulletRect(b), player)) {
+                        allyBullets.splice(i, 1);
+                        enemies.push({
+                            x: player.x, y: player.y, width: b.width, height: b.height,
+                            type: 'normal', ally: true, weapon: true, power: b.power
+                        });
+                    }
+                    continue;
+                }
                 b.x += b.vx;
                 b.y += b.vy;
                 if (b.x < gameState.cameraX - 300 || b.x > gameState.cameraX + canvas.width + 300 || b.y < -300 || b.y > canvas.height + 300) {
                     allyBullets.splice(i, 1);
                     continue;
                 }
-                if (boss && checkCollision(b, boss)) {
+                if (boss && checkCollision(bulletRect(b), boss)) {
                     allyBullets.splice(i, 1);
                     spawnExplosion(b.x, b.y, '#22c55e', 10);
                     boss.hp = 0;
@@ -3543,15 +3569,46 @@
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const t = enemies[j];
                     if (t.ally || t.type === 'projectile') continue;
-                    if (checkCollision(b, t)) {
-                        t.ally = true;
-                        t.power = b.power * 2;
-                        t.fireTimer = 20;
+                    if (checkCollision(bulletRect(b), t)) {
+                        enemies.splice(j, 1);
+                        b.power = b.power * 2;
+                        b.returning = true;
                         spawnExplosion(t.x + t.width / 2, t.y + t.height / 2, '#22c55e', 14);
-                        allyBullets.splice(i, 1);
                         break;
                     }
                 }
+            }
+        }
+
+        function instrumentSync() {
+            const want = guitarOn() ? 'guitar' : (pianoActive ? 'piano' : null);
+            if (want === instCur) return;
+            if (instCur === 'guitar') {
+                riceGuitarAudio.pause();
+                riceGuitarAudio.loop = false;
+            } else if (instCur === 'piano') {
+                stopToneSequence();
+            }
+            instCur = want;
+            if (want === 'guitar') {
+                stopToneSequence();
+                stopBGM();
+                riceGuitarAudio.loop = true;
+                riceGuitarAudio.currentTime = 0;
+                const pr = riceGuitarAudio.play();
+                if (pr && pr.catch) pr.catch(() => {});
+            } else if (want === 'piano') {
+                stopBGM();
+                ensurePiano().then(() => {
+                    if (instCur === 'piano') {
+                        playToneSequence('instr', [
+                            { type: 'triangle', vol: -10, notes: PIANO_1 },
+                            { type: 'triangle', vol: -10, notes: PIANO_2 }
+                        ], 0, () => true, () => 1);
+                    }
+                });
+            } else {
+                startBGM();
             }
         }
 
@@ -6333,6 +6390,11 @@
         RP_BGM_LIST.push({ label: '타이틀', title: true });
         RP_BGM_LIST.push({ label: '크레딧', file: 'cradits_bgm.mp3' });
         RP_BGM_LIST.push({ label: '클리어', data: () => ({ drum: 0, tracks: stageClearTracks() }) });
+        RP_BGM_LIST.push({ label: '기타', file: 'rice_guitar.mp3' });
+        RP_BGM_LIST.push({ label: '피아노', data: () => ({ drum: 0, tracks: [
+            { type: 'triangle', vol: -10, notes: PIANO_1 },
+            { type: 'triangle', vol: -10, notes: PIANO_2 }
+        ] }) });
 
         const RP_VIB_LIST = [
             { label: 'six seven (67)', pattern: VIB_SIX_SEVEN },
@@ -6360,6 +6422,10 @@
             { label: '모기', play: () => playMosquitoSample() },
             { label: '몬스터 죽는 소리', play: () => rpPlayAudio(monsterDieAudio) },
             { label: '축하', play: () => rpPlayAudio(congratAudio) },
+            { label: '제제이야', play: () => rpPlayAudio(zezeiyaAudio) },
+            { label: '적을 처치했습니다', play: () => rpPlayAudio(killAudio) },
+            { label: '연결 준비', play: () => rpPlayAudio(btReadyAudio) },
+            { label: '연결', play: () => rpPlayAudio(btConnectAudio) },
             { label: '보스 죽는 소리', play: () => rpPlayAudio(bossDieAudio) },
             { label: 'six seven 60초 남음', play: () => rpPlayAudio(new Audio('six seven!(60s left both 50s).mp3')) },
             { label: 'six seven 30초 남음', play: () => rpPlayAudio(new Audio('six seven!(30s left).mp3')) },
@@ -8044,6 +8110,7 @@
     var FULL_SMALL = tx('안정적으로 서바이벌을 돌리기 위해 10명 이상이 서바이벌에 참가할 수 없습니다. 이번 경기가 끝날 때까지 모험을 혼자 하다가 다음 경기에서 참여하세요.');
     var GONE_BIG = tx('친구를 찾을 수 없습니다');
     var pendingJoins = [];
+    var pianoCount = {};
     var toastTimer = null;
     var annOn = false;
     var annOpen = false;
@@ -8097,7 +8164,7 @@
             pid: pid, nick: nick, color: COLORS[pid % COLORS.length],
             x: x, y: BASE_Y - PH, tx: x, ty: BASE_Y - PH, vx: 0, vy: 0, f: 1,
             hp: 3, inv: 0, dash: 0, grounded: false, pw: null, pwk: '', gunT: 0,
-            left: false, pr: null
+            left: false, pr: null, touching: {}
         };
     }
 
@@ -8168,6 +8235,14 @@
         var kind = items[idx].k;
         items.splice(idx, 1);
         bcast({ t: 'gone', id: id });
+        if (kind === 'gt') {
+            bcast({ t: 'dance', ms: 10000 }, pid);
+            if (pid !== myPid) applyDance(10000);
+        }
+        if (kind === 'pi') {
+            bcast({ t: 'dance', ms: 30000 }, pid);
+            if (pid !== myPid) applyDance(30000);
+        }
         if (kind === 'd') {
             bcast({ t: 'freeze' }, pid);
             if (pid !== myPid) applyFreeze();
@@ -8198,6 +8273,13 @@
             var msg = { t: 'chat', pid: from, n: p.nick, x: String(m.text || '').slice(0, 120) };
             bcast(msg);
             onChat(msg);
+        } else if (m.t === 'pianohit') {
+            var tc = (pianoCount[m.target] || 0) + 1;
+            pianoCount[m.target] = tc;
+            if (tc % 3 === 0) {
+                if (m.target === myPid) applyPianoDamage();
+                else send(clientConns[m.target], { t: 'pdmg' });
+            }
         } else if (m.t === 'pick') {
             hostPick(m.id, from);
         } else if (m.t === 'hit') {
@@ -8250,6 +8332,10 @@
         } else if (m.t === 'fullnote') {
             mode = 'starting';
             showNote(tx('흠... 다 모였군요! 그럼 서바이벌 시작합니다!'));
+        } else if (m.t === 'pdmg') {
+            applyPianoDamage();
+        } else if (m.t === 'dance') {
+            applyDance(m.ms || 10000);
         } else if (m.t === 'freeze') {
             applyFreeze();
         } else if (m.t === 'gone') {
@@ -8289,6 +8375,17 @@
         p.pw = null;
     }
 
+    function applyDance(ms) {
+        var me = players[myPid];
+        if (!me || me.hp <= 0) return;
+        me.frozenUntil = now() + ms;
+    }
+
+    function applyPianoDamage() {
+        var me = players[myPid];
+        if (me && me.hp > 0) damage(me, 1, null);
+    }
+
     function applyFreeze() {
         var me = players[myPid];
         if (!me || me.hp <= 0) return;
@@ -8297,11 +8394,23 @@
     }
 
     function applyGrant(kind) {
+        if (kind === 'gt') {
+            playDieAudio(riceGuitarAudio);
+            return;
+        }
+        if (kind === 'z') {
+            const zme = players[myPid];
+            if (zme && zme.hp > 0) {
+                clearPw(zme);
+                zme.pw = { k: 'z' };
+            }
+            return;
+        }
         if (kind === 'pi') {
             const pme = players[myPid];
             if (pme && pme.hp > 0) {
                 clearPw(pme);
-                pme.pw = { k: 'pi' };
+                pme.pw = { k: 'pi', until: now() + 30000 };
                 playPianoMelody();
             }
             return;
@@ -8341,6 +8450,11 @@
 
     function damage(p, n, by) {
         if (p.inv > 0 || p.hp <= 0 || inSafe(p)) return;
+        if (p.pw && p.pw.k === 'z') {
+            p.pw = null;
+            p.inv = 30;
+            return;
+        }
         p.hp -= n;
         if (p.pw && p.pw.k === 'pi') p.pw = null;
         p.inv = 75;
@@ -8396,7 +8510,7 @@
                 p.grounded = false;
                 try { playSynthSound('jump'); } catch (e) {}
             }
-            if (inp.a) {
+            if (inp.a && !p.attackLocked) {
                 if (p.pw && p.pw.k === 'g') {
                     if (p.gunT <= 0) fire(p);
                 } else if (!actLatch) {
@@ -8513,6 +8627,25 @@
     function checkHits(me, t) {
         if (me.hp <= 0) return;
         var r = { x: me.x, y: me.y, w: PW, h: PH };
+        if (me.dash > 0 && me.pw && me.pw.k === 'z') {
+            Object.keys(players).forEach(function (k) {
+                var o = players[k];
+                if (o.pid !== myPid && o.hp > 0 && !o.left && overlap(r, { x: o.x, y: o.y, w: PW, h: PH })) me.attackLocked = true;
+            });
+        }
+        if (me.pw && me.pw.k === 'pi') {
+            Object.keys(players).forEach(function (k) {
+                var o = players[k];
+                if (o.pid === myPid || o.hp <= 0 || o.left) return;
+                var hit = overlap(r, { x: o.x, y: o.y, w: PW, h: PH });
+                if (hit && !me.touching[o.pid]) {
+                    me.touching[o.pid] = true;
+                    toHost({ t: 'pianohit', target: o.pid });
+                } else if (!hit) {
+                    me.touching[o.pid] = false;
+                }
+            });
+        }
         Object.keys(players).forEach(function (k) {
             var o = players[k];
             if (o.pid === myPid || o.hp <= 0 || o.left) return;
@@ -8528,7 +8661,7 @@
         }
         if (t >= goUntil) {
             items.forEach(function (it) {
-                if (!pendingPick[it.id] && overlap(r, { x: it.x, y: it.y, w: 45, h: 45 })) {
+                if (!pendingPick[it.id] && !(it.k === 'z' && !isHost) && overlap(r, { x: it.x, y: it.y, w: 45, h: 45 })) {
                     pendingPick[it.id] = true;
                     if (!isHost) items = items.filter(function (x) { return x.id !== it.id; });
                     toHost({ t: 'pick', id: it.id });
@@ -8574,6 +8707,7 @@
     }
 
     function launch() {
+        pianoCount = {};
         clearInterval(inviteTimer);
         inviteTimer = null;
         sendCancel();
@@ -8989,6 +9123,16 @@
     function drawItem(it) {
         if (it.k === 'c') { drawCamItem(it); return; }
         if (it.k === 'd') { drawDrumItem(it); return; }
+        if (it.k === 'z' || it.k === 'gt') {
+            const hz = Math.sin((frame + it.id * 7) / 10) * 4;
+            ctx.save();
+            ctx.font = '34px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(it.k === 'z' ? '🧲' : '🎸', it.x - camX + 22, it.y + 22 + hz);
+            ctx.restore();
+            return;
+        }
         if (it.k === 'pi') {
             const hv = Math.sin((frame + it.id * 7) / 10) * 4;
             ctx.save();
@@ -9088,6 +9232,7 @@
             drawRice(sx, p.y, p.f, p.color, o);
             if (p.hp > 0) drawText(nameOf(p.pid, p.nick).slice(0, 8), sx + PW / 2, p.y - 14, 16, isMe ? '#fde047' : '#ffffff');
             if (p.hp > 0 && k2 === 'pi') drawText('🎹', sx + PW / 2, p.y - 36, 22, '#ffffff');
+            if (p.hp > 0 && k2 === 'z') drawText('🧲', sx + PW / 2, p.y - 36, 22, '#ffffff');
         });
         drawHud(me, t);
         drawChatOverlay();
@@ -9349,11 +9494,13 @@
 
     function pickKind() {
         var q = Math.random();
-        if (q < 0.36) return 'g';
-        if (q < 0.62) return 'l';
-        if (q < 0.74) return 'c';
-        if (q < 0.84) return 'd';
-        return 'pi';
+        if (q < 0.26) return 'g';
+        if (q < 0.46) return 'l';
+        if (q < 0.56) return 'c';
+        if (q < 0.66) return 'd';
+        if (q < 0.76) return 'pi';
+        if (q < 0.88) return 'gt';
+        return 'z';
     }
 
     function nameOf(pid, nick) {
