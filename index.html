@@ -815,6 +815,20 @@
                     <option value="friends">친구들과 플레이</option>
                 </select>
             </div>
+            <div class="st-row">
+                <span>손전등 효과</span>
+                <label class="st-switch"><input id="st-flash-on" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+            <div class="st-row">
+                <span>손전등 밝기</span>
+                <select id="st-flash-level" class="st-select">
+                    <option value="weak">약</option>
+                    <option value="mid">중</option>
+                    <option value="strong">강</option>
+                    <option value="max">최강</option>
+                    <option value="auto">자동</option>
+                </select>
+            </div>
             <h3 class="st-section">소리 및 진동</h3>
             <div class="st-row">
                 <span>진동</span>
@@ -853,6 +867,59 @@
             <div class="st-row">
                 <span>경기 자동 녹화</span>
                 <label class="st-switch"><input id="st-autorec" type="checkbox" checked><span class="st-track"></span></label>
+            </div>
+            <div class="st-row">
+                <span>채팅 읽어주기 음성</span>
+                <select id="st-voice" class="st-select">
+                    <option value="device">기기 내장 TTS</option>
+                    <option value="rica2.0">rica2.0</option>
+                    <option value="rica1.9">rica1.9</option>
+                    <option value="music">rica music</option>
+                    <option value="rica1.8">rica1.8</option>
+                    <option value="rica1.7">rica1.7</option>
+                    <option value="rica1.6">rica1.6</option>
+                    <option value="rica1.5">rica1.5</option>
+                    <option value="rica1.4">rica1.4</option>
+                    <option value="rica1.3">rica1.3</option>
+                    <option value="rica1.2">rica1.2</option>
+                    <option value="rica1.1">rica1.1</option>
+                </select>
+            </div>
+            <div id="st-rica-speed-row" class="st-row st-rica-row" hidden>
+                <span>음성 속도</span>
+                <select id="st-voice-speed" class="st-select">
+                    <option value="vslow">매우 느림</option>
+                    <option value="slow">느림</option>
+                    <option value="normal">보통</option>
+                    <option value="fast">빠름</option>
+                    <option value="vfast">매우 빠름</option>
+                </select>
+            </div>
+            <div id="st-rica-pitch-row" class="st-row st-rica-row" hidden>
+                <span>음높이</span>
+                <input id="st-voice-pitch" class="st-range" type="range" min="0" max="100" step="1" value="30">
+            </div>
+            <div id="st-rica-tone-row" class="st-row st-rica-row" hidden>
+                <span>음색</span>
+                <select id="st-voice-tone" class="st-select">
+                    <option value="normal">일반</option>
+                    <option value="natural">더 자연스러움</option>
+                    <option value="whisper">소곤거림</option>
+                </select>
+            </div>
+            <div id="st-rica-qual-row" class="st-row st-rica-row" hidden>
+                <span>품질</span>
+                <select id="st-voice-qual" class="st-select">
+                    <option value="hq">일반</option>
+                    <option value="basic">고품질</option>
+                </select>
+            </div>
+            <div id="st-rica-singer-row" class="st-row st-rica-row" hidden>
+                <span>가수</span>
+                <select id="st-voice-singer" class="st-select">
+                    <option value="rica">리카</option>
+                    <option value="geun">김근육</option>
+                </select>
             </div>
             <div class="st-row">
                 <span>친구 메시지 읽어주기</span>
@@ -2135,6 +2202,7 @@
             },
 
             shootWaterGun() {
+                flashShot();
                 this.shootCooldown = 15; 
                 playSynthSound('shoot');
                 
@@ -3076,7 +3144,8 @@
                     else if (item.type === 'lightning') {
                         playLightningSynth();
                         tryPhoneFlash();
-                        lightningFlashFrames = 40;
+                        if (flashOn() && flashLevel() === 'auto') runFlash(FLASH_BOLT);
+                        else lightningFlashFrames = 40;
                         if (navigator.vibrate) {
                             vib(VIB_LIGHTNING);
                         }
@@ -3459,6 +3528,8 @@
                 ctx.restore();
             }
 
+            drawFlashlight();
+
             if (lightningFlashFrames > 0) {
                 lightningFlashFrames--;
                 ctx.save();
@@ -3470,6 +3541,54 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.restore();
             }
+        }
+
+        let flashSteps = null;
+        let flashStart = 0;
+        const FLASH_LEVEL = { weak: 0.2, mid: 0.45, strong: 0.7, max: 0.95 };
+        const FLASH_SHOT = [['max', 100], ['strong', 100], ['mid', 100], ['weak', 100]];
+        const FLASH_BOLT = [['max', 50], ['none', 300], ['weak', 50], ['strong', 50], ['weak', 50], ['strong', 50], ['weak', 50], ['max', 50]];
+
+        function flashOn() {
+            try { return localStorage.getItem('riceJumpFlashOn') !== 'off'; } catch (e) { return true; }
+        }
+
+        function flashLevel() {
+            try { return localStorage.getItem('riceJumpFlashLevel') || 'auto'; } catch (e) { return 'auto'; }
+        }
+
+        function runFlash(steps) {
+            flashSteps = steps.map(function (st) {
+                return { a: st[0] === 'none' ? 0 : FLASH_LEVEL[st[0]], ms: st[1] };
+            });
+            flashStart = performance.now();
+        }
+
+        function flashShot() {
+            if (!flashOn()) return;
+            const lv = flashLevel();
+            if (lv === 'auto') runFlash(FLASH_SHOT);
+            else runFlash([[lv, 100]]);
+        }
+
+        function drawFlashlight() {
+            if (!flashSteps) return;
+            const el = performance.now() - flashStart;
+            let t = 0;
+            for (let i = 0; i < flashSteps.length; i++) {
+                const st = flashSteps[i];
+                if (el < t + st.ms) {
+                    if (st.a > 0) {
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(255, 255, 240, ' + st.a + ')';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.restore();
+                    }
+                    return;
+                }
+                t += st.ms;
+            }
+            flashSteps = null;
         }
 
         function updateScoreDisplay() {
@@ -7857,6 +7976,7 @@
         #fr-ann-cancel { background: #374151; color: #fff; }
         #fr-note { position: fixed; inset: 0; z-index: 9900; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #fff; background: rgba(2, 6, 23, 0.85); font-size: clamp(16px, 4vw, 26px); line-height: 1.6; word-break: keep-all; }
         #fr-note[hidden] { display: none; }
+        .st-rica-row[hidden] { display: none; }
         #fr-ann .fr-actions button { min-width: 100px; padding: 12px 16px; font-family: inherit; font-size: 12px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; }
         #fr-ask .fr-actions button { min-width: 100px; padding: 12px 16px; font-family: inherit; font-size: 12px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; }
         #fr-go {
@@ -9649,6 +9769,42 @@
         try { return localStorage.getItem('riceJumpMicMode') === 'announce' ? 'announce' : 'normal'; } catch (e) { return 'normal'; }
     }
 
+    function domFlash(steps) {
+        var el = document.getElementById('fr-flash');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'fr-flash';
+            el.style.cssText = 'position:fixed;inset:0;z-index:9950;pointer-events:none;display:none;';
+            document.body.appendChild(el);
+        }
+        var i = 0;
+        function next() {
+            if (i >= steps.length) { el.style.display = 'none'; return; }
+            el.style.display = 'block';
+            el.style.background = 'rgba(255, 255, 240, ' + steps[i][0] + ')';
+            var ms = steps[i][1];
+            i++;
+            setTimeout(next, ms);
+        }
+        next();
+    }
+
+    function bindFlash() {
+        var on = document.getElementById('st-flash-on');
+        var lv = document.getElementById('st-flash-level');
+        if (!on || !lv) return;
+        on.checked = flashOn();
+        lv.value = flashLevel();
+        on.addEventListener('change', function () {
+            try { localStorage.setItem('riceJumpFlashOn', on.checked ? 'on' : 'off'); } catch (e) {}
+        });
+        lv.addEventListener('change', function () {
+            try { localStorage.setItem('riceJumpFlashLevel', lv.value); } catch (e) {}
+            if (lv.value === 'auto') domFlash([[0.95, 100], [0.7, 100], [0.45, 100], [0.2, 100]]);
+            else domFlash([[FLASH_LEVEL[lv.value], 100]]);
+        });
+    }
+
     function bindMicMode() {
         var sel = document.getElementById('st-mic-mode');
         if (!sel) return;
@@ -9920,11 +10076,58 @@
         try { return localStorage.getItem(TTS_KEY) !== 'off'; } catch (e) { return true; }
     }
 
+    function voiceOpts() {
+        function g(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+        return {
+            model: g('riceJumpVoice', 'device'),
+            speed: g('riceJumpVoiceSpeed', 'normal'),
+            pitch: Number(g('riceJumpVoicePitch', '30')),
+            tone: g('riceJumpVoiceTone', 'normal'),
+            qual: g('riceJumpVoiceQual', 'hq'),
+            singer: g('riceJumpVoiceSinger', 'rica')
+        };
+    }
+
+    var SPEED_RATE = { vslow: 0.6, slow: 0.8, normal: 1, fast: 1.25, vfast: 1.5 };
+
     function speakText(t) {
+        var o = voiceOpts();
+        if (o.model !== 'device' && typeof window.ricaSpeak === 'function') {
+            window.ricaSpeak(t, o);
+            return;
+        }
         if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
         var u = new SpeechSynthesisUtterance(t);
         u.lang = LANG_CODES[currentLang] || 'ko-KR';
+        u.rate = SPEED_RATE[o.speed] || 1;
+        u.pitch = 0.5 + o.pitch / 100;
         speechSynthesis.speak(u);
+    }
+
+    function bindVoiceSettings() {
+        var model = document.getElementById('st-voice');
+        if (!model) return;
+        var o = voiceOpts();
+        var keys = { 'st-voice': 'riceJumpVoice', 'st-voice-speed': 'riceJumpVoiceSpeed', 'st-voice-tone': 'riceJumpVoiceTone', 'st-voice-qual': 'riceJumpVoiceQual', 'st-voice-singer': 'riceJumpVoiceSinger', 'st-voice-pitch': 'riceJumpVoicePitch' };
+        var vals = { 'st-voice': o.model, 'st-voice-speed': o.speed, 'st-voice-tone': o.tone, 'st-voice-qual': o.qual, 'st-voice-singer': o.singer, 'st-voice-pitch': o.pitch };
+        var rows = ['st-rica-speed-row', 'st-rica-pitch-row', 'st-rica-tone-row', 'st-rica-qual-row', 'st-rica-singer-row'];
+        function syncRicaRows() {
+            var isRica = model.value !== 'device';
+            rows.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.hidden = !isRica;
+            });
+        }
+        Object.keys(keys).forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.value = vals[id];
+            el.addEventListener('change', function () {
+                try { localStorage.setItem(keys[id], el.value); } catch (e) {}
+                if (id === 'st-voice') syncRicaRows();
+            });
+        });
+        syncRicaRows();
     }
 
     function bindTts() {
@@ -10297,6 +10500,8 @@
     bindTts();
     bindAutoRec();
     bindMicMode();
+    bindFlash();
+    bindVoiceSettings();
     startPresence();
     setInterval(inviteTick, 1000);
 })();
