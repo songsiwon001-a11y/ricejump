@@ -837,8 +837,9 @@
             <div class="st-row">
                 <span>사운드 엔진</span>
                 <select id="st-engine" class="st-select">
-                    <option value="tone">tone.js</option>
-                    <option value="sf2026super">sf2026super</option>
+                    <option value="tone">브라우저 기본 사운드</option>
+                    <option value="sf2026super">자체 개발 사운드 기술</option>
+                    <option value="retro">레트로 게임 스타일 사운드</option>
                 </select>
             </div>
             <div class="st-row">
@@ -1042,7 +1043,7 @@
         }
 
         function playDrumBeat() {
-            if (soundEngine === 'sf2026super') {
+            if (usesSamples()) {
                 if (sfBuffers.noise && audioCtx) {
                     sfDrum();
                     return;
@@ -1182,10 +1183,10 @@
         let soundEngine = 'tone';
         try {
             const savedEngine = localStorage.getItem(ENGINE_KEY);
-            if (savedEngine === 'sf2026super') soundEngine = 'sf2026super';
+            if (savedEngine === 'sf2026super' || savedEngine === 'retro') soundEngine = savedEngine;
         } catch (e) {}
 
-        const SF_FILES = {
+        const SF_FILES_DEFAULT = {
             bell:   { file: 'bell.wav',           base: 670 },
             piano:  { file: 'piano.wav',          base: 130.81 },
             square: { file: 'square_wave.wav',    base: 5 },
@@ -1194,6 +1195,28 @@
             short:  { file: 'short_noise.wav',    base: 1 / 0.3 },
             noise:  { file: 'whitenoise.wav',     base: 340 }
         };
+        const SF_FILES_RETRO = {
+            bell:   { file: 'pulse25.wav',         base: 2.5 },
+            piano:  { file: 'piano.wav',          base: 130.81 },
+            square: { file: 'square_wave.wav',    base: 5 },
+            saw:    { file: 'pulse12.5.wav',      base: 1.25 },
+            srjs:   { file: 'triangle_wave.wav',  base: 50 },
+            short:  { file: 'pulse12.5.wav',      base: 1.25 },
+            noise:  { file: 'whitenoise.wav',     base: 340 }
+        };
+        let SF_FILES = soundEngine === 'retro' ? SF_FILES_RETRO : SF_FILES_DEFAULT;
+
+        function usesSamples() {
+            return soundEngine === 'sf2026super' || soundEngine === 'retro';
+        }
+
+        function applyEngineFiles() {
+            SF_FILES = soundEngine === 'retro' ? SF_FILES_RETRO : SF_FILES_DEFAULT;
+            Object.keys(sfBuffers).forEach(function (k) { delete sfBuffers[k]; });
+            sfReady = false;
+            sfLoading = false;
+        }
+
         const SF_KIND = {
             sine:     { key: 'srjs',   base: SF_FILES.srjs.base },
             triangle: { key: 'srjs',   base: SF_FILES.srjs.base },
@@ -1210,7 +1233,7 @@
                 shortNote(freq, t, dur, 1, sfSeqSources);
                 return;
             }
-            const key = MUSIC_KEY[type];
+            const key = musicKey(type);
             if (!key) return;
             sfPlayKey(key, SF_FILES[key].base, [[freq, 0]], t, dur, 1, sfSeqSources);
         }
@@ -1438,10 +1461,24 @@
             return src;
         }
 
-        function sfContour(kind, points, t, dur, vol) {
+        const SF_KIND_RETRO = { sine: 'bell', triangle: 'srjs', square: 'square', sawtooth: 'saw' };
+
+        function kindKey(kind) {
+            if (soundEngine === 'retro') return SF_KIND_RETRO[kind] || null;
             const cfg = SF_KIND[kind];
-            if (!cfg) return;
-            sfPlayKey(cfg.key, cfg.base, points, t, dur, vol);
+            return cfg ? cfg.key : null;
+        }
+
+        function musicKey(type) {
+            if (type === 'piano') return 'piano';
+            if (type === 'triangle') return soundEngine === 'retro' ? 'srjs' : 'piano';
+            return MUSIC_KEY[type] || null;
+        }
+
+        function sfContour(kind, points, t, dur, vol) {
+            const key = kindKey(kind);
+            if (!key) return;
+            sfPlayKey(key, SF_FILES[key].base, points, t, dur, vol);
         }
 
         function sfNote(kind, freq, t, dur, vol) {
@@ -1479,7 +1516,7 @@
 
         function playSynthSound(type) {
             if (!audioCtx || !soundEnabled) return;
-            if (soundEngine === 'sf2026super') {
+            if (usesSamples()) {
                 if (sfReady) {
                     if (sfSynthEffect(type)) return;
                 } else {
@@ -1589,7 +1626,7 @@
 
         function playLightningSynth() {
             if (!audioCtx || !soundEnabled) return;
-            if (soundEngine === 'sf2026super' && sfReady) { sfLightning(); return; }
+            if (usesSamples() && sfReady) { sfLightning(); return; }
             const now = audioCtx.currentTime;
 
             const bufferSize = audioCtx.sampleRate * 1.0;
@@ -1660,7 +1697,7 @@
 
         function playRecordStartFeedback() {
             if (!audioCtx || !soundEnabled) return;
-            if (soundEngine === 'sf2026super' && sfReady) { sfRecordFeedback(); return; }
+            if (usesSamples() && sfReady) { sfRecordFeedback(); return; }
             const now = audioCtx.currentTime;
             
             const oscClick = audioCtx.createOscillator();
@@ -1713,7 +1750,7 @@
 
             titleMusicInterval = setInterval(() => {
                 const now = audioCtx.currentTime;
-                if (soundEngine === 'sf2026super' && sfReady) {
+                if (usesSamples() && sfReady) {
                     sfTitleStep(step, melody, bass, titleSine, titleSquare);
                     step++;
                     return;
@@ -1902,8 +1939,8 @@
         ];
 
         function stageClearTracks() {
-            const piano = soundEngine === 'sf2026super' && sfReady;
-            return STAGE_CLEAR_PIANO.map(t => ({ type: piano ? 'triangle' : 'sawtooth', vol: t.vol, notes: t.notes }));
+            const piano = usesSamples() && sfReady;
+            return STAGE_CLEAR_PIANO.map(t => ({ type: piano ? 'piano' : 'sawtooth', vol: t.vol, notes: t.notes }));
         }
 
         let clearTimer = null;
@@ -2006,14 +2043,18 @@
         }
 
         function playToneSequence(mode, tracks, drumSec, shouldPlay, getSpeed, drumRates) {
-            if (soundEngine === 'sf2026super') {
+            if (usesSamples()) {
                 if (sfReady && audioCtx) {
                     playSfSequence(mode, tracks, drumSec, shouldPlay, getSpeed, drumRates);
                     return;
                 }
                 loadSfSamples();
             }
-            tracks = tracks.map(function (t) { return t.type === 'short' ? { type: 'sawtooth', vol: t.vol, notes: t.notes } : t; });
+            tracks = tracks.map(function (t) {
+                if (t.type === 'short') return { type: 'sawtooth', vol: t.vol, notes: t.notes };
+                if (t.type === 'piano') return { type: 'triangle', vol: t.vol, notes: t.notes };
+                return t;
+            });
             if (typeof Tone === 'undefined' || !audioCtx) return;
             stopToneSequence();
             const T = toneTransport();
@@ -3721,8 +3762,8 @@
                 ensurePiano().then(() => {
                     if (instCur === 'piano') {
                         playToneSequence('instr', [
-                            { type: 'triangle', vol: -10, notes: PIANO_1 },
-                            { type: 'triangle', vol: -10, notes: PIANO_2 }
+                            { type: 'piano', vol: -10, notes: PIANO_1 },
+                            { type: 'piano', vol: -10, notes: PIANO_2 }
                         ], 0, () => true, () => 1);
                     }
                 });
@@ -6511,8 +6552,8 @@
         RP_BGM_LIST.push({ label: '클리어', data: () => ({ drum: 0, tracks: stageClearTracks() }) });
         RP_BGM_LIST.push({ label: '기타', file: 'rice_guitar.mp3' });
         RP_BGM_LIST.push({ label: '피아노', data: () => ({ drum: 0, tracks: [
-            { type: 'triangle', vol: -10, notes: PIANO_1 },
-            { type: 'triangle', vol: -10, notes: PIANO_2 }
+            { type: 'piano', vol: -10, notes: PIANO_1 },
+            { type: 'piano', vol: -10, notes: PIANO_2 }
         ] }) });
 
         const RP_VIB_LIST = [
@@ -6891,7 +6932,8 @@
         stEngine.addEventListener('change', () => {
             soundEngine = stEngine.value;
             try { localStorage.setItem(ENGINE_KEY, soundEngine); } catch (e) {}
-            if (soundEngine === 'sf2026super') loadSfSamples();
+            applyEngineFiles();
+            if (usesSamples()) loadSfSamples();
         });
         const stSnd = document.getElementById('st-snd');
         const stOverlay = document.getElementById('st-overlay');
@@ -7420,7 +7462,7 @@
                     if (l > level) level = l;
                 }
             }
-            if (soundEngine === 'sf2026super' && sfReady) { sfMosqUpdate(level); return; }
+            if (usesSamples() && sfReady) { sfMosqUpdate(level); return; }
             if (level <= 0 && !mosqOsc) return;
             if (!mosqOsc) {
                 mosqOsc = audioCtx.createOscillator();
@@ -7439,7 +7481,7 @@
 
         function playMosquitoSample() {
             if (!audioCtx || !soundEnabled) return;
-            if (soundEngine === 'sf2026super' && sfReady) { sfMosquitoOnce(); return; }
+            if (usesSamples() && sfReady) { sfMosquitoOnce(); return; }
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sawtooth';
@@ -9841,9 +9883,17 @@
     }
 
     function speakAnn(text, done) {
+        var o = voiceOpts();
+        if (o.model !== 'device') {
+            if (typeof window.ricaSpeak === 'function') window.ricaSpeak(text, o, done);
+            else done();
+            return;
+        }
         if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { done(); return; }
         const u = new SpeechSynthesisUtterance(text);
         u.lang = LANG_CODES[currentLang] || 'ko-KR';
+        u.rate = SPEED_RATE[o.speed] || 1;
+        u.pitch = 0.5 + o.pitch / 100;
         u.onend = done;
         u.onerror = done;
         speechSynthesis.speak(u);
@@ -10092,8 +10142,8 @@
 
     function speakText(t) {
         var o = voiceOpts();
-        if (o.model !== 'device' && typeof window.ricaSpeak === 'function') {
-            window.ricaSpeak(t, o);
+        if (o.model !== 'device') {
+            if (typeof window.ricaSpeak === 'function') window.ricaSpeak(t, o, function () {});
             return;
         }
         if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
